@@ -1,0 +1,42 @@
+.sidebar {
+  min-height: calc(100vh - 76px);
+  position: fixed;
+  top: 76px; /* Altura del navbar */
+  bottom: 0;
+  left: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  background-color: #f8f9fa;
+  overflow-y: auto; /* Permite scroll si el menú es muy largo */
+}
+
+.sidebar-expanded {
+  width: 250px;
+}
+
+.sidebar-collapsed {
+  width: 70px;
+}
+
+.icon-only {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    top: 56px; /* Navbar es más pequeño en móviles */
+    width: 250px; /* Siempre 250px en móviles */
+    left: -250px; /* Inicialmente fuera de la vista */
+  }
+  
+  .sidebar-expanded {
+    left: 0; /* Muestra el sidebar */
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  .sidebar-collapsed {
+    left: -250px; /* Oculta el sidebar */
+  }
+}

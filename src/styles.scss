@@ -1,1 +1,179 @@
-/* You can add global styles to this file, and also import other style files */
+/* Importaciones de Bootstrap y Bootstrap Icons */
+@import '~bootstrap/dist/css/bootstrap.min.css';
+@import '~bootstrap-icons/font/bootstrap-icons.css';
+
+/* Estilos globales para el layout */
+body {
+  padding-top: 76px; /* Espacio para el navbar fijo */
+  overflow-x: hidden; /* Evita scroll horizontal */
+}
+
+/* Ajustes para el contenido principal */
+.content-with-sidebar {
+  margin-left: 250px;
+  width: calc(100% - 250px);
+  transition: all 0.3s ease;
+  min-height: calc(100vh - 76px);
+  padding-top: 10px;
+}
+
+.content-with-sidebar-collapsed {
+  margin-left: 70px;
+  width: calc(100% - 70px);
+  transition: all 0.3s ease;
+  min-height: calc(100vh - 76px);
+  padding-top: 10px;
+}
+
+/* Clase para prevenir scroll cuando el sidebar está abierto en móvil */
+.sidebar-open {
+  overflow: hidden;
+}
+
+/* Estilos para el overlay del sidebar en móviles */
+.sidebar-overlay {
+  position: fixed;
+  top: 56px; /* Altura del navbar en móviles */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 998; /* Justo debajo del sidebar */
+  transition: opacity 0.3s ease;
+}
+
+/* Media query para dispositivos móviles */
+@media (max-width: 768px) {
+  body {
+    padding-top: 56px; /* Navbar más pequeño en móviles */
+  }
+  
+  .content-with-sidebar, 
+  .content-with-sidebar-collapsed {
+    margin-left: 0;
+    width: 100%;
+    transition: all 0.3s ease;
+  }
+  
+  /* Cuando el sidebar está visible en móvil */
+  .sidebar-visible-mobile {
+    margin-left: 0; /* El contenido no se mueve en móviles */
+  }
+}
+
+/* Estilos para tarjetas de categorías */
+.category-card {
+  transition: transform 0.3s ease;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Estilos para tarjetas de productos */
+.product-card {
+  transition: all 0.3s ease;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+.product-card img {
+  transition: transform 0.5s ease;
+  height: 200px;
+  object-fit: cover;
+}
+
+.product-card:hover img {
+  transform: scale(1.05);
+}
+
+.product-badge {
+  z-index: 1;
+  font-size: 0.8rem;
+}
+
+/* Estilos para la sección de beneficios */
+.benefits-icon {
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Estilos para secciones de llamada a la acción */
+.cta-section {
+  background: linear-gradient(45deg, #dc3545, #c41d2e) !important;
+}
+
+/* Estilos para tarjetas de combos */
+.combo-card {
+  transition: transform 0.3s ease;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.combo-card:hover {
+  transform: translateY(-5px);
+}
+
+.popular-combo {
+  border: 2px solid #dc3545 !important;
+}
+
+.ribbon {
+  width: 150px;
+  height: 150px;
+  overflow: hidden;
+  position: absolute;
+  top: -10px;
+  right: -10px;
+}
+
+.ribbon span {
+  position: absolute;
+  display: block;
+  width: 225px;
+  padding: 8px 0;
+  background-color: #dc3545;
+  box-shadow: 0 5px 10px rgba(0,0,0,.1);
+  color: #fff;
+  font-size: 13px;
+  text-transform: uppercase;
+  text-align: center;
+  right: -25px;
+  top: 30px;
+  transform: rotate(45deg);
+}
+
+/* Estilos para la sección de descarga de app */
+.app-screenshot {
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.combo-price {
+  font-weight: 700;
+}
+
+.combo-items li {
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+/* Estilos para la sección de hero */
+.hero-section {
+  padding: 1rem 0;
+  background-color: #fffbf7;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-image-container {
+  position: relative;
+}

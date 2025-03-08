@@ -1,0 +1,32 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" [ngClass]="{'navbar-scrolled': isScrolled, 'navbar-hidden': !headerVisible}">
+  <div class="container-fluid">
+    <button class="btn btn-outline-light me-2" (click)="toggleSidebar()">
+      <i class="bi" [ngClass]="sidebarService.isSidebarCollapsed ? 'bi-list' : 'bi-x'"></i>
+    </button>
+    <a class="navbar-brand" href="#">Mi Pizzería</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="#">Inicio</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Menú</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Combos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Contacto</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link btn btn-danger text-white ms-lg-2 px-3" href="#">
+            <i class="bi bi-cart me-1"></i> Ordenar
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
