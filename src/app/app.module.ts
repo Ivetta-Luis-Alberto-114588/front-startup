@@ -5,9 +5,8 @@ import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { CoreModule } from '../app/core/core.module';
 import { SharedModule } from './shared/shared.module';
-import { FeaturesModule } from './features/features.module';
+import { AuthModule } from './auth/auth.module';
 
 @NgModule({
   declarations: [
@@ -15,11 +14,10 @@ import { FeaturesModule } from './features/features.module';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule,
     NgbModule,
-    CoreModule,
+    AuthModule,
+    AppRoutingModule,
     SharedModule,
-    FeaturesModule
   ],
   providers: [],
   bootstrap: [AppComponent]

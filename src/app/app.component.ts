@@ -1,5 +1,5 @@
 import { Component, HostListener } from '@angular/core';
-import { SidebarService } from './core/components/sidebar/sidebar.service';
+import { SidebarService } from './shared/sidebar/sidebar.service';
 
 @Component({
   selector: 'app-root',
