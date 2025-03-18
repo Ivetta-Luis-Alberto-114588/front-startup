@@ -1,19 +1,23 @@
+// src/app/shared/shared.module.ts
 import { NgModule } from '@angular/core';
-import {RouterModule} from "@angular/router"
+import { RouterModule } from "@angular/router";
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { HeaderComponent } from './header/header.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 
 @NgModule({
   declarations: [    
     HeaderComponent,
-    SidebarComponent],
+    SidebarComponent
+  ],
   imports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterModule
+    RouterModule,
+    NgbModule
   ],
   exports: [
     CommonModule,
