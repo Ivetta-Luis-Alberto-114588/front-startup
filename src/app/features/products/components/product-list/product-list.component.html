@@ -1,5 +1,10 @@
 <div class="container mt-4">
     <h2 class="mb-4 text-capitalize">{{ category.description }}</h2>
+    <div class="mb-3">
+        <a routerLink="/dashboard" class="text-decoration-none">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
 
     <div *ngIf="isLoading" class="text-center">
         <div class="spinner-border text-primary" role="status">
@@ -21,16 +26,19 @@
                     <h5 class="card-title">{{ product.name }}</h5>
                     <p class="card-text small text-muted flex-grow-1">{{ product.description | slice:0:80 }}{{
                         product.description.length > 80 ? '...' : '' }}</p>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
+
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-2">
                         <p class="fw-bold text-danger mb-0 h5">{{ product.price | currency }}</p>
-                        <div>
+                        <div class="d-flex mt-2 mt-md-0">
                             <button class="btn btn-sm btn-outline-secondary me-1"
                                 (click)="viewProductDetail(product.id)" title="Ver detalle">
-                                <i class="bi bi-eye"></i>
+                                Ver
+                                <!-- <i class="bi bi-eye"></i> -->
                             </button>
-                            <button class="btn btn-sm btn-danger" (click)="addToCart(product)"
+                            <button class="btn btn-sm btn-success" (click)="addToCart(product)"
                                 title="Añadir al carrito">
-                                <i class="bi bi-cart-plus"></i>
+                                Comprar
+                                <!-- <i class="bi bi-cart-plus"></i> -->
                             </button>
                         </div>
                     </div>

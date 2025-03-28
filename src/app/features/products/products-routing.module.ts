@@ -6,14 +6,14 @@ import { ProductDetailComponent } from './components/product-detail/product-deta
 const routes: Routes = [
   {
     // Ruta para mostrar la lista de productos de una categoría específica
-    // Ej: /products/pizzas, /products/empanadas
-    path: ':idCategory', // El parámetro de ruta se llamará 'category'
+    // Ej: /products/67dc9f28e260c0eef5279182, /products/67dc9f28e260c0eef5279182
+    path: ':idCategory', // El parámetro de ruta se llamará 'idCategory'
     component: ProductListComponent
   },
   {
     // Ruta para mostrar el detalle de un producto específico
-    // Ej: /products/detail/60b8d295f1d2a5001c8e4abc
-    path: 'detail/:id', // El parámetro de ruta se llamará 'id'
+    // Ej: /products/67dc9f28e260c0eef5279182/60b8d295f1d2a5001c8e4abc
+    path: ':idCategory/:idProduct', // El parámetro de ruta se llamará 'idCategory' y 'idProduct'
     component: ProductDetailComponent
   },
   {

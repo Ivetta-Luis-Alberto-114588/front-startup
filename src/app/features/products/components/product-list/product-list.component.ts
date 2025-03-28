@@ -16,7 +16,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
   public listProducts: IProduct[] = []
   public category: ICategory = {} as ICategory;
 
-  currentCategory: string | null = null;
+  idCategory: string | null = null;
+  productSelected: IProduct | null = null;
   public isLoading = false;
   error: string | null = null;
   private routeSubscription: Subscription | null = null;
@@ -38,7 +39,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.routeSubscription = this.getParamsFromUrl();
 
 
-    this.getCategory(this.currentCategory!);
+    this.getCategory(this.idCategory!);
   }
 
 
@@ -50,9 +51,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
   getParamsFromUrl(): any {
     this.activatedRoute.paramMap.pipe(
       switchMap(params => {
-        this.currentCategory = params.get('idCategory');
+        this.idCategory = params.get('idCategory');
 
-        if (!this.currentCategory) {
+        if (!this.idCategory) {
           // Decide qué hacer si no hay categoría (¿mostrar todo? ¿redirigir?)
           // Por ahora, lanzamos un error o devolvemos un observable vacío
           this.error = "Categoría no especificada.";
@@ -62,7 +63,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
         }
 
         // Llama al servicio para obtener los productos de esa categoría
-        return this.productService.getProductsByCategory(this.currentCategory);
+        return this.productService.getProductsByCategory(this.idCategory);
       })
     ).subscribe({
       next: (data) => {
@@ -90,8 +91,19 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   viewProductDetail(productId: string): void {
-    // Navega a la ruta de detalle del producto
-    this.router.navigate(['/productos', 'detalle', productId]);
+
+    this.productService.getProductsById(productId).subscribe({
+      next: (data) => {
+        this.productSelected = data;
+        console.log('Producto seleccionado:', this.productSelected);
+      },
+      error: (error) => {
+        console.error('Error fetching product:', error);
+      }
+    })
+
+
+    this.router.navigate(['/products', this.idCategory, productId]);
   }
 
   addToCart(product: IProduct): void {
@@ -99,6 +111,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
     console.log('Añadir al carrito:', product);
     // Ejemplo: this.cartService.addItem(product, 1);
   }
+
+
+
 
 
 

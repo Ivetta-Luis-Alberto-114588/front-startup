@@ -1,1 +1,66 @@
-<p>product-detail works!</p>
+<!-- src/app/features/products/components/product-detail/product-detail.component.html -->
+<div class="container mt-4">
+    <div *ngIf="isLoading" class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+    <div *ngIf="product" class="row">
+        <div class="col-md-5">
+            <img [src]="product.imgUrl || 'assets/placeholder.png'" class="img-fluid rounded" [alt]="product.name">
+            <!-- Añadido placeholder por si no hay imagen -->
+        </div>
+        <div class="col-md-7">
+            <div class="mb-3">
+                <!-- Considera usar un método goBack() en TS en lugar de depender de product.category aquí -->
+                <!-- <a routerLink="/products/{{product.category}}" class="text-decoration-none"> -->
+                <a routerLink="/dashboard" class="text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
+            <h2 class="mb-3">{{ product.name }}</h2>
+            <p class="lead mb-4">{{ product.description }}</p>
+            <div class="mb-4">
+                <h4 class="text-danger">{{ product.price | currency }}</h4>
+                <p class="text-muted" *ngIf="product.stock > 0">
+                    <i class="bi bi-check-circle-fill text-success me-1"></i> En stock ({{product.stock}} disponibles)
+                </p>
+                <p class="text-danger" *ngIf="product.stock <= 0">
+                    <i class="bi bi-x-circle-fill me-1"></i> Agotado
+                </p>
+            </div>
+
+            <!-- === INICIO: Controles de Cantidad y Carrito === -->
+            <div class="mb-3">
+                <label for="quantity" class="form-label fw-bold">Cantidad:</label>
+                <div class="input-group" style="max-width: 150px;">
+                    <button class="btn btn-outline-secondary" type="button" (click)="decreaseQuantity()"
+                        [disabled]="quantity <= 1">
+                        <i class="bi bi-dash"></i>
+                    </button>
+                    <input type="number" id="quantity" class="form-control text-center" [(ngModel)]="quantity" min="1"
+                        [max]="product.stock" readonly>
+                    <button class="btn btn-outline-secondary" type="button" (click)="increaseQuantity()"
+                        [disabled]="quantity >= product.stock">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- === FIN: Controles de Cantidad === -->
+
+            <!-- Botones de Acción -->
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" [disabled]="product.stock <= 0 || quantity > product.stock"
+                    (click)="addToCart()">
+                    <i class="bi bi-cart-plus me-2"></i> Agregar al carrito
+                </button>
+                <button class="btn btn-outline-secondary">
+                    <i class="bi bi-heart me-2"></i> Añadir a favoritos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
