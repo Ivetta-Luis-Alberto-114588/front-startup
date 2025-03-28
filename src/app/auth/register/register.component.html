@@ -1,136 +1,114 @@
 <div class="container">
-    <div class="row justify-content-center mt-5">
-      <div class="col-md-6 col-lg-5">
-        <!-- Tarjeta de Registro -->
-        <div class="card shadow-sm">
-          <div class="card-header bg-primary text-white text-center py-3">
-            <h4 class="mb-0">Crear cuenta</h4>
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+      <!-- Tarjeta de Registro -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white text-center py-3">
+          <h4 class="mb-0">Crear cuenta</h4>
+        </div>
+
+        <div class="card-body p-4">
+          <!-- Logo de la aplicación -->
+          <div class="text-center mb-4">
+            <img src="../../../assets/login.jpg" alt="Logo" class="img-fluid mb-2" style="max-width: 80px;">
+            <p class="text-muted">Regístrate para comenzar</p>
           </div>
-          
-          <div class="card-body p-4">
-            <!-- Logo de la aplicación -->
-            <div class="text-center mb-4">
-              <img src="/api/placeholder/80/80" alt="Logo" class="img-fluid mb-2" style="max-width: 80px;">
-              <p class="text-muted">Regístrate para comenzar</p>
+
+          <!-- Formulario de registro -->
+          <form>
+            <!-- Nombre -->
+            <div class="mb-3">
+              <label for="nombre" class="form-label">Nombre completo</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-person"></i>
+                </span>
+                <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Introduce tu nombre">
+              </div>
             </div>
-            
-            <!-- Formulario de registro -->
-            <form>
-              <!-- Nombre -->
-              <div class="mb-3">
-                <label for="nombre" class="form-label">Nombre completo</label>
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-person"></i>
-                  </span>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    id="nombre" 
-                    name="nombre" 
-                    placeholder="Introduce tu nombre">
-                </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+              <label for="email" class="form-label">Correo electrónico</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-envelope"></i>
+                </span>
+                <input type="email" class="form-control" id="email" name="email" placeholder="ejemplo@correo.com">
               </div>
-              
-              <!-- Email -->
-              <div class="mb-3">
-                <label for="email" class="form-label">Correo electrónico</label>
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-envelope"></i>
-                  </span>
-                  <input 
-                    type="email" 
-                    class="form-control" 
-                    id="email" 
-                    name="email" 
-                    placeholder="ejemplo@correo.com">
-                </div>
-              </div>
-              
-              <!-- Contraseña -->
-              <div class="mb-3">
-                <label for="password" class="form-label">Contraseña</label>
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-lock"></i>
-                  </span>
-                  <input 
-                    type="password" 
-                    class="form-control" 
-                    id="password" 
-                    name="password" 
-                    placeholder="Crea una contraseña">
-                  <button 
-                    type="button" 
-                    class="btn btn-outline-secondary">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                </div>
-                <div class="form-text">La contraseña debe tener al menos 6 caracteres</div>
-              </div>
-              
-              <!-- Confirmar Contraseña -->
-              <div class="mb-3">
-                <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="bi bi-lock-fill"></i>
-                  </span>
-                  <input 
-                    type="password" 
-                    class="form-control" 
-                    id="confirmPassword" 
-                    name="confirmPassword" 
-                    placeholder="Repite tu contraseña">
-                </div>
-              </div>
-              
-              <!-- Checkbox Términos -->
-              <div class="mb-3 form-check">
-                <input type="checkbox" class="form-check-input" id="acceptTerms" name="acceptTerms">
-                <label class="form-check-label" for="acceptTerms">
-                  Acepto los <a href="#" class="text-primary">términos y condiciones</a>
-                </label>
-              </div>
-              
-              <!-- Botón de registro -->
-              <div class="d-grid mb-3">
-                <button 
-                  type="submit" 
-                  class="btn btn-primary">
-                  Crear cuenta
+            </div>
+
+            <!-- Contraseña -->
+            <div class="mb-3">
+              <label for="password" class="form-label">Contraseña</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-lock"></i>
+                </span>
+                <input type="password" class="form-control" id="password" name="password"
+                  placeholder="Crea una contraseña">
+                <button type="button" class="btn btn-outline-secondary">
+                  <i class="bi bi-eye"></i>
                 </button>
               </div>
-              
-              <!-- Separador -->
-              <div class="d-flex align-items-center mb-3">
-                <hr class="flex-grow-1">
-                <span class="px-2 text-muted small">O</span>
-                <hr class="flex-grow-1">
+              <div class="form-text">La contraseña debe tener al menos 6 caracteres</div>
+            </div>
+
+            <!-- Confirmar Contraseña -->
+            <div class="mb-3">
+              <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-lock-fill"></i>
+                </span>
+                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                  placeholder="Repite tu contraseña">
               </div>
-              
-              <!-- Botones de redes sociales -->
-              <div class="row g-2 mb-3">
-                <div class="col-6">
-                  <button type="button" class="btn btn-outline-primary w-100">
-                    <i class="bi bi-google me-2"></i>Google
-                  </button>
-                </div>
-                <div class="col-6">
-                  <button type="button" class="btn btn-outline-primary w-100">
-                    <i class="bi bi-facebook me-2"></i>Facebook
-                  </button>
-                </div>
+            </div>
+
+            <!-- Checkbox Términos -->
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="acceptTerms" name="acceptTerms">
+              <label class="form-check-label" for="acceptTerms">
+                Acepto los <a href="#" class="text-primary">términos y condiciones</a>
+              </label>
+            </div>
+
+            <!-- Botón de registro -->
+            <div class="d-grid mb-3">
+              <button type="submit" class="btn btn-primary">
+                Crear cuenta
+              </button>
+            </div>
+
+            <!-- Separador -->
+            <div class="d-flex align-items-center mb-3">
+              <hr class="flex-grow-1">
+              <span class="px-2 text-muted small">O</span>
+              <hr class="flex-grow-1">
+            </div>
+
+            <!-- Botones de redes sociales -->
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <button type="button" class="btn btn-outline-primary w-100">
+                  <i class="bi bi-google me-2"></i>Google
+                </button>
               </div>
-            </form>
-          </div>
-          
-          <!-- Footer con enlace de login -->
-          <div class="card-footer bg-light py-3 text-center">
-            <p class="mb-0">¿Ya tienes una cuenta? <a href="#" class="text-primary">Inicia sesión</a></p>
-          </div>
+              <div class="col-6">
+                <button type="button" class="btn btn-outline-primary w-100">
+                  <i class="bi bi-facebook me-2"></i>Facebook
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Footer con enlace de login -->
+        <div class="card-footer bg-light py-3 text-center">
+          <p class="mb-0">¿Ya tienes una cuenta? <a href="#" class="text-primary">Inicia sesión</a></p>
         </div>
       </div>
     </div>
   </div>
+</div>

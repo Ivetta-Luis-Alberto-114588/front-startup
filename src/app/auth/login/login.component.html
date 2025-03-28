@@ -6,20 +6,20 @@
         <div class="card-header bg-primary text-white text-center py-3">
           <h4 class="mb-0">Iniciar Sesión</h4>
         </div>
-        
+
         <div class="card-body p-4">
           <!-- Logo de la aplicación -->
           <div class="text-center mb-4">
-            <img src="/api/placeholder/80/80" alt="Logo" class="img-fluid mb-2" style="max-width: 80px;">
+            <img src="../../../assets/login.jpg" alt="Logo" class="img-fluid mb-2" style="max-width: 80px;">
             <p class="text-muted">Accede a tu cuenta</p>
           </div>
-          
+
           <!-- Mensaje de error -->
           <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ error }} 
+            {{ error }}
             <button type="button" class="btn-close" aria-label="Close" (click)="error = null"></button>
           </div>
-          
+
           <!-- Formulario de login -->
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
             <!-- Campo Email -->
@@ -29,20 +29,18 @@
                 <span class="input-group-text">
                   <i class="bi bi-envelope"></i>
                 </span>
-                <input 
-                  type="email" 
-                  class="form-control" 
-                  id="email" 
-                  formControlName="email" 
+                <input type="email" class="form-control" id="email" formControlName="email"
                   [ngClass]="{'is-invalid': loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)}"
                   placeholder="ejemplo@correo.com">
               </div>
-              <div *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)" class="text-danger mt-1 small">
+              <div
+                *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)"
+                class="text-danger mt-1 small">
                 <div *ngIf="loginForm.get('email')?.errors?.['required']">El correo electrónico es obligatorio.</div>
                 <div *ngIf="loginForm.get('email')?.errors?.['email']">Ingresa un correo electrónico válido.</div>
               </div>
             </div>
-            
+
             <!-- Campo Contraseña -->
             <div class="mb-3">
               <div class="d-flex justify-content-between">
@@ -53,49 +51,43 @@
                 <span class="input-group-text">
                   <i class="bi bi-lock"></i>
                 </span>
-                <input 
-                  [type]="showPassword ? 'text' : 'password'" 
-                  class="form-control" 
-                  id="password" 
-                  formControlName="password" 
+                <input [type]="showPassword ? 'text' : 'password'" class="form-control" id="password"
+                  formControlName="password"
                   [ngClass]="{'is-invalid': loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)}"
                   placeholder="Introduce tu contraseña">
-                <button 
-                  type="button" 
-                  class="btn btn-outline-secondary"
-                  (click)="togglePasswordVisibility()">
+                <button type="button" class="btn btn-outline-secondary" (click)="togglePasswordVisibility()">
                   <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
               </div>
-              <div *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)" class="text-danger mt-1 small">
+              <div
+                *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)"
+                class="text-danger mt-1 small">
                 <div *ngIf="loginForm.get('password')?.errors?.['required']">La contraseña es obligatoria.</div>
               </div>
             </div>
-            
+
             <!-- Checkbox Recordar -->
             <div class="mb-3 form-check">
               <input type="checkbox" class="form-check-input" id="rememberMe" formControlName="rememberMe">
               <label class="form-check-label" for="rememberMe">Mantener sesión iniciada</label>
             </div>
-            
+
             <!-- Botón de login -->
             <div class="d-grid mb-3">
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                [disabled]="isLoading">
-                <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              <button type="submit" class="btn btn-primary" [disabled]="isLoading">
+                <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
+                  aria-hidden="true"></span>
                 Iniciar Sesión
               </button>
             </div>
-            
+
             <!-- Separador -->
             <div class="d-flex align-items-center mb-3">
               <hr class="flex-grow-1">
               <span class="px-2 text-muted small">O</span>
               <hr class="flex-grow-1">
             </div>
-            
+
             <!-- Botones de redes sociales -->
             <div class="row g-2 mb-3">
               <div class="col-6">
@@ -111,7 +103,7 @@
             </div>
           </form>
         </div>
-        
+
         <!-- Footer con enlace de registro -->
         <div class="card-footer bg-light py-3 text-center">
           <p class="mb-0">¿No tienes una cuenta? <a routerLink="/auth/register" class="text-primary">Regístrate</a></p>

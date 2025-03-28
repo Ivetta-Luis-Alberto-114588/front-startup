@@ -3,53 +3,53 @@
     background-color: #f8f9fa;
     position: relative;
     overflow: hidden;
-  }
-  
-  .hero-image-container {
+}
+
+.hero-image-container {
     position: relative;
-  }
-  
-  .category-card {
+}
+
+.category-card {
     transition: transform 0.3s ease;
     border-radius: 10px;
     overflow: hidden;
-  }
-  
-  .category-card:hover {
+}
+
+.category-card:hover {
     transform: translateY(-5px);
-  }
-  
-  .product-card {
+}
+
+.product-card {
     transition: all 0.3s ease;
     border-radius: 10px;
     overflow: hidden;
-  }
-  
-  .product-card:hover {
+}
+
+.product-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-  }
-  
-  .product-card img {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.product-card img {
     transition: transform 0.5s ease;
     height: 200px;
     object-fit: cover;
-  }
-  
-  .product-card:hover img {
+}
+
+.product-card:hover img {
     transform: scale(1.05);
-  }
-  
-  .product-badge {
+}
+
+.product-badge {
     z-index: 1;
     font-size: 0.8rem;
-  }
-  
-  .benefits-icon {
+}
+
+.benefits-icon {
     min-width: 60px;
     text-align: center;
-  }
-  
-  .cta-section {
+}
+
+.cta-section {
     background: linear-gradient(45deg, #007bff, #0056b3);
-  }
+}
