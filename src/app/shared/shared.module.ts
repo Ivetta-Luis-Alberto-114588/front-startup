@@ -6,11 +6,17 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { HeaderComponent } from './header/header.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
+import { NotpagefoundComponent } from './components/notpagefound/notpagefound.component';
+import { TermsConditionsComponent } from './pages/terms-conditions/terms-conditions.component';
+import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy.component';
 
 @NgModule({
-  declarations: [    
+  declarations: [
     HeaderComponent,
-    SidebarComponent
+    SidebarComponent,
+    NotpagefoundComponent,
+    TermsConditionsComponent,
+    PrivacyPolicyComponent
   ],
   imports: [
     CommonModule,
@@ -23,8 +29,10 @@ import { SidebarComponent } from './sidebar/sidebar.component';
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
+    NgbModule,
     HeaderComponent,
-    SidebarComponent
+    SidebarComponent,
+    NotpagefoundComponent
   ]
 })
 export class SharedModule { }

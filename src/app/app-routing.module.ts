@@ -1,6 +1,8 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { NotpagefoundComponent } from './auth/notpagefound/notpagefound.component';
+import { NotpagefoundComponent } from './shared/components/notpagefound/notpagefound.component';
+import { TermsConditionsComponent } from './shared/pages/terms-conditions/terms-conditions.component';
+import { PrivacyPolicyComponent } from './shared/pages/privacy-policy/privacy-policy.component';
 
 const routes: Routes = [
   {
@@ -23,6 +25,9 @@ const routes: Routes = [
   // Redirecciones directas para conveniencia
   { path: 'login', redirectTo: 'auth/login', pathMatch: 'full' },
   { path: 'registro', redirectTo: 'auth/registro', pathMatch: 'full' },
+
+  { path: 'terms', component: TermsConditionsComponent },
+  { path: 'privacy-policy', component: PrivacyPolicyComponent },
 
   // Ruta para páginas no encontradas
   { path: '**', component: NotpagefoundComponent }

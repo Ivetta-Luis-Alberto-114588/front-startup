@@ -1,26 +1,14 @@
 .navbar {
-    transition: all 0.3s ease;
-    padding: 1rem;
-  }
-  
-  .navbar-scrolled {
-    padding: 0.5rem 1rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    background-color: rgba(33, 37, 41, 0.95) !important;
-  }
-  
-  .navbar-hidden {
-    transform: translateY(-100%);
-  }
-  
-  // También necesitamos ajustar el layout principal para manejar el navbar fixed
-  
-  // File: src/styles.scss (agregar al archivo existente)
-  /* Agregue esto a sus estilos globales para manejar el espacio del navbar fijo */
-  body {
-    padding-top: 76px; /* Ajustar según la altura de tu navbar */
-  }
-  
-  .content-with-sidebar, .content-with-sidebar-collapsed {
-    padding-top: 10px;
-  }
+  transition: all 0.3s ease;
+  padding: 1rem;
+}
+
+.navbar-scrolled {
+  padding: 0.5rem 1rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: rgba(33, 37, 41, 0.95) !important;
+}
+
+.navbar-hidden {
+  transform: translateY(-100%);
+}

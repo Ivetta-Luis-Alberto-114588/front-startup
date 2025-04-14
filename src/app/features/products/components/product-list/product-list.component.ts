@@ -80,29 +80,19 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   getCategory(id: string) {
+    if (!id) return;
     this.categoryService.getCategoryById(id).subscribe({
-      next: (data: any) => {
+      next: (data: ICategory) => { // Usar ICategory
         this.category = data;
       },
       error: (error) => {
-        console.log('Error fetching categories', error);
+        console.log('Error fetching category', error);
+        // Considera mostrar un error al usuario si la categoría no carga
       }
     });
   }
 
   viewProductDetail(productId: string): void {
-
-    this.productService.getProductsById(productId).subscribe({
-      next: (data) => {
-        this.productSelected = data;
-        console.log('Producto seleccionado:', this.productSelected);
-      },
-      error: (error) => {
-        console.error('Error fetching product:', error);
-      }
-    })
-
-
     this.router.navigate(['/products', this.idCategory, productId]);
   }
 

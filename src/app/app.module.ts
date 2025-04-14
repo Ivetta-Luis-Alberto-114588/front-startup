@@ -1,14 +1,15 @@
 // src/app/app.module.ts
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { RouterModule } from '@angular/router';
-import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations'; // <-- Importar
+import { ToastrModule } from 'ngx-toastr'; // <-- Importar
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { SharedModule } from './shared/shared.module';
-import { AuthModule } from './auth/auth.module';
+// Elimina la importación de AuthModule si aún la tienes aquí
+// import { AuthModule } from './auth/auth.module';
 import { AuthInterceptor } from './auth/interceptors/auth.interceptor';
 
 @NgModule({
@@ -17,11 +18,17 @@ import { AuthInterceptor } from './auth/interceptors/auth.interceptor';
   ],
   imports: [
     BrowserModule,
-    NgbModule,
-    // AuthModule,
     AppRoutingModule,
-    SharedModule,
     HttpClientModule,
+    SharedModule,
+    BrowserAnimationsModule, // <-- Añadir aquí
+    ToastrModule.forRoot({   // <-- Añadir y configurar (opcional)
+      timeOut: 3000, // Tiempo visible en ms
+      positionClass: 'toast-bottom-right', // Posición en pantalla
+      preventDuplicates: true, // Evitar toasts duplicados idénticos
+      closeButton: true, // Mostrar botón de cierre
+      progressBar: true, // Mostrar barra de progreso
+    }),
   ],
   providers: [
     {

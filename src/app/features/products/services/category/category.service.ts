@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ICategory } from '../../model/icategory';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,7 @@ import { ICategory } from '../../model/icategory';
 export class CategoryService {
 
   // private apiUrlCategory = 'https://sistema-mongo.onrender.com/api/products/by-category/67bb26204bb12979fc09e267?page=1&limit=10';
-  private apiUrlCategory = 'https://sistema-mongo.onrender.com/api/categories';
+  private apiUrlCategory = `${environment.apiUrl}/categories`;
 
 
   constructor(private http: HttpClient) { }

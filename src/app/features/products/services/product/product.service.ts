@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { IProduct } from '../../model/iproduct';
+import { environment } from 'src/environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -9,14 +10,14 @@ import { IProduct } from '../../model/iproduct';
 export class ProductService {
 
   // private apiUrlCategory = 'http://localhost:3000/api/products/by-category/67bb26204bb12979fc09e267?page=1&limit=10';
-  private apiUrlCategory = 'https://sistema-mongo.onrender.com/api/products/by-category';
+  private apiUrlCategory = `${environment.apiUrl}/products/by-category`;
 
   // private apiUrlCategory = 'http://localhost:3000/api/products/67bb66e150cbedc32c59ad6b';
-  private apiUrlById = 'https://sistema-mongo.onrender.com/api/products';
+  private apiUrlById = `${environment.apiUrl}/products`;
 
 
   // private apiUrlGetAll = 'https://sistema-mongo.onrender.com/api/products?page=1&limit=10';
-  private apiUrlGetAll = 'https://sistema-mongo.onrender.com/api/products?page=1&limit=10';
+  private apiUrlGetAll = `${environment.apiUrl}/products?page=1&limit=10`;
 
 
 
