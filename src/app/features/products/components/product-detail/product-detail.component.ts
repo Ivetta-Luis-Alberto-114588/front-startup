@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { IProduct } from '../../model/iproduct';
 import { Subscription, switchMap } from 'rxjs';
 import { NotificationService } from 'src/app/shared/services/notification.service';
+import { Location } from '@angular/common';
 
 @Component({
   selector: 'app-product-detail',
@@ -22,7 +23,8 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   constructor(
     private productService: ProductService,
     private activatedRoute: ActivatedRoute,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private location: Location
   ) { }
 
 
@@ -91,6 +93,10 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     console.log(`Intentando agregar ${this.quantity} unidad(es) de ${this.product.name} (ID: ${this.product.id}) al carrito.`);
     // Aquí irá la lógica para llamar al servicio del carrito
     this.notificationService.showInfo(`Simulación: ${this.quantity} x ${this.product.name} añadido(s).`, 'Carrito');
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
 
