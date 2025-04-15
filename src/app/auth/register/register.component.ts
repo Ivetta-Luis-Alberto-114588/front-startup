@@ -41,9 +41,11 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
-    }
+    /* COMENTADO o ELIMINADO: Ya no redirigimos automáticamente si el usuario está autenticado
+  if (this.authService.isAuthenticated()) {
+    this.router.navigate(['/dashboard']);
+  }
+  */
   }
 
   onSubmit(): void {

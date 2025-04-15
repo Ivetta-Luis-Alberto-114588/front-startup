@@ -1,0 +1,10 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<!-- Contenedor principal para el contenido que se cargará en el outlet secundario -->
+<!-- La clase 'main-content' ayuda a aplicar padding/margin para evitar solapamiento con header/sidebar -->
+<main class="main-content">
+    <router-outlet></router-outlet> <!-- Este es el outlet para Dashboard, Products, etc. -->
+</main>
+
+<!-- Opcionalmente, podrías añadir un <app-footer> aquí -->

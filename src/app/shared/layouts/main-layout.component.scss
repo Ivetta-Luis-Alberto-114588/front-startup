@@ -1,0 +1,32 @@
+.main-content {
+    // Asumiendo que el header tiene una altura fija (ej: 76px) y es 'fixed-top'
+    // y el sidebar colapsado tiene un ancho (ej: 70px)
+    margin-top: 76px; // Ajusta a la altura real de tu header
+    margin-left: 70px; // Ajusta al ancho del sidebar colapsado (en desktop)
+    padding: 1.5rem; // Espaciado interno para el contenido
+    min-height: calc(100vh - 76px); // Ocupa al menos el alto restante
+    transition: margin-left 0.3s ease; // Suaviza el cambio de margen al expandir/colapsar sidebar
+    background-color: #f4f7f6; // Un color de fondo suave (opcional)
+}
+
+/* Estilos para cuando el sidebar está expandido (necesitarás una forma de saberlo) */
+/* Podrías añadir una clase al body o al host de este componente via HostBinding */
+/* Asumamos que MainLayoutComponent tiene un HostBinding [class.sidebar-expanded] */
+:host-context(.sidebar-expanded) .main-content {
+    margin-left: 250px; // Ajusta al ancho del sidebar expandido
+}
+
+
+/* Ajustes para móvil donde el sidebar suele ser un overlay */
+@media (max-width: 767.98px) {
+    .main-content {
+        margin-left: 0; // Sin margen izquierdo fijo en móvil
+        margin-top: 56px; // Ajusta a la altura del header en móvil si es diferente
+        padding: 1rem; // Quizás menos padding en móvil
+    }
+
+    // Cuando el sidebar se expande en móvil (overlay), no cambiamos el margen
+    :host-context(.sidebar-expanded) .main-content {
+        margin-left: 0;
+    }
+}

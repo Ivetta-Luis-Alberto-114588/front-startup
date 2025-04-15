@@ -1,12 +1,12 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+// import { CommonModule } from '@angular/common'; // Ya no es necesario importar directamente
+// import { FormsModule } from '@angular/forms'; // Ya no es necesario importar directamente
 
 import { ProductsRoutingModule } from './products-routing.module';
 import { ProductListComponent } from './components/product-list/product-list.component';
 import { ProductDetailComponent } from './components/product-detail/product-detail.component';
-import { RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-
+import { RouterModule } from '@angular/router'; // Necesario para directivas como routerLink
+import { SharedModule } from 'src/app/shared/shared.module'; // <-- Importar SharedModule
 
 @NgModule({
   declarations: [
@@ -14,10 +14,11 @@ import { FormsModule } from '@angular/forms';
     ProductDetailComponent
   ],
   imports: [
-    CommonModule,
+    // CommonModule, // <-- Quitar si importas SharedModule
+    // FormsModule, // <-- Quitar si importas SharedModule
     ProductsRoutingModule,
-    RouterModule,
-    FormsModule
+    RouterModule, // <-- Mantener para directivas de enrutador en plantillas
+    SharedModule  // <-- Añadir para obtener CommonModule, FormsModule, etc.
   ]
 })
 export class ProductsModule { }

@@ -9,6 +9,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { NotpagefoundComponent } from './components/notpagefound/notpagefound.component';
 import { TermsConditionsComponent } from './pages/terms-conditions/terms-conditions.component';
 import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy.component';
+import { MainLayoutComponent } from './layouts/main-layout.component';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy.co
     SidebarComponent,
     NotpagefoundComponent,
     TermsConditionsComponent,
-    PrivacyPolicyComponent
+    PrivacyPolicyComponent,
+    MainLayoutComponent
   ],
   imports: [
     CommonModule,
