@@ -5,6 +5,13 @@ import { IProduct } from '../../model/iproduct';
 import { environment } from 'src/environments/environment';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto'; // Asumiendo que tienes un DTO similar o creas uno
 
+
+export interface PaginatedProductsResponse {
+  total: number;
+  products: IProduct[];
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -15,17 +22,15 @@ export class ProductService {
 
   constructor(private http: HttpClient) { }
 
-  // --- MÉTODO ACTUALIZADO ---
-  // Obtiene productos por categoría con paginación
-  getProductsByCategory(categoryId: string, pagination: PaginationDto): Observable<IProduct[]> {
+  getProductsByCategory(categoryId: string, pagination: PaginationDto): Observable<PaginatedProductsResponse> {
     const { page, limit } = pagination;
-    // El endpoint del backend es /api/products/by-category/:categoryId
     const url = `${this.productsApiUrl}/by-category/${categoryId}`;
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
 
-    return this.http.get<IProduct[]>(url, { params });
+    // Espera recibir un objeto { total: number, products: IProduct[] }
+    return this.http.get<PaginatedProductsResponse>(url, { params });
   }
 
   // --- MÉTODO ACTUALIZADO ---
@@ -36,16 +41,13 @@ export class ProductService {
     return this.http.get<IProduct>(url);
   }
 
-  // --- MÉTODO ACTUALIZADO ---
-  // Obtiene todos los productos con paginación
   getAllProducts(pagination: PaginationDto): Observable<IProduct[]> {
+    // Nota: Este método también necesitaría devolver el total si quieres paginar aquí
     const { page, limit } = pagination;
-    // El endpoint del backend es /api/products
     const url = this.productsApiUrl;
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
-
     return this.http.get<IProduct[]>(url, { params });
   }
 

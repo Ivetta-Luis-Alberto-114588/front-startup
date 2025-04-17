@@ -90,12 +90,10 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     if (!this.product || this.isAddingToCart) return; // No hacer nada si no hay producto o ya se está añadiendo
 
     this.isAddingToCart = true; // Deshabilitar botón
-    console.log(`Intentando agregar ${this.quantity} unidad(es) de ${this.product.name} (ID: ${this.product.id}) al carrito.`);
 
     this.cartService.addItem(this.product.id, this.quantity).subscribe({
       next: (updatedCart) => {
         // Éxito: El servicio ya muestra la notificación
-        console.log('Producto añadido/actualizado en el carrito:', updatedCart);
         this.isAddingToCart = false; // Habilitar botón
       },
       error: (err) => {

@@ -40,7 +40,6 @@ export class CartService {
   getCart(): Observable<ICart | null> {
     return this.http.get<ICart>(this.cartApiUrl).pipe(
       tap(cart => {
-        console.log('Carrito obtenido:', cart);
         this._updateCartState(cart); // Actualiza el BehaviorSubject
       }),
       catchError(err => this.handleError(err, 'obtener el carrito'))
@@ -131,7 +130,6 @@ export class CartService {
    */
   private _updateCartState(cart: ICart | null): void {
     this.cartSubject.next(cart);
-    console.log('Estado del carrito actualizado:', this.cartSubject.value);
   }
 
   /**
@@ -153,7 +151,6 @@ export class CartService {
     } else if (error.status === 404 && operation === 'obtener el carrito') {
       // Si es un 404 al obtener el carrito, no es realmente un error grave,
       // simplemente no existe aún. Emitimos null y no mostramos notificación de error.
-      console.log('Carrito no encontrado en el backend (404), emitiendo null.');
       this._updateCartState(null);
       return throwError(() => new Error('Carrito no encontrado')); // Devolvemos un error simple que getCart puede manejar
     }

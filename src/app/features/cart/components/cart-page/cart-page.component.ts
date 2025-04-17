@@ -81,34 +81,27 @@ export class CartPageComponent implements OnInit, OnDestroy {
       next: (cart) => {
         this.isLoading = false;
         if (!cart || cart.items.length === 0) {
-          console.log('Carrito vacío o no encontrado.');
         }
       },
       error: (err) => {
         this.isLoading = false;
         this.error = err.message || 'No se pudo cargar el carrito.';
-        console.error('Error cargando carrito en CartPageComponent:', err);
       }
     });
   }
 
   removeItem(productId: string): void {
     // ***** AÑADIR ESTE LOG *****
-    console.log(`[CartPage] removeItem llamado con productId: ${productId}`);
     // ***** FIN LOG AÑADIDO *****
 
     if (this.updatingItemId) {
-      console.log(`[CartPage] removeItem bloqueado: updatingItemId es ${this.updatingItemId}`);
       return; // Evitar múltiples actualizaciones
     }
     this.updatingItemId = productId; // Usar el mismo flag para deshabilitar
-    console.log(`[CartPage] Llamando a cartService.removeItem(${productId})...`); // Log adicional
     this.cartService.removeItem(productId)
       .subscribe({
-        // next: (cart) => console.log('[CartPage] removeItem success'), // Opcional
         error: (err) => console.error('[CartPage] Error en subscribe de removeItem:', err), // Loguear error si la suscripción falla
         complete: () => {
-          console.log(`[CartPage] removeItem completado para ${productId}, reseteando updatingItemId.`); // Log de complete
           this.updatingItemId = null; // Resetear al completar
         }
       });
@@ -124,14 +117,12 @@ export class CartPageComponent implements OnInit, OnDestroy {
     this.modalRef.result.then(
       (result) => {
         // Si se cierra haciendo clic en el botón "Aceptar" (o el que llame a modal.close())
-        console.log(`Modal cerrado con resultado: ${result}`);
         if (result === 'confirm') {
           this.executeClearCart(); // Llama a la función que realmente vacía el carrito
         }
       },
       (reason) => {
         // Si se cierra haciendo clic fuera, con Esc, o con el botón "Cancelar" (o el que llame a modal.dismiss())
-        console.log(`Modal descartado con razón: ${reason}`);
         this.clearingCart = false; // Asegurarse de resetear el estado si se cancela
       }
     );
@@ -143,7 +134,6 @@ export class CartPageComponent implements OnInit, OnDestroy {
     this.cartService.clearCart().subscribe({
       next: () => {
         // El servicio ya muestra la notificación de éxito
-        console.log('Carrito vaciado exitosamente.');
         // No es necesario resetear clearingCart aquí si el modal ya se cerró
       },
       error: (err) => {

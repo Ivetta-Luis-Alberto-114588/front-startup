@@ -1,10 +1,10 @@
 // src/app/shared/header/header.component.ts
 import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subscription } from 'rxjs'; // Sigue siendo necesario para la carga inicial del carrito
 
 import { SidebarService } from '../sidebar/sidebar.service';
 import { AuthService, User } from '../../auth/services/auth.service';
-import { CartService } from '../../features/cart/services/cart.service'; // <--- IMPORTAR CartService
+import { CartService } from '../../features/cart/services/cart.service';
 
 @Component({
   selector: 'app-header',
@@ -15,62 +15,44 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isScrolled = false;
   lastScrollTop = 0;
   headerVisible = true;
-  isAuthenticated = false;
-  currentUser: User | null = null;
 
-  private authSubscription: Subscription | null = null;
-  private userSubscription: Subscription | null = null;
+  // Ya no necesitamos las propiedades locales isAuthenticated y currentUser
+  // porque usaremos los observables directamente en la plantilla con async pipe.
+
+  // Mantenemos la suscripción para la carga inicial del carrito
+  private cartLoadSubscription: Subscription | null = null;
 
   constructor(
-    public sidebarService: SidebarService, // Público para acceso fácil en plantilla
-    public authService: AuthService,     // Público para acceso fácil en plantilla
-    public cartService: CartService      // <--- INYECTAR y hacerlo PÚBLICO
-  ) {
-    // El constructor ahora está más limpio, la lógica principal va a ngOnInit
-  }
+    public sidebarService: SidebarService, // Público para acceso en plantilla
+    public authService: AuthService,     // Público para acceso en plantilla
+    public cartService: CartService      // Público para acceso en plantilla
+  ) { }
 
   ngOnInit(): void {
-    // Suscribirse al estado de autenticación
-    this.authSubscription = this.authService.isAuthenticated$.subscribe(
-      isAuth => {
-        this.isAuthenticated = isAuth;
-        // Opcional: Si el usuario se desloguea, podríamos querer limpiar el carrito visualmente
-        // if (!isAuth) {
-        //   this.cartService.clearLocalCartState(); // Necesitarías añadir este método a CartService si lo quieres
-        // }
-      }
-    );
-
-    // Suscribirse a la información del usuario
-    this.userSubscription = this.authService.user$.subscribe(
-      user => {
-        this.currentUser = user;
-      }
-    );
-
-    // Cargar el carrito inicial si el usuario está autenticado
-    // (Descomenta la llamada en CartService si quieres esta funcionalidad)
-    // this.cartService.loadInitialCartIfAuthenticated(); // O llama a getCart() aquí si prefieres
+    // Intentar cargar el carrito inicial si el usuario está autenticado al cargar el header
+    // Nos suscribimos aquí solo para disparar la petición, no necesitamos guardar el resultado localmente.
+    // El CartService actualizará su propio BehaviorSubject, y el async pipe en la plantilla reaccionará.
     if (this.authService.isAuthenticated()) {
-      this.cartService.getCart().subscribe(); // Llama para cargar, el servicio actualiza el BehaviorSubject
+      this.cartLoadSubscription = this.cartService.getCart().subscribe({
+        error: (err) => console.warn('HeaderComponent: Error al cargar carrito inicial:', err.message) // El servicio ya notifica
+      });
     }
-
   }
 
   ngOnDestroy(): void {
-    // Cancelar suscripciones al destruir el componente
-    this.authSubscription?.unsubscribe();
-    this.userSubscription?.unsubscribe();
+    // Cancelar la suscripción de carga inicial si aún está activa
+    this.cartLoadSubscription?.unsubscribe();
   }
 
   toggleSidebar(): void {
+    // La llamada al servicio es suficiente, el estado se maneja allí
     this.sidebarService.toggleSidebar();
   }
 
   logout(): void {
     this.authService.logout();
-    // Opcional: Limpiar el estado local del carrito al hacer logout
-    // this.cartService.clearLocalCartState(); // Necesitarías añadir este método a CartService
+    // El CartService podría (o debería) escuchar el logout de AuthService
+    // para limpiar su propio estado si es necesario, en lugar de hacerlo aquí.
   }
 
   @HostListener('window:scroll', [])
@@ -86,8 +68,5 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.lastScrollTop = scrollTop;
   }
 
-  // Método para comprobar estado de autenticación (para debug en la plantilla)
-  checkAuth(): boolean {
-    return this.isAuthenticated;
-  }
+  // Ya no necesitamos checkAuth()
 }

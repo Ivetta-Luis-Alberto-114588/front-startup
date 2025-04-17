@@ -29,7 +29,10 @@ const routes: Routes = [
         path: 'products',
         loadChildren: () => import('./features/products/products.module').then(m => m.ProductsModule)
       },
-      // --- Cambia loadComponent por component ---
+      {
+        path: 'cart',
+        loadChildren: () => import('./features/cart/cart.module').then(m => m.CartModule)
+      },
       {
         path: 'terms',
         component: TermsConditionsComponent // Carga directa
@@ -41,7 +44,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
-  { path: 'cart', loadChildren: () => import('./features/cart/cart.module').then(m => m.CartModule) },
+
 
   // --- Ruta 404 ---
   { path: '**', component: NotpagefoundComponent }
