@@ -27,7 +27,7 @@ export interface RegisterPayload {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/auth`; // URL base de la API
+  private apiUrl = `${environment.apiUrl}/api/auth`; // URL base de la API
   private token: string | null = null;
   private user: User | null = null;
 

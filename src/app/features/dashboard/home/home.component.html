@@ -36,6 +36,10 @@
                         </div>
                         <div class="card-body text-center">
                             <h5 class="card-title">{{item.name}}</h5>
+
+                            <h6 class="card-subtitle mb-2 text-muted">
+                                {{item.description}}
+                            </h6>
                             <a [routerLink]="['/products', item.id]" class="stretched-link">Ver opciones</a>
                         </div>
                     </div>

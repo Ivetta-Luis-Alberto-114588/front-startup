@@ -10,7 +10,7 @@ import { environment } from 'src/environments/environment';
 export class CategoryService {
 
   // private apiUrlCategory = 'https://sistema-mongo.onrender.com/api/products/by-category/67bb26204bb12979fc09e267?page=1&limit=10';
-  private apiUrlCategory = `${environment.apiUrl}/categories`;
+  private apiUrlCategory = `${environment.apiUrl}/api/categories`;
 
 
   constructor(private http: HttpClient) { }

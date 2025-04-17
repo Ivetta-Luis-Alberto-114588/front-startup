@@ -28,7 +28,7 @@
                         product.description.length > 80 ? '...' : '' }}</p>
 
                     <div class="d-flex flex-wrap justify-content-between align-items-center mt-2">
-                        <p class="fw-bold text-danger mb-0 h5">{{ product.price | currency }}</p>
+                        <p class="fw-bold text-danger mb-0 h5">{{ product.priceWithTax | currency }}</p>
                         <div class="d-flex mt-2 mt-md-0">
                             <button class="btn btn-sm btn-outline-secondary me-1"
                                 (click)="viewProductDetail(product.id)" title="Ver detalle">
@@ -36,9 +36,12 @@
                                 <!-- <i class="bi bi-eye"></i> -->
                             </button>
                             <button class="btn btn-sm btn-success" (click)="addToCart(product)"
-                                title="Añadir al carrito">
-                                Comprar
-                                <!-- <i class="bi bi-cart-plus"></i> -->
+                                [disabled]="productsBeingAdded[product.id]" title="Añadir al carrito">
+                                <!-- Mostrar spinner si se está añadiendo -->
+                                <span *ngIf="productsBeingAdded[product.id]" class="spinner-border spinner-border-sm"
+                                    role="status" aria-hidden="true"></span>
+                                <span *ngIf="!productsBeingAdded[product.id]">Comprar</span> <!-- O icono -->
+                                <!-- <i *ngIf="!productsBeingAdded[product.id]" class="bi bi-cart-plus"></i> -->
                             </button>
                         </div>
                     </div>

@@ -15,9 +15,6 @@ import { AuthRoutingModule } from './auth-routing.module';
     LoginComponent,
   ],
   imports: [CommonModule, RouterModule, AuthRoutingModule, FormsModule, ReactiveFormsModule],
-  exports: [
-    RegisterComponent,
-    LoginComponent,
-  ]
+  exports: []
 })
 export class AuthModule { }

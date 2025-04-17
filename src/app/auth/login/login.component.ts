@@ -26,34 +26,27 @@ export class LoginComponent implements OnInit {
       rememberMe: [false]
     });
 
-    // console.log('LoginComponent constructor');
   }
 
   ngOnInit(): void {
-    // console.log('LoginComponent ngOnInit');
     /* COMENTADO o ELIMINADO: Ya no redirigimos automáticamente si hay token
     if (this.authService.getToken()) {
-      // console.log('User already has token, redirecting to dashboard');
       this.router.navigate(['/dashboard']);
     } else {
-      // console.log('No token found, showing login form');
     }
     */
   }
 
   onSubmit(): void {
-    // console.log('Login form submitted');
 
     if (this.loginForm.valid) {
       this.isLoading = true;
       this.error = null;
 
       const { email, password } = this.loginForm.value;
-      // console.log('Attempting login with email:', email);
 
       this.authService.login(email, password).subscribe({
         next: (response) => {
-          // console.log('Login successful:', response);
           this.isLoading = false;
 
           // Pequeña pausa para asegurar que todos los observables se han actualizado
@@ -77,7 +70,6 @@ export class LoginComponent implements OnInit {
         }
       });
     } else {
-      // console.log('Form validation failed');
       // Marcar todos los campos como tocados para mostrar errores de validación
       this.loginForm.markAllAsTouched();
     }

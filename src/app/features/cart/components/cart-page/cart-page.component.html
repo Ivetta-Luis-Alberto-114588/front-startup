@@ -1,0 +1,162 @@
+<!-- src/app/features/cart/components/cart-page/cart-page.component.html -->
+<div class="container mt-4 mb-5">
+
+
+    <!-- ***** BOTÓN VOLVER (AÑADIDO DE NUEVO) ***** -->
+    <div class="mb-3">
+        <button class="btn btn-outline-secondary" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i> Volver
+        </button>
+    </div>
+    <!-- ***** FIN BOTÓN VOLVER ***** -->
+
+
+    <h2>Tu Carrito de Compras</h2>
+    <hr>
+
+    <!-- ... (Estados de Carga y Error sin cambios) ... -->
+
+    <!-- Contenido del Carrito -->
+    <ng-container *ngIf="cart$ | async as cart; else emptyCart">
+        <div *ngIf="!isLoading && !error">
+
+            <!-- Lista de Items -->
+            <div *ngIf="cart.items.length > 0; else emptyCart" class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 10%;">Producto</th>
+                            <th scope="col" style="width: 35%;"></th>
+                            <th scope="col" class="text-center" style="width: 15%;">Precio Unit.</th>
+                            <!-- Columna Precio Unitario -->
+                            <th scope="col" class="text-center" style="width: 15%;">Cantidad</th>
+                            <th scope="col" class="text-end" style="width: 15%;">Subtotal</th>
+                            <!-- Columna Subtotal Item -->
+                            <th scope="col" class="text-center" style="width: 10%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let item of cart.items">
+                            <!-- Columna Imagen (sin cambios) -->
+                            <td>
+                                <img [src]="item.product.imgUrl || 'assets/placeholder.png'" [alt]="item.product.name"
+                                    class="img-fluid rounded" style="max-width: 60px; height: auto;">
+                            </td>
+                            <!-- Columna Nombre/Descripción (sin cambios) -->
+                            <td>
+                                <h6 class="mb-0">{{ item.product.name }}</h6>
+                                <small class="text-muted">{{ item.product.description | slice:0:50 }}...</small>
+                            </td>
+                            <!-- ***** Columna Precio Unitario CORREGIDA ***** -->
+                            <td class="text-center">{{ item.unitPriceWithTax | currency }}</td>
+                            <!-- ***** Columna Cantidad (sin cambios) ***** -->
+                            <td class="text-center">
+                                <div class="input-group input-group-sm justify-content-center"
+                                    style="max-width: 120px;">
+                                    <button class="btn btn-outline-secondary" type="button"
+                                        (click)="decreaseQuantity(item)"
+                                        [disabled]="updatingItemId === getProductId(item)">
+                                        <i class="bi bi-dash"></i>
+                                    </button>
+                                    <input type="text" class="form-control text-center" [value]="item.quantity" readonly
+                                        style="min-width: 40px;">
+                                    <button class="btn btn-outline-secondary" type="button"
+                                        (click)="increaseQuantity(item)"
+                                        [disabled]="updatingItemId === getProductId(item) || item.quantity >= item.product.stock">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                </div>
+                                <small *ngIf="item.quantity >= item.product.stock"
+                                    class="text-danger d-block mt-1">Stock máximo</small>
+                            </td>
+                            <!-- ***** Columna Subtotal Item CORREGIDA ***** -->
+                            <td class="text-end fw-bold">{{ item.subtotalWithTax | currency }}</td>
+                            <!-- Columna Eliminar (sin cambios) -->
+                            <td class="text-center">
+
+                                <!-- boton eliminar -->
+                                <button class="btn btn-sm btn-outline-danger" title="Eliminar item"
+                                    (click)="removeItem(item.product.id)"
+                                    [disabled]="updatingItemId === getProductId(item)">
+                                    <span *ngIf="updatingItemId === getProductId(item)"
+                                        class="spinner-border spinner-border-sm" role="status"
+                                        aria-hidden="true"></span>
+                                    <i *ngIf="updatingItemId !== getProductId(item)" class="bi bi-trash"></i>
+                                </button>
+                                <!-- fin boton eliminar -->
+
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ... (Resumen y Acciones sin cambios) ... -->
+            <!-- Resumen y Acciones (Solo si hay items) -->
+            <div *ngIf="cart.items.length > 0" class="row mt-4 justify-content-end">
+                <div class="col-md-5 col-lg-4">
+                    <h4>Resumen del Pedido</h4>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Subtotal (sin IVA)
+                            <span>{{ cart.subtotalWithoutTax | currency }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            IVA
+                            <span>{{ cart.totalTaxAmount | currency }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center fw-bold h5">
+                            Total
+                            <span>{{ cart.total | currency }}</span>
+                        </li>
+                    </ul>
+                    <div class="d-grid gap-2 mt-3">
+                        <button class="btn btn-primary btn-lg" (click)="proceedToCheckout()">
+                            Proceder al Pago
+                        </button>
+                        <button class="btn btn-outline-danger" (click)="clearCart()" [disabled]="clearingCart">
+                            <span *ngIf="clearingCart" class="spinner-border spinner-border-sm me-2" role="status"
+                                aria-hidden="true"></span>
+                            Vaciar Carrito
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </ng-container>
+
+    <!-- ... (Plantilla Carrito Vacío sin cambios) ... -->
+    <ng-template #emptyCart>
+        <div *ngIf="!isLoading && !error" class="text-center my-5">
+            <i class="bi bi-cart-x" style="font-size: 4rem; color: #6c757d;"></i>
+            <h4 class="mt-3">Tu carrito está vacío</h4>
+            <p class="text-muted">Añade algunos productos para empezar.</p>
+            <a routerLink="/products" class="btn btn-primary mt-2">Ver Productos</a>
+        </div>
+    </ng-template>
+
+
+
+
+    <!-- ***** INICIO PLANTILLA MODAL CONFIRMACIÓN ***** -->
+    <ng-template #confirmClearCartModal let-modal>
+        <div class="modal-header">
+            <h4 class="modal-title" id="modal-basic-title">Confirmar Acción</h4>
+            <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+        </div>
+        <div class="modal-body">
+            <p><strong>¿Estás seguro de que quieres vaciar tu carrito de compras?</strong></p>
+            <p>Todos los artículos serán eliminados y esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer">
+            <!-- Botón Cancelar: llama a modal.dismiss() -->
+            <button type="button" class="btn btn-outline-secondary"
+                (click)="modal.dismiss('cancel click')">Cancelar</button>
+            <!-- Botón Aceptar: llama a modal.close() con un resultado -->
+            <button type="button" class="btn btn-danger" (click)="modal.close('confirm')">Vaciar Carrito</button>
+        </div>
+    </ng-template>
+    <!-- ***** FIN PLANTILLA MODAL CONFIRMACIÓN ***** -->
+
+</div>

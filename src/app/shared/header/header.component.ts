@@ -1,8 +1,10 @@
 // src/app/shared/header/header.component.ts
 import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
+
 import { SidebarService } from '../sidebar/sidebar.service';
 import { AuthService, User } from '../../auth/services/auth.service';
-import { Subscription } from 'rxjs';
+import { CartService } from '../../features/cart/services/cart.service'; // <--- IMPORTAR CartService
 
 @Component({
   selector: 'app-header',
@@ -15,86 +17,77 @@ export class HeaderComponent implements OnInit, OnDestroy {
   headerVisible = true;
   isAuthenticated = false;
   currentUser: User | null = null;
-  
+
   private authSubscription: Subscription | null = null;
   private userSubscription: Subscription | null = null;
 
   constructor(
-    public sidebarService: SidebarService,
-    public authService: AuthService
+    public sidebarService: SidebarService, // Público para acceso fácil en plantilla
+    public authService: AuthService,     // Público para acceso fácil en plantilla
+    public cartService: CartService      // <--- INYECTAR y hacerlo PÚBLICO
   ) {
-    // console.log('HeaderComponent constructor - Checking initial auth state');
-    this.isAuthenticated = this.authService.isAuthenticated();
-    // console.log('Initial auth state:', this.isAuthenticated);
+    // El constructor ahora está más limpio, la lógica principal va a ngOnInit
   }
-  
+
   ngOnInit(): void {
-    // console.log('HeaderComponent ngOnInit');
-    
     // Suscribirse al estado de autenticación
     this.authSubscription = this.authService.isAuthenticated$.subscribe(
       isAuth => {
-        // console.log('Auth state changed:', isAuth);
         this.isAuthenticated = isAuth;
+        // Opcional: Si el usuario se desloguea, podríamos querer limpiar el carrito visualmente
+        // if (!isAuth) {
+        //   this.cartService.clearLocalCartState(); // Necesitarías añadir este método a CartService si lo quieres
+        // }
       }
     );
-    
+
     // Suscribirse a la información del usuario
     this.userSubscription = this.authService.user$.subscribe(
       user => {
-        // console.log('User info received:', user);
         this.currentUser = user;
       }
     );
-    
-    // Verificar el estado actual
-    const token = this.authService.getToken();
-    // console.log('Current token:', token ? 'exists' : 'none');
-    // console.log('Is authenticated method:', this.authService.isAuthenticated());
+
+    // Cargar el carrito inicial si el usuario está autenticado
+    // (Descomenta la llamada en CartService si quieres esta funcionalidad)
+    // this.cartService.loadInitialCartIfAuthenticated(); // O llama a getCart() aquí si prefieres
+    if (this.authService.isAuthenticated()) {
+      this.cartService.getCart().subscribe(); // Llama para cargar, el servicio actualiza el BehaviorSubject
+    }
+
   }
-  
+
   ngOnDestroy(): void {
     // Cancelar suscripciones al destruir el componente
-    if (this.authSubscription) {
-      this.authSubscription.unsubscribe();
-    }
-    
-    if (this.userSubscription) {
-      this.userSubscription.unsubscribe();
-    }
+    this.authSubscription?.unsubscribe();
+    this.userSubscription?.unsubscribe();
   }
 
   toggleSidebar(): void {
     this.sidebarService.toggleSidebar();
   }
-  
+
   logout(): void {
-    // console.log('Logout clicked');
     this.authService.logout();
+    // Opcional: Limpiar el estado local del carrito al hacer logout
+    // this.cartService.clearLocalCartState(); // Necesitarías añadir este método a CartService
   }
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
+    // ... (sin cambios)
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    
-    // Determina si el usuario ha hecho scroll suficiente para activar el efecto
     this.isScrolled = scrollTop > 50;
-    
-    // Determina la dirección del scroll
     if (scrollTop > this.lastScrollTop && scrollTop > 100) {
-      // Scroll hacia abajo
       this.headerVisible = false;
     } else {
-      // Scroll hacia arriba
       this.headerVisible = true;
     }
-    
     this.lastScrollTop = scrollTop;
   }
-  
+
   // Método para comprobar estado de autenticación (para debug en la plantilla)
   checkAuth(): boolean {
-    // console.log('Template checking auth:', this.isAuthenticated);
     return this.isAuthenticated;
   }
 }

@@ -39,20 +39,17 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // ... (código existente) ...
+
   }
 
   onSubmit(): void {
     this.registerForm.markAllAsTouched();
 
     if (this.registerForm.invalid) {
-      console.log('Formulario inválido');
       // Opcional: verificar errores específicos
       // if (this.acceptTerms?.errors?.['required']) {
-      //   console.log('Error: Términos y condiciones no aceptados.');
       // }
       if (this.acceptPrivacyPolicy?.errors?.['required']) {
-        console.log('Error: Política de privacidad no aceptada.');
       }
       return;
     }
@@ -67,7 +64,6 @@ export class RegisterComponent implements OnInit {
       next: (response) => {
         // ... (código existente de éxito) ...
         this.isLoading = false;
-        console.log('Registro exitoso:', response);
         this.notificationService.showSuccess('¡Registro exitoso! Ahora puedes iniciar sesión.', 'Completado');
         this.router.navigate(['/auth/login']);
       },

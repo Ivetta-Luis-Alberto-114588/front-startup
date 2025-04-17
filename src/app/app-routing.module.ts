@@ -41,6 +41,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
+  { path: 'cart', loadChildren: () => import('./features/cart/cart.module').then(m => m.CartModule) },
 
   // --- Ruta 404 ---
   { path: '**', component: NotpagefoundComponent }
