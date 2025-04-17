@@ -34,7 +34,9 @@ import { MainLayoutComponent } from './layouts/main-layout.component';
     NgbModule,
     HeaderComponent,
     SidebarComponent,
-    NotpagefoundComponent
+    NotpagefoundComponent,
+    TermsConditionsComponent,
+    PrivacyPolicyComponent,
   ]
 })
 export class SharedModule { }

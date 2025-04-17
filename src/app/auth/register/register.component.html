@@ -9,20 +9,19 @@
         </div>
 
         <div class="card-body p-4">
-          <!-- Logo de la aplicación -->
+          <!-- Logo y título -->
           <div class="text-center mb-4">
             <img src="../../../assets/login.jpg" alt="Logo" class="img-fluid mb-2" style="max-width: 80px;">
             <p class="text-muted">Regístrate para comenzar</p>
           </div>
 
-          <!-- Mensaje de error general de API -->
+          <!-- Mensaje de error general -->
           <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
             {{ error }}
             <button type="button" class="btn-close" aria-label="Close" (click)="error = null"></button>
           </div>
 
-          <!-- Formulario de registro -->
-          <!-- Vinculado al FormGroup y al método onSubmit -->
+          <!-- Formulario -->
           <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
 
             <!-- Nombre -->
@@ -30,15 +29,12 @@
               <label for="name" class="form-label">Nombre completo</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-person"></i></span>
-                <!-- Vinculado con formControlName -->
                 <input type="text" class="form-control" id="name" formControlName="name"
                   placeholder="Introduce tu nombre"
                   [ngClass]="{'is-invalid': name?.invalid && (name?.dirty || name?.touched)}">
               </div>
-              <!-- Mensajes de error para Nombre -->
               <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="text-danger mt-1 small">
                 <div *ngIf="name?.errors?.['required']">El nombre es obligatorio.</div>
-                <!-- Podrías añadir más validaciones si las tienes (ej: minLength) -->
               </div>
             </div>
 
@@ -47,12 +43,10 @@
               <label for="email" class="form-label">Correo electrónico</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                <!-- Vinculado con formControlName -->
                 <input type="email" class="form-control" id="email" formControlName="email"
                   placeholder="ejemplo@correo.com"
                   [ngClass]="{'is-invalid': email?.invalid && (email?.dirty || email?.touched)}">
               </div>
-              <!-- Mensajes de error para Email -->
               <div *ngIf="email?.invalid && (email?.dirty || email?.touched)" class="text-danger mt-1 small">
                 <div *ngIf="email?.errors?.['required']">El correo electrónico es obligatorio.</div>
                 <div *ngIf="email?.errors?.['email']">Ingresa un correo electrónico válido.</div>
@@ -64,22 +58,17 @@
               <label for="password" class="form-label">Contraseña</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                <!-- Vinculado con formControlName -->
                 <input [type]="showPassword ? 'text' : 'password'" class="form-control" id="password"
                   formControlName="password" placeholder="Crea una contraseña"
                   [ngClass]="{'is-invalid': password?.invalid && (password?.dirty || password?.touched)}">
-                <!-- Botón para mostrar/ocultar contraseña -->
                 <button type="button" class="btn btn-outline-secondary" (click)="togglePasswordVisibility()">
                   <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
               </div>
-              <!-- Mensajes de error para Contraseña -->
               <div *ngIf="password?.invalid && (password?.dirty || password?.touched)" class="text-danger mt-1 small">
                 <div *ngIf="password?.errors?.['required']">La contraseña es obligatoria.</div>
                 <div *ngIf="password?.errors?.['minlength']">La contraseña debe tener al menos 6 caracteres.</div>
               </div>
-              <!-- Texto informativo (opcional, ya cubierto por validación) -->
-              <!-- <div class="form-text">La contraseña debe tener al menos 6 caracteres</div> -->
             </div>
 
             <!-- Confirmar Contraseña -->
@@ -87,21 +76,17 @@
               <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
               <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                <!-- Vinculado con formControlName -->
                 <input [type]="showConfirmPassword ? 'text' : 'password'" class="form-control" id="confirmPassword"
                   formControlName="confirmPassword" placeholder="Repite tu contraseña"
                   [ngClass]="{'is-invalid': (confirmPassword?.invalid && (confirmPassword?.dirty || confirmPassword?.touched)) || (registerForm.errors?.['passwordMismatch'] && (confirmPassword?.dirty || confirmPassword?.touched))}">
-                <!-- Botón para mostrar/ocultar contraseña -->
                 <button type="button" class="btn btn-outline-secondary" (click)="toggleConfirmPasswordVisibility()">
                   <i class="bi" [ngClass]="showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
               </div>
-              <!-- Mensajes de error para Confirmar Contraseña -->
               <div *ngIf="confirmPassword?.invalid && (confirmPassword?.dirty || confirmPassword?.touched)"
                 class="text-danger mt-1 small">
                 <div *ngIf="confirmPassword?.errors?.['required']">Debes confirmar la contraseña.</div>
               </div>
-              <!-- Mensaje de error para No Coincidencia (del validador del grupo) -->
               <div
                 *ngIf="registerForm.errors?.['passwordMismatch'] && (confirmPassword?.dirty || confirmPassword?.touched)"
                 class="text-danger mt-1 small">
@@ -109,56 +94,54 @@
               </div>
             </div>
 
-            <!-- Checkbox Términos -->
+            <!-- ***** INICIO: Checkbox Términos y Condiciones ***** -->
             <div class="mb-3 form-check">
-              <!-- Vinculado con formControlName -->
-              <input type="checkbox" class="form-check-input" id="acceptTerms" formControlName="acceptTerms"
-                [ngClass]="{'is-invalid': acceptTerms?.invalid && (acceptTerms?.dirty || acceptTerms?.touched)}">
-              <label class="form-check-label" for="acceptTerms">
-                <!-- COMENTADO: Enlace a términos y condiciones - Funcionalidad futura -->
-                <!-- Podrías crear una página simple o modal para esto -->
-                Acepto los <a routerLink="/terms" target="_blank" rel="noopener noreferrer"
-                  class="text-primary">términos y condiciones</a>
+              <!-- <input type="checkbox" class="form-check-input" id="acceptTerms" formControlName="acceptTerms"
+                [ngClass]="{'is-invalid': acceptTerms?.invalid && (acceptTerms?.dirty || acceptTerms?.touched)}"> -->
+
+              <!-- <label class="form-check-label" for="acceptTerms">
+                Acepto los <a routerLink="/terms" rel="noopener noreferrer" class="text-primary">términos y
+                  condiciones</a>
+              </label> -->
+
+              <!-- Mensaje de error específico para los términos -->
+              <!-- <div *ngIf="acceptTerms?.invalid && (acceptTerms?.dirty || acceptTerms?.touched)"
+                class="invalid-feedback d-block">
+                Debes aceptar los términos y condiciones para registrarte.
+              </div> -->
+            </div>
+            <!-- ***** FIN: Checkbox Términos y Condiciones ***** -->
+
+
+            <!-- ***** INICIO: Checkbox Política de Privacidad ***** -->
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="acceptPrivacyPolicy"
+                formControlName="acceptPrivacyPolicy"
+                [ngClass]="{'is-invalid': acceptPrivacyPolicy?.invalid && (acceptPrivacyPolicy?.dirty || acceptPrivacyPolicy?.touched)}">
+              <label class="form-check-label" for="acceptPrivacyPolicy">
+                Acepto la <a routerLink="/privacy-policy" rel="noopener noreferrer" class="text-primary">política de
+                  privacidad</a>
               </label>
-              <!-- Mensaje de error para Términos -->
-              <div *ngIf="acceptTerms?.invalid && (acceptTerms?.dirty || acceptTerms?.touched)"
-                class="text-danger mt-1 small">
-                Debes aceptar los términos y condiciones.
+              <!-- Mensaje de error específico para la política de privacidad -->
+              <div *ngIf="acceptPrivacyPolicy?.invalid && (acceptPrivacyPolicy?.dirty || acceptPrivacyPolicy?.touched)"
+                class="invalid-feedback d-block">
+                Debes aceptar la política de privacidad para registrarte.
               </div>
             </div>
+            <!-- ***** FIN: Checkbox Política de Privacidad ***** -->
 
             <!-- Botón de registro -->
             <div class="d-grid mb-3">
-              <!-- Deshabilitado si el formulario es inválido o está cargando -->
               <button type="submit" class="btn btn-primary" [disabled]="registerForm.invalid || isLoading">
-                <!-- Spinner de carga -->
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
                   aria-hidden="true"></span>
                 Crear cuenta
               </button>
             </div>
 
-            <!-- Separador y Botones de redes sociales -->
-            <!-- COMENTADO: Separador "O" y botones de redes sociales (Google/Facebook) - Funcionalidad futura -->
-            <!--
-            <div class="d-flex align-items-center mb-3">
-              <hr class="flex-grow-1">
-              <span class="px-2 text-muted small">O</span>
-              <hr class="flex-grow-1">
-            </div>
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <button type="button" class="btn btn-outline-primary w-100" disabled>
-                  <i class="bi bi-google me-2"></i>Google
-                </button>
-              </div>
-              <div class="col-6">
-                <button type="button" class="btn btn-outline-primary w-100" disabled>
-                  <i class="bi bi-facebook me-2"></i>Facebook
-                </button>
-              </div>
-            </div>
-            -->
+            <!-- Opciones de redes sociales (comentadas) -->
+            <!-- ... -->
+
           </form>
         </div>
 
