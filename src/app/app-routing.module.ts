@@ -6,6 +6,10 @@ import { MainLayoutComponent } from './shared/layouts/main-layout.component';
 // --- Importa los componentes directamente ---
 import { TermsConditionsComponent } from './shared/pages/terms-conditions/terms-conditions.component';
 import { PrivacyPolicyComponent } from './shared/pages/privacy-policy/privacy-policy.component';
+import { PaymentSuccessComponent } from './features/payments/components/payment-success/payment-success.component';
+import { PaymentFailureComponent } from './features/payments/components/payment-failure/payment-failure.component';
+import { PaymentPendingComponent } from './features/payments/components/payment-pending/payment-pending.component';
+import { AuthGuard } from './auth/guards/auth.guard';
 
 const routes: Routes = [
   // --- Rutas sin Layout ---
@@ -41,9 +45,20 @@ const routes: Routes = [
         path: 'privacy-policy',
         component: PrivacyPolicyComponent // Carga directa
       },
+      {
+        path: 'checkout',
+        loadChildren: () => import('./features/checkout/checkout.module').then(m => m.CheckoutModule),
+        canActivate: [AuthGuard]
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
+
+  // --- Rutas de Callback de Pago ---
+  { path: 'payment/success', component: PaymentSuccessComponent },
+  { path: 'payment/failure', component: PaymentFailureComponent },
+  { path: 'payment/pending', component: PaymentPendingComponent },
+
 
 
   // --- Ruta 404 ---

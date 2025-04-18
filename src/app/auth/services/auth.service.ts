@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { Router } from "@angular/router";
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, BehaviorSubject } from 'rxjs';
+import { Observable, tap, BehaviorSubject, catchError, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 // Interfaz para la información del usuario
@@ -43,7 +43,7 @@ export class AuthService {
     private router: Router,
     private http: HttpClient
   ) {
-    // ... (código existente del constructor) ...
+
     this.loadUserAndToken(); // Mover lógica a método privado
   }
 
@@ -75,22 +75,35 @@ export class AuthService {
 
 
   login(email: string, password: string): Observable<any> {
+    console.log('%c[AuthService] login: Iniciando petición...', 'color: magenta;');
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password })
       .pipe(
         tap(response => {
+          console.log('%c[AuthService] login: Respuesta recibida del backend:', 'color: magenta;', response);
           // Estructura específica donde el token está dentro del objeto user
           if (response && typeof response === 'object' && response.user && typeof response.user === 'object' && typeof response.user.token === 'string') {
+            console.log('%c[AuthService] login: Token encontrado en respuesta. Llamando a storeToken y storeUser...', 'color: magenta;');
             const token = response.user.token;
             const userData = response.user;
-            this.storeToken(token);
+            this.storeToken(token); // <--- Llamada clave
             const { token: _, ...userWithoutToken } = userData;
-            this.storeUser(userWithoutToken);
+            this.storeUser(userWithoutToken); // <--- Llamada clave
             this.isAuthenticatedSubject.next(true);
+            console.log('%c[AuthService] login: Estado de autenticación actualizado a true.', 'color: magenta;');
           } else {
-            console.warn('Login response structure is not as expected:', response);
+            console.warn('%c[AuthService] login: La estructura de la respuesta de login no es la esperada.', 'color: orange;', response);
             // Considerar lanzar un error o manejarlo de otra forma
             // throw new Error('Respuesta de login inválida'); // Podría ser una opción
           }
+        }),
+        // Añadir catchError aquí si quieres manejar errores específicos del login en el servicio
+        catchError(err => {
+          console.error('%c[AuthService] login: Error en la petición HTTP.', 'color: red;', err);
+          // Limpiar estado si falla el login? Podría ser, pero el componente ya maneja el error.
+          // this.isAuthenticatedSubject.next(false);
+          // localStorage.removeItem('token');
+          // localStorage.removeItem('user');
+          return throwError(() => err); // Re-lanzar para que el componente lo maneje
         })
       );
   }
@@ -119,6 +132,10 @@ export class AuthService {
   }
 
   getToken(): string | null {
+    // Si this.token es null, intenta leerlo de nuevo desde localStorage
+    if (!this.token) {
+      this.token = localStorage.getItem('token');
+    }
     return this.token;
   }
 
@@ -131,13 +148,39 @@ export class AuthService {
   }
 
   private storeToken(token: string): void {
+    console.log('%c[AuthService] storeToken: Intentando guardar token...', 'color: blue;'); // Log inicio
     this.token = token;
-    localStorage.setItem('token', token);
+    try {
+      localStorage.setItem('token', token);
+      // Verificar inmediatamente después de guardar
+      const storedToken = localStorage.getItem('token');
+      if (storedToken === token) {
+        console.log('%c[AuthService] storeToken: Token guardado CORRECTAMENTE en localStorage.', 'color: green;');
+      } else {
+        console.error('%c[AuthService] storeToken: ¡FALLO AL VERIFICAR! El token en localStorage no coincide o es null.', 'color: red;');
+        console.log('Token que se intentó guardar:', token);
+        console.log('Token encontrado en localStorage:', storedToken);
+      }
+    } catch (e) {
+      console.error('%c[AuthService] storeToken: ¡ERROR AL GUARDAR en localStorage!', 'color: red;', e);
+    }
   }
 
   private storeUser(user: User): void {
+    console.log('%c[AuthService] storeUser: Intentando guardar usuario...', 'color: blue;', user); // Log inicio
     this.user = user;
-    this.userSubject.next(user);
-    localStorage.setItem('user', JSON.stringify(user));
+    this.userSubject.next(user); // Actualizar observable
+    try {
+      localStorage.setItem('user', JSON.stringify(user));
+      // Verificar inmediatamente después de guardar
+      const storedUser = localStorage.getItem('user');
+      if (storedUser && JSON.stringify(user) === storedUser) {
+        console.log('%c[AuthService] storeUser: Usuario guardado CORRECTAMENTE en localStorage.', 'color: green;');
+      } else {
+        console.error('%c[AuthService] storeUser: ¡FALLO AL VERIFICAR! El usuario en localStorage no coincide o es null.', 'color: red;');
+      }
+    } catch (e) {
+      console.error('%c[AuthService] storeUser: ¡ERROR AL GUARDAR usuario en localStorage!', 'color: red;', e);
+    }
   }
 }

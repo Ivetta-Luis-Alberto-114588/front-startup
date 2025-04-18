@@ -11,6 +11,7 @@ import { SharedModule } from './shared/shared.module';
 // Elimina la importación de AuthModule si aún la tienes aquí
 // import { AuthModule } from './auth/auth.module';
 import { AuthInterceptor } from './auth/interceptors/auth.interceptor';
+import { FeaturesModule } from './features/features.module';
 
 @NgModule({
   declarations: [
@@ -29,6 +30,7 @@ import { AuthInterceptor } from './auth/interceptors/auth.interceptor';
       closeButton: true, // Mostrar botón de cierre
       progressBar: true, // Mostrar barra de progreso
     }),
+    FeaturesModule
   ],
   providers: [
     {
