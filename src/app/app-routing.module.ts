@@ -50,14 +50,16 @@ const routes: Routes = [
         loadChildren: () => import('./features/checkout/checkout.module').then(m => m.CheckoutModule),
         canActivate: [AuthGuard]
       },
+
+      // --- Rutas de Callback de Pago ---
+      { path: 'payment/success', component: PaymentSuccessComponent },
+      { path: 'payment/failure', component: PaymentFailureComponent },
+      { path: 'payment/pending', component: PaymentPendingComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
 
-  // --- Rutas de Callback de Pago ---
-  { path: 'payment/success', component: PaymentSuccessComponent },
-  { path: 'payment/failure', component: PaymentFailureComponent },
-  { path: 'payment/pending', component: PaymentPendingComponent },
+
 
 
 
