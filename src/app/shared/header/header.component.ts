@@ -1,6 +1,6 @@
 // src/app/shared/header/header.component.ts
 import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs'; // Sigue siendo necesario para la carga inicial del carrito
+import { Subscription, tap } from 'rxjs'; // Sigue siendo necesario para la carga inicial del carrito
 
 import { SidebarService } from '../sidebar/sidebar.service';
 import { AuthService, User } from '../../auth/services/auth.service';
@@ -21,6 +21,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   // Mantenemos la suscripción para la carga inicial del carrito
   private cartLoadSubscription: Subscription | null = null;
+  private authSub: Subscription | null = null; // Para desuscribir
 
   constructor(
     public sidebarService: SidebarService, // Público para acceso en plantilla
@@ -37,11 +38,21 @@ export class HeaderComponent implements OnInit, OnDestroy {
         error: (err) => console.warn('HeaderComponent: Error al cargar carrito inicial:', err.message) // El servicio ya notifica
       });
     }
+
+    // *** AÑADIR ESTA SUSCRIPCIÓN PARA DEBUG ***
+    console.log('HeaderComponent OnInit: Verificando estado inicial...');
+    this.authSub = this.authService.isAuthenticated$.pipe(
+      tap(isAuth => console.log('>>> HeaderComponent - isAuthenticated$ emitió:', isAuth))
+    ).subscribe();
+    // Loguear también el valor síncrono inicial (puede ser diferente si aún no se carga de localStorage)
+    console.log('>>> HeaderComponent - Valor síncrono inicial authService.isAuthenticated():', this.authService.isAuthenticated());
+    // *** FIN DEBUG ***
   }
 
   ngOnDestroy(): void {
     // Cancelar la suscripción de carga inicial si aún está activa
     this.cartLoadSubscription?.unsubscribe();
+    this.authSub?.unsubscribe()
   }
 
   toggleSidebar(): void {
