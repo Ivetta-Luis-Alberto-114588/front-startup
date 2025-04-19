@@ -2,14 +2,22 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { MyOrdersPageComponent } from './pages/my-orders-page/my-orders-page.component'; // Importa el componente
+import { OrderDetailPageComponent } from './pages/order-detail-page/order-detail-page.component';
 
 // Define la ruta DENTRO de este módulo lazy-loaded
 // Cuando se navega a /my-orders (definido en app-routing), se carga este módulo
 // y la ruta '' (vacía) dentro de este módulo coincide, cargando MyOrdersPageComponent.
 const routes: Routes = [
-  { path: '', component: MyOrdersPageComponent }
-  // Aquí podrías añadir rutas hijas en el futuro, como /my-orders/:id para detalles
-  // { path: ':id', component: OrderDetailPageComponent }
+  {
+    path: '',
+    component: MyOrdersPageComponent
+  },
+  {
+    path: ':orderId', // Ruta para el detalle, ej: /my-orders/680396faafcf6a19585c8e80
+    component: OrderDetailPageComponent // 
+    // Nota: No necesitas AuthGuard aquí si la ruta padre (/my-orders) ya lo tiene.
+  }
+
 ];
 
 @NgModule({

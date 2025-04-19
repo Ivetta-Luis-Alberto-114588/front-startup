@@ -31,5 +31,17 @@ export class OrderService {
   }
   // --- FIN NUEVO MÉTODO ---
 
-  // Podrías añadir getOrderById(id: string): Observable<IOrder> aquí en el futuro
+
+  // --- NUEVO MÉTODO ---
+  /**
+   * Obtiene los detalles de un pedido específico por su ID.
+   * Requiere que el interceptor añada el token JWT.
+   * @param orderId El ID del pedido a obtener.
+   * @returns Un Observable con los detalles del pedido.
+   */
+  getOrderById(orderId: string): Observable<IOrder> {
+    // Llama al endpoint GET /api/sales/:id
+    return this.http.get<IOrder>(`${this.apiUrl}/${orderId}`);
+  }
+  // --- FIN NUEVO MÉTODO ---
 }

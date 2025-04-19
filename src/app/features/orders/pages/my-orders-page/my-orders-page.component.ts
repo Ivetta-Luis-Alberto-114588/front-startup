@@ -4,6 +4,8 @@ import { Subscription } from 'rxjs';
 import { IOrder } from '../../models/iorder'; // Asegúrate que la ruta sea correcta
 import { OrderService } from '../../services/order.service'; // Asegúrate que la ruta sea correcta
 import { NotificationService } from 'src/app/shared/services/notification.service'; // Para feedback
+import { Router } from '@angular/router';
+
 
 @Component({
   selector: 'app-my-orders-page',
@@ -19,7 +21,8 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
 
   constructor(
     private orderService: OrderService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -69,10 +72,8 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  // --- Método para ver detalles (futuro) ---
+
   viewOrderDetails(orderId: string): void {
-    // Navegar a una ruta de detalle de pedido, ej: /my-orders/orderId
-    console.log("Navegar a detalles del pedido:", orderId);
-    // this.router.navigate(['/my-orders', orderId]); // Necesitarás inyectar Router
+    this.router.navigate(['/my-orders', orderId]); // Navegar programáticamente
   }
 }

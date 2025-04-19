@@ -4,14 +4,16 @@ import { CommonModule } from '@angular/common'; // Necesario para *ngIf, *ngFor,
 
 import { OrdersRoutingModule } from './orders-routing.module';
 import { MyOrdersPageComponent } from './pages/my-orders-page/my-orders-page.component';
-import { SharedModule } from 'src/app/shared/shared.module'; // Importa SharedModule para pipes, etc.
+import { SharedModule } from 'src/app/shared/shared.module';
+import { OrderDetailPageComponent } from './pages/order-detail-page/order-detail-page.component'; // Importa SharedModule para pipes, etc.
 // No necesitas importar RouterModule aquí si ya lo hace SharedModule,
 // pero si SharedModule NO exporta RouterModule, entonces sí lo necesitas aquí.
 // import { RouterModule } from '@angular/router';
 
 @NgModule({
   declarations: [
-    MyOrdersPageComponent
+    MyOrdersPageComponent,
+    OrderDetailPageComponent
     // Aquí declararías OrderDetailPageComponent en el futuro
   ],
   imports: [

@@ -1,0 +1,136 @@
+<div class="container mt-4 mb-5">
+
+    <!-- Botón Volver -->
+    <div class="mb-3">
+        <button class="btn btn-outline-secondary" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i> Volver a Mis Pedidos
+        </button>
+    </div>
+
+    <h2>Detalle del Pedido</h2>
+    <hr>
+
+    <!-- Indicador de Carga -->
+    <div *ngIf="isLoading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando detalles...</span>
+        </div>
+    </div>
+
+    <!-- Mensaje de Error -->
+    <div *ngIf="error && !isLoading" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+    </div>
+
+    <!-- Contenido del Detalle -->
+    <div *ngIf="order && !isLoading && !error">
+        <div class="row g-4">
+
+            <!-- Columna Izquierda: Resumen y Envío -->
+            <div class="col-lg-7">
+                <!-- Resumen del Pedido -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Resumen del Pedido</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Número de Pedido:</dt>
+                            <dd class="col-sm-8"><code>{{ order.id }}</code></dd>
+
+                            <dt class="col-sm-4">Fecha:</dt>
+                            <dd class="col-sm-8">{{ order.date | date:'fullDate' }} a las {{ order.date |
+                                date:'shortTime' }}</dd>
+
+                            <dt class="col-sm-4">Estado:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge fs-6" [ngClass]="{
+                    'bg-warning text-dark': order.status === 'pending',
+                    'bg-success': order.status === 'completed',
+                    'bg-danger': order.status === 'cancelled'
+                  }">
+                                    {{ getFormattedStatus(order.status) }}
+                                </span>
+                            </dd>
+
+                            <dt class="col-sm-4">Total Pagado:</dt>
+                            <dd class="col-sm-8 fw-bold h5">{{ order.total | currency }}</dd>
+
+                            <ng-container *ngIf="order.discountAmount && order.discountAmount > 0">
+                                <dt class="col-sm-4">Subtotal:</dt>
+                                <dd class="col-sm-8">{{ order.subtotal | currency }}</dd>
+                                <dt class="col-sm-4">Descuento Aplicado:</dt>
+                                <dd class="col-sm-8 text-success">- {{ order.discountAmount | currency }}
+                                    ({{order.discountRate | number:'1.0-2'}}%)</dd>
+                            </ng-container>
+
+                            <dt class="col-sm-4">Impuestos (IVA):</dt>
+                            <dd class="col-sm-8">{{ order.taxAmount | currency }}</dd>
+
+                            <ng-container *ngIf="order.notes">
+                                <dt class="col-sm-4">Notas:</dt>
+                                <dd class="col-sm-8">{{ order.notes }}</dd>
+                            </ng-container>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- Detalles de Envío -->
+                <div class="card shadow-sm mb-4" *ngIf="order.shippingDetails">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Información de Envío</h5>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Recibe:</dt>
+                            <dd class="col-sm-8">{{ order.shippingDetails.recipientName }}</dd>
+
+                            <dt class="col-sm-4">Teléfono:</dt>
+                            <dd class="col-sm-8">{{ order.shippingDetails.phone }}</dd>
+
+                            <dt class="col-sm-4">Dirección:</dt>
+                            <dd class="col-sm-8">
+                                {{ order.shippingDetails.streetAddress }}
+                                <span *ngIf="order.shippingDetails.postalCode">, CP {{ order.shippingDetails.postalCode
+                                    }}</span><br>
+                                {{ order.shippingDetails.neighborhoodName }}, {{ order.shippingDetails.cityName }}
+                            </dd>
+
+                            <ng-container *ngIf="order.shippingDetails.additionalInfo">
+                                <dt class="col-sm-4">Info Adicional:</dt>
+                                <dd class="col-sm-8">{{ order.shippingDetails.additionalInfo }}</dd>
+                            </ng-container>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Items del Pedido -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Items del Pedido</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li *ngFor="let item of order.items"
+                            class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <img [src]="item.product?.imgUrl || 'assets/placeholder.png'" [alt]="item.product?.name"
+                                    class="img-fluid rounded me-3"
+                                    style="width: 50px; height: 50px; object-fit: cover;">
+                                <div>
+                                    <h6 class="my-0">{{ item.product?.name || 'Producto no disponible' }}</h6>
+                                    <small class="text-muted">Cantidad: {{ item.quantity }} x {{ item.unitPrice |
+                                        currency }}</small>
+                                </div>
+                            </div>
+                            <span class="text-muted fw-bold">{{ item.subtotal | currency }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div> <!-- Fin .row -->
+    </div> <!-- Fin *ngIf="order" -->
+
+</div>
