@@ -1,11 +1,11 @@
 // src/app/features/orders/pages/my-orders-page/my-orders-page.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { IOrder } from '../../models/iorder'; // Asegúrate que la ruta sea correcta
-import { OrderService } from '../../services/order.service'; // Asegúrate que la ruta sea correcta
-import { NotificationService } from 'src/app/shared/services/notification.service'; // Para feedback
-import { Router } from '@angular/router';
-
+import { IOrder } from '../../models/iorder';
+import { OrderService } from '../../services/order.service';
+import { NotificationService } from 'src/app/shared/services/notification.service';
+import { Location } from '@angular/common'; // <<<--- IMPORTAR Location
+import { Router } from '@angular/router'; // <<<--- IMPORTAR Router (si usas viewOrderDetails)
 
 @Component({
   selector: 'app-my-orders-page',
@@ -22,7 +22,8 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
   constructor(
     private orderService: OrderService,
     private notificationService: NotificationService,
-    private router: Router
+    private location: Location, // <<<--- INYECTAR Location
+    private router: Router      // <<<--- INYECTAR Router (si usas viewOrderDetails)
   ) { }
 
   ngOnInit(): void {
@@ -34,6 +35,7 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
   }
 
   loadOrders(): void {
+    // ... (lógica existente) ...
     this.isLoading = true;
     this.error = null;
     this.orders = []; // Limpiar antes de cargar
@@ -56,7 +58,7 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
         } else if (err.status === 401 || err.status === 403) {
           this.error = 'No estás autorizado para ver esta información.';
         }
-        this.notificationService.showError(this.error || 'Error desconocido', 'Error al Cargar Pedidos');
+        this.notificationService.showError(this.error ?? 'Error desconocido', 'Error al Cargar Pedidos');
         this.isLoading = false;
       }
     });
@@ -64,6 +66,7 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
 
   // --- Helper para formatear estado (opcional) ---
   getFormattedStatus(status: 'pending' | 'completed' | 'cancelled'): string {
+    // ... (lógica existente) ...
     switch (status) {
       case 'pending': return 'Pendiente';
       case 'completed': return 'Completado';
@@ -72,8 +75,15 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
     }
   }
 
-
+  // --- Método para ver detalles (futuro) ---
   viewOrderDetails(orderId: string): void {
-    this.router.navigate(['/my-orders', orderId]); // Navegar programáticamente
+    // ... (lógica existente) ...
+    this.router.navigate(['/my-orders', orderId]);
   }
+
+  // --- NUEVO MÉTODO goBack ---
+  goBack(): void {
+    this.location.back(); // Navega a la página anterior en el historial del navegador
+  }
+  // --- FIN NUEVO MÉTODO ---
 }
