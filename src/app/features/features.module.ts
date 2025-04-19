@@ -17,6 +17,7 @@ import { PaymentPendingComponent } from './payments/components/payment-pending/p
   imports: [
     CommonModule,
     SharedModule,
+    RouterModule
     // ProductsModule
   ]
 })

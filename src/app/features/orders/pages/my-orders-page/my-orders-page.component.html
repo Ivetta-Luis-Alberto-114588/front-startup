@@ -1,0 +1,65 @@
+<div class="container mt-4 mb-5">
+    <h2>Mis Pedidos</h2>
+    <hr>
+
+    <!-- Indicador de Carga -->
+    <div *ngIf="isLoading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando historial...</span>
+        </div>
+        <p class="mt-2">Cargando tu historial de pedidos...</p>
+    </div>
+
+    <!-- Mensaje de Error -->
+    <div *ngIf="error && !isLoading" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+        <button class="btn btn-sm btn-outline-secondary ms-3" (click)="loadOrders()">Reintentar</button>
+    </div>
+
+    <!-- Mensaje si no hay pedidos -->
+    <div *ngIf="!isLoading && !error && orders.length === 0" class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i> Aún no has realizado ningún pedido.
+        <a routerLink="/dashboard" class="ms-2">¡Empieza a comprar!</a>
+    </div>
+
+    <!-- Tabla de Pedidos -->
+    <div *ngIf="!isLoading && !error && orders.length > 0" class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Pedido #</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end">Total</th>
+                    <th scope="col" class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let order of orders">
+                    <!-- Usar slice para mostrar solo una parte del ID largo -->
+                    <td><code>{{ order.id | slice:0:8 }}...</code></td>
+                    <td>{{ order.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>
+                        <span class="badge" [ngClass]="{
+                'bg-warning text-dark': order.status === 'pending',
+                'bg-success': order.status === 'completed',
+                'bg-danger': order.status === 'cancelled'
+              }">
+                            {{ getFormattedStatus(order.status) }}
+                        </span>
+                    </td>
+                    <td class="text-end fw-bold">{{ order.total | currency }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary" (click)="viewOrderDetails(order.id)"
+                            title="Ver Detalles">
+                            <i class="bi bi-eye"></i> Detalles
+                        </button>
+                        <!-- Podrías añadir un botón de "Repetir Pedido" aquí en el futuro -->
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <!-- Aquí podrías añadir paginación si el endpoint /my-orders la soporta -->
+    </div>
+
+</div>

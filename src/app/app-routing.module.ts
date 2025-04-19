@@ -51,6 +51,11 @@ const routes: Routes = [
         canActivate: [AuthGuard]
       },
 
+      {
+        path: 'my-orders',
+        loadChildren: () => import('./features/orders/orders.module').then(m => m.OrdersModule)
+      },
+
       // --- Rutas de Callback de Pago ---
       { path: 'payment/success', component: PaymentSuccessComponent },
       { path: 'payment/failure', component: PaymentFailureComponent },
@@ -58,9 +63,6 @@ const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
-
-
-
 
 
   // --- Ruta 404 ---
