@@ -128,7 +128,7 @@ export class AuthService {
     localStorage.removeItem('user');
     this.isAuthenticatedSubject.next(false);
     this.userSubject.next(null);
-    this.router.navigate(['/auth/login']);
+    this.router.navigate(['/dashboard'])
   }
 
   getToken(): string | null {

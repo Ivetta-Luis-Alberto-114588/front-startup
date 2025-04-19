@@ -1,10 +1,17 @@
 <div class="container mt-5 text-center">
-    <i class="bi bi-check-circle-fill display-1 text-success"></i>
-    <h2 class="mt-3">¡Pago Cancelado!</h2>
-    <p class="lead">Tu pedido ha sido cancelado.</p>
+    <!-- Cambiar icono y color para fallo -->
+    <i class="bi bi-x-octagon-fill display-1 text-danger"></i>
+    <h2 class="mt-3">¡Pago Fallido!</h2>
+    <p class="lead">Hubo un problema al procesar tu pago o fue cancelado.</p>
+    <p>Por favor, intenta nuevamente o contacta a soporte si el problema persiste.</p>
 
-    <!-- Opcional: Mostrar ID de pedido si lo pasas por query params -->
-    <!-- <p *ngIf="orderId">Número de pedido: <strong>{{ orderId }}</strong></p> -->
-    <a routerLink="/my-orders" class="btn btn-primary mt-3 me-2">Ver Mis Pedidos</a>
+    <!-- ***** MOSTRAR ID DEL PEDIDO ***** -->
+    <p *ngIf="orderId" class="mt-3">
+        Referencia del pedido: <strong class="text-monospace">{{ orderId }}</strong>
+    </p>
+    <!-- ***** FIN MOSTRAR ID ***** -->
+
+    <!-- Cambiar texto/enlaces si es necesario -->
+    <a routerLink="/cart" class="btn btn-warning mt-3 me-2">Volver al Carrito</a>
     <a routerLink="/dashboard" class="btn btn-outline-secondary mt-3">Seguir Comprando</a>
 </div>

@@ -1,10 +1,16 @@
 <div class="container mt-5 text-center">
-    <i class="bi bi-check-circle-fill display-1 text-success"></i>
-    <h2 class="mt-3">¡Pago Pendiente</h2>
-    <p class="lead">Tu pedido esta pendiente.</p>
-    <p>Recibirás una confirmación por correo electrónico cuando haya sido exitoso.</p>
-    <!-- Opcional: Mostrar ID de pedido si lo pasas por query params -->
-    <!-- <p *ngIf="orderId">Número de pedido: <strong>{{ orderId }}</strong></p> -->
+    <!-- Cambiar icono y color para pendiente -->
+    <i class="bi bi-hourglass-split display-1 text-warning"></i>
+    <h2 class="mt-3">Pago Pendiente</h2>
+    <p class="lead">Tu pago está siendo procesado o requiere una acción adicional (ej: pago en efectivo).</p>
+    <p>Recibirás una confirmación cuando el pago se acredite.</p>
+
+    <!-- ***** MOSTRAR ID DEL PEDIDO ***** -->
+    <p *ngIf="orderId" class="mt-3">
+        Número de pedido: <strong class="text-monospace">{{ orderId }}</strong>
+    </p>
+    <!-- ***** FIN MOSTRAR ID ***** -->
+
     <a routerLink="/my-orders" class="btn btn-primary mt-3 me-2">Ver Mis Pedidos</a>
     <a routerLink="/dashboard" class="btn btn-outline-secondary mt-3">Seguir Comprando</a>
 </div>
