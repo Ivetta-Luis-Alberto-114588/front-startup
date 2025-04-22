@@ -4,10 +4,12 @@ import { CategoryService } from '../../products/services/category/category.servi
 import { ProductService, PaginatedProductsResponse } from '../../products/services/product/product.service';
 import { ICategory } from '../../products/model/icategory';
 import { IProduct } from '../../products/model/iproduct';
-import { Observable, of } from 'rxjs';
-import { catchError, map, finalize, tap } from 'rxjs/operators'; // Importar tap
+import { Observable, of, Subscription } from 'rxjs';
+import { catchError, map, finalize, tap } from 'rxjs/operators';
 import { CartService } from '../../cart/services/cart.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
+import { AuthService } from 'src/app/auth/services/auth.service'; // <<<--- IMPORTAR AuthService
+import { Router } from '@angular/router'; // <<<--- IMPORTAR Router
 
 @Component({
   selector: 'app-home',
@@ -16,29 +18,39 @@ import { NotificationService } from 'src/app/shared/services/notification.servic
 })
 export class HomeComponent implements OnInit {
 
+  // ... (propiedades existentes) ...
   public listCategories: ICategory[] = [];
   public popularProducts$: Observable<IProduct[]> = of([]);
   public comboProducts$: Observable<IProduct[]> = of([]);
-
   public isLoadingPopular = true;
   public isLoadingCombos = true;
   public errorPopular: string | null = null;
   public errorCombos: string | null = null;
   public productsBeingAdded: { [productId: string]: boolean } = {};
+  private popularSubscription: Subscription | null = null;
+  private comboSubscription: Subscription | null = null;
 
   constructor(
     private categoryService: CategoryService,
     private productService: ProductService,
     private cartService: CartService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private authService: AuthService, // <<<--- INYECTAR AuthService
+    private router: Router // <<<--- INYECTAR Router
   ) { }
 
+  // ... (ngOnInit, ngOnDestroy, getAllCategories, loadPopularProducts, loadComboProducts sin cambios) ...
   ngOnInit(): void {
     this.getAllCategories();
     this.loadPopularProducts();
     this.loadComboProducts();
-    console.log('HomeComponent initialized');
   }
+
+  // Opcional: Añadir ngOnDestroy para limpiar suscripciones
+  // ngOnDestroy(): void {
+  //   this.popularSubscription?.unsubscribe();
+  //   this.comboSubscription?.unsubscribe();
+  // }
 
   getAllCategories() {
     this.categoryService.getAllCategories().subscribe({
@@ -48,64 +60,79 @@ export class HomeComponent implements OnInit {
   }
 
   loadPopularProducts() {
-    this.isLoadingPopular = true; // Inicia carga
+    this.isLoadingPopular = true;
     this.errorPopular = null;
-    this.popularProducts$ = this.productService.searchProducts({ tags: 'popular', limit: 4 })
-      .pipe(
-        tap(() => console.log('Popular products request started...')), // Log inicio
-        map((response: PaginatedProductsResponse) => {
-          console.log('Popular products received:', response.products.length); // Log éxito
-          this.isLoadingPopular = false; // <-- Detener carga en éxito
-          return response.products;
-        }),
-        catchError(err => {
-          console.error("Error cargando productos populares:", err); // Log error
+    this.popularSubscription?.unsubscribe();
+    this.popularSubscription = this.productService.searchProducts({ tags: 'popular', limit: 4 })
+      .subscribe({
+        next: (response) => {
+          console.log('RESPUESTA POPULAR RECIBIDA:', response.products.length);
+          this.popularProducts$ = of(response.products);
+          this.isLoadingPopular = false;
+        },
+        error: (err) => {
+          console.error("ERROR POPULAR RECIBIDO:", err);
           this.errorPopular = "No se pudieron cargar los productos populares.";
-          this.isLoadingPopular = false; // <-- Detener carga en error
-          return of([]); // Devolver array vacío para que el async pipe no falle
-        })
-        // finalize(() => { // Finalize es bueno, pero asegurémonos en map/catchError primero
-        //   console.log('Finalizing popular products stream');
-        //   this.isLoadingPopular = false;
-        // })
-      );
+          this.isLoadingPopular = false;
+          this.popularProducts$ = of([]);
+        },
+        complete: () => {
+          console.log('Observable Popular completado');
+          if (this.isLoadingPopular) {
+            this.isLoadingPopular = false;
+            console.warn("isLoadingPopular forzado a false en complete()");
+          }
+        }
+      });
   }
 
   loadComboProducts() {
-    this.isLoadingCombos = true; // Inicia carga
+    this.isLoadingCombos = true;
     this.errorCombos = null;
-    this.comboProducts$ = this.productService.searchProducts({ tags: 'combo', limit: 3 })
-      .pipe(
-        tap(() => console.log('Combo products request started...')), // Log inicio
-        map((response: PaginatedProductsResponse) => {
-          console.log('Combo products received:', response.products.length); // Log éxito
-          this.isLoadingCombos = false; // <-- Detener carga en éxito
-          return response.products;
-        }),
-        catchError(err => {
-          console.error("Error cargando combos:", err); // Log error
+    this.comboSubscription?.unsubscribe();
+    this.comboSubscription = this.productService.searchProducts({ tags: 'combo', limit: 3 })
+      .subscribe({
+        next: (response) => {
+          console.log('RESPUESTA COMBOS RECIBIDA:', response.products.length);
+          this.comboProducts$ = of(response.products);
+          this.isLoadingCombos = false;
+        },
+        error: (err) => {
+          console.error("ERROR COMBOS RECIBIDO:", err);
           this.errorCombos = "No se pudieron cargar los combos.";
-          this.isLoadingCombos = false; // <-- Detener carga en error
-          return of([]); // Devolver array vacío
-        })
-        // finalize(() => {
-        //   console.log('Finalizing combo products stream');
-        //   this.isLoadingCombos = false;
-        // })
-      );
+          this.isLoadingCombos = false;
+          this.comboProducts$ = of([]);
+        },
+        complete: () => {
+          console.log('Observable Combos completado');
+          if (this.isLoadingCombos) {
+            this.isLoadingCombos = false;
+            console.warn("isLoadingCombos forzado a false en complete()");
+          }
+        }
+      });
   }
 
-  // Método addToCart (sin cambios respecto a la versión anterior)
-  addToCart(product: IProduct): void {
-    if (!product || this.productsBeingAdded[product.id]) return;
-    this.productsBeingAdded[product.id] = true;
 
+  addToCart(product: IProduct): void {
+    // 1. VERIFICAR AUTENTICACIÓN
+    if (!this.authService.isAuthenticated()) {
+      this.notificationService.showInfo('Inicia sesión para añadir al carrito.', 'Inicio Requerido');
+      // GUARDAR ACCIÓN PENDIENTE
+      const pendingAction = { productId: product.id, quantity: 1 };
+      localStorage.setItem('pendingCartAction', JSON.stringify(pendingAction));
+      // REDIRIGIR
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    // 2. SI ESTÁ AUTENTICADO
+    if (!product || this.productsBeingAdded[product.id] || product.stock <= 0) return;
+
+    this.productsBeingAdded[product.id] = true;
     this.cartService.addItem(product.id, 1).pipe(
-      finalize(() => {
-        delete this.productsBeingAdded[product.id];
-      })
+      finalize(() => { delete this.productsBeingAdded[product.id]; })
     ).subscribe({
-      // next: () => {}, // El servicio notifica
       error: (err) => {
         console.error(`[HomeComponent] Error al añadir ${product.name} al carrito:`, err);
       }

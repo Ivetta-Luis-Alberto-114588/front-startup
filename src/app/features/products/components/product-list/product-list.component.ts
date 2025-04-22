@@ -1,15 +1,17 @@
 // src/app/features/products/components/product-list/product-list.component.ts
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription, switchMap, catchError, EMPTY, tap, finalize } from 'rxjs'; // Importar finalize
+import { Subscription, EMPTY } from 'rxjs';
+import { catchError, finalize, tap } from 'rxjs/operators';
 
 import { IProduct } from '../../model/iproduct';
 import { ICategory } from '../../model/icategory';
-import { ProductService, PaginatedProductsResponse } from '../../services/product/product.service'; // Importar interfaz
+import { ProductService, PaginatedProductsResponse } from '../../services/product/product.service';
 import { CategoryService } from '../../services/category/category.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 import { CartService } from '../../../cart/services/cart.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
+import { AuthService } from 'src/app/auth/services/auth.service'; // <<<--- IMPORTAR AuthService
 
 @Component({
   selector: 'app-product-list',
@@ -18,6 +20,7 @@ import { NotificationService } from 'src/app/shared/services/notification.servic
 })
 export class ProductListComponent implements OnInit, OnDestroy {
 
+  // ... (propiedades existentes: listProducts, category, idCategory, etc.) ...
   public listProducts: IProduct[] = [];
   public category: ICategory = { id: '', name: 'Cargando...', description: '', isActive: false };
   idCategory: string | null = null;
@@ -25,13 +28,11 @@ export class ProductListComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private routeSubscription: Subscription | null = null;
   productsBeingAdded: { [productId: string]: boolean } = {};
-
-  // <<<--- ESTADO DE PAGINACIÓN --- >>>
   currentPage = 1;
-  itemsPerPage = 8; // <--- Definido aquí como 8
+  itemsPerPage = 8;
   totalItems = 0;
   totalPages = 0;
-  // <<<--- FIN ESTADO DE PAGINACIÓN --- >>>
+
 
   constructor(
     private productService: ProductService,
@@ -39,99 +40,76 @@ export class ProductListComponent implements OnInit, OnDestroy {
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private cartService: CartService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private authService: AuthService // <<<--- INYECTAR AuthService
   ) { }
 
+  // ... (ngOnInit, ngOnDestroy, loadProducts, loadPage, getCategoryDetails, viewProductDetail sin cambios)...
   ngOnInit(): void {
     this.routeSubscription = this.activatedRoute.paramMap.pipe(
       tap(params => {
         const newCategoryId = params.get('idCategory');
-        // Si la categoría cambia, reseteamos la paginación y cargamos
         if (newCategoryId && newCategoryId !== this.idCategory) {
           this.idCategory = newCategoryId;
-          this.currentPage = 1; // Resetear a página 1 al cambiar categoría
+          this.currentPage = 1;
           this.totalItems = 0;
           this.totalPages = 0;
-          this.listProducts = []; // Limpiar lista anterior
-          this.isLoading = true; // Mostrar carga
+          this.listProducts = [];
+          this.isLoading = true;
           this.error = null;
-          this.getCategoryDetails(this.idCategory); // Obtener detalles de la nueva categoría
-          this.loadProducts(); // Cargar productos para la nueva categoría y página 1
+          this.getCategoryDetails(this.idCategory);
+          this.loadProducts();
         } else if (!newCategoryId) {
           console.error('[ProductList] No se encontró idCategory en la ruta.');
           this.error = "Categoría no especificada en la URL.";
           this.isLoading = false;
-        } else {
-          // Opcional: Log si la categoría no cambió
-          // console.log(`[ProductList] Misma categoría (${this.idCategory}), no se recarga por cambio de ruta.`);
         }
       })
-    ).subscribe(); // Solo nos suscribimos para reaccionar a cambios de ruta
+    ).subscribe();
   }
 
   ngOnDestroy(): void {
     this.routeSubscription?.unsubscribe();
   }
 
-  // <<<--- MÉTODO PARA CARGAR PRODUCTOS (CORREGIDO) --- >>>
   loadProducts(): void {
-    if (!this.idCategory) {
-      return;
-    }
-
+    if (!this.idCategory) return;
     this.isLoading = true;
     this.error = null;
-    // Usa el valor de itemsPerPage definido en la clase (8)
     const pagination: PaginationDto = { page: this.currentPage, limit: this.itemsPerPage };
 
     this.productService.getProductsByCategory(this.idCategory, pagination).pipe(
       catchError(err => {
         console.error('[ProductList] Error fetching products by category:', err);
         this.error = 'Error al cargar los productos. Por favor, intente más tarde.';
-        this.listProducts = []; // Limpiar en caso de error
+        this.listProducts = [];
         this.totalItems = 0;
         this.totalPages = 0;
-        return EMPTY; // Terminar el observable en caso de error
+        return EMPTY;
       }),
-      finalize(() => {
-        this.isLoading = false;
-      })
+      finalize(() => { this.isLoading = false; })
     ).subscribe({
       next: (data: PaginatedProductsResponse) => {
-        this.listProducts = data.products; // Reemplaza la lista con los nuevos productos
+        this.listProducts = data.products;
         this.totalItems = data.total;
-        // Calcula totalPages usando el itemsPerPage de la clase (8)
         this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
-
-        if (data.total === 0) {
-          // Opcional: Mostrar mensaje si no hay productos
-        }
       }
     });
   }
-  // <<<--- FIN MÉTODO PARA CARGAR PRODUCTOS --- >>>
 
-  // <<<--- MÉTODO PARA CAMBIAR DE PÁGINA --- >>>
   loadPage(page: number): void {
-    if (page === this.currentPage || this.isLoading) {
-      return; // No recargar si es la misma página o ya está cargando
-    }
+    if (page === this.currentPage || this.isLoading) return;
     this.currentPage = page;
-    this.loadProducts(); // Llamar al método que carga los productos para la nueva página
+    this.loadProducts();
   }
-  // <<<--- FIN MÉTODO PARA CAMBIAR DE PÁGINA --- >>>
 
   getCategoryDetails(id: string): void {
     if (!id) return;
     this.categoryService.getCategoryById(id).subscribe({
-      next: (data: ICategory) => {
-        this.category = data;
-      },
+      next: (data: ICategory) => { this.category = data; },
       error: (error) => {
         console.error('[ProductList] Error fetching category details:', error);
         this.category = { id: '', name: 'Categoría Desconocida', description: 'No se pudo cargar la información.', isActive: false };
-        // Considerar si mostrar un error más prominente al usuario
-        // this.error = 'No se pudo cargar la información de la categoría.';
       }
     });
   }
@@ -145,18 +123,28 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
   }
 
+
   addToCart(product: IProduct): void {
-    if (!product || this.productsBeingAdded[product.id]) return;
+    // 1. VERIFICAR AUTENTICACIÓN
+    if (!this.authService.isAuthenticated()) {
+      this.notificationService.showInfo('Inicia sesión para añadir al carrito.', 'Inicio Requerido');
+      // GUARDAR ACCIÓN PENDIENTE
+      const pendingAction = { productId: product.id, quantity: 1 }; // Asumimos cantidad 1
+      localStorage.setItem('pendingCartAction', JSON.stringify(pendingAction));
+      // REDIRIGIR
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    // 2. SI ESTÁ AUTENTICADO
+    if (!product || this.productsBeingAdded[product.id] || product.stock <= 0) return;
+
     this.productsBeingAdded[product.id] = true;
-    this.cartService.addItem(product.id, 1).pipe(
-      finalize(() => {
-        delete this.productsBeingAdded[product.id]; // Asegurar que se limpia el flag
-      })
+    this.cartService.addItem(product.id, 1).pipe( // Añadir 1 unidad
+      finalize(() => { delete this.productsBeingAdded[product.id]; })
     ).subscribe({
-      // next: ya no es necesario hacer nada aquí, el servicio notifica
       error: (err) => {
-        console.error('[ProductList] Error al añadir al carrito desde ProductList:', err);
-        // El servicio ya muestra la notificación de error
+        console.error(`[ProductList] Error al añadir ${product.name} al carrito:`, err);
       }
     });
   }

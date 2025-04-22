@@ -56,6 +56,9 @@ export class ProductService {
         }
       }
     }
+    console.log("URL de búsqueda:", url);
+    console.log("Parámetros de búsqueda:", params.toString());
+
 
     // La respuesta del backend ya coincide con PaginatedProductsResponse
     return this.http.get<PaginatedProductsResponse>(url, { params });
