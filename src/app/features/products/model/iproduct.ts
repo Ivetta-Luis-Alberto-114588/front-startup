@@ -12,6 +12,7 @@ export interface IProduct {
     description: string;
     taxRate: number;
     priceWithTax: number; // Precio CON IVA
+    tags?: string[]
     imgUrl?: string;
     createdAt?: Date;
     updatedAt?: Date;

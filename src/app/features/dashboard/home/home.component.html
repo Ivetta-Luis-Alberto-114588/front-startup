@@ -6,17 +6,15 @@
                 <div class="col-lg-6 py-5">
                     <h1 class="display-4 fw-bold mb-4">Sabor auténtico a domicilio</h1>
                     <p class="lead mb-4">Las mejores pizzas, empanadas y lomitos de la ciudad. Ingredientes frescos y
-                        entrega
-                        rápida para disfrutar en casa o en la oficina.</p>
+                        entrega rápida para disfrutar en casa o en la oficina.</p>
                     <div class="d-flex gap-3">
-                        <button class="btn btn-danger btn-lg px-4">Ordenar ahora</button>
-                        <button class="btn btn-outline-dark btn-lg px-4">Ver menú</button>
+                        <a routerLink="/products" class="btn btn-danger btn-lg px-4">Ordenar ahora</a>
+                        <a routerLink="/products" class="btn btn-outline-dark btn-lg px-4">Ver menú</a>
                     </div>
                 </div>
                 <div class="col-lg-6 d-none d-lg-block">
                     <div class="hero-image-container">
-                        <img src="../../../../assets/pizza.jpg" alt="Pizza deliciosa"
-                            class="img-fluid rounded shadow-lg">
+                        <img src="assets/pizza.jpg" alt="Pizza deliciosa" class="img-fluid rounded shadow-lg">
                     </div>
                 </div>
             </div>
@@ -25,164 +23,124 @@
 
     <!-- Categories Section -->
     <section class="categories-section py-5 bg-light">
-
         <div class="container">
             <h2 class="text-center mb-5">Nuestras especialidades</h2>
-            <div class="row g-4">
+            <div *ngIf="!listCategories || listCategories.length === 0" class="text-center text-muted">
+                Cargando categorías...
+                <div class="spinner-border spinner-border-sm text-secondary ms-2" role="status"></div>
+            </div>
+            <div *ngIf="listCategories && listCategories.length > 0" class="row g-4">
                 <div class="col-6 col-md-3" *ngFor="let item of listCategories">
                     <div class="card category-card border-0 shadow-sm h-100">
                         <div class="category-icon-container text-center p-4">
-                            <i class="bi bi-circle fs-1 text-danger"></i>
+                            <i class="bi bi-tag-fill fs-1 text-danger"></i>
                         </div>
                         <div class="card-body text-center">
-                            <h5 class="card-title">{{item.name}}</h5>
-
+                            <h5 class="card-title">{{ item.name | titlecase }}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">
-                                {{item.description}}
+                                {{ item.description }}
                             </h6>
                             <a [routerLink]="['/products', item.id]" class="stretched-link">Ver opciones</a>
                         </div>
                     </div>
                 </div>
-                <!-- <div class="col-6 col-md-3">
-                    <div class="card category-card border-0 shadow-sm h-100">
-                        <div class="category-icon-container text-center p-4">
-                            <i class="bi bi-triangle fs-1 text-danger"></i>
-                        </div>
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Empanadas</h5>
-                            <a routerLink="/products/empanadas" class="stretched-link">Ver opciones</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="card category-card border-0 shadow-sm h-100">
-                        <div class="category-icon-container text-center p-4">
-                            <i class="bi bi-layout-wtf fs-1 text-danger"></i>
-                        </div>
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Lomitos</h5>
-                            <a routerLink="/products/lomitos" class="stretched-link">Ver opciones</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="card category-card border-0 shadow-sm h-100">
-                        <div class="category-icon-container text-center p-4">
-                            <i class="bi bi-cup-straw fs-1 text-danger"></i>
-                        </div>
-                        <div class="card-body text-center">
-                            <h5 class="card-title">Bebidas</h5>
-                            <a href="#" class="stretched-link">Ver opciones</a>
-                        </div>
-                    </div>
-                </div> -->
             </div>
         </div>
     </section>
 
-    <!-- Featured Products Section -->
+    <!-- Featured Products Section (CORREGIDO) -->
     <section class="featured-products-section py-5">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Más populares</h2>
-                <a href="#" class="btn btn-outline-danger">Ver todos</a>
+                <a [routerLink]="['/products']" [queryParams]="{ tags: 'popular' }" class="btn btn-outline-danger">Ver
+                    todos</a>
             </div>
-            <div class="row g-4">
-                <!-- Product Card 1 -->
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card product-card border-0 shadow-sm h-100">
-                        <div
-                            class="product-badge bg-primary text-white position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill">
-                            Favorita</div>
-                        <img src="../../../../assets/pizza.jpg" class="card-img-top" alt="Pizza Mozzarella">
-                        <div class="card-body">
-                            <h5 class="card-title">Pizza Mozzarella</h5>
-                            <p class="text-muted small">Masa casera, salsa de tomate y queso mozzarella</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <p class="fw-bold text-danger mb-0">$12.99</p>
-                                </div>
-                                <button class="btn btn-sm btn-outline-danger rounded-circle">
-                                    <i class="bi bi-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Product Card 2 -->
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card product-card border-0 shadow-sm h-100">
-                        <div
-                            class="product-badge bg-success text-white position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill">
-                            Nuevo</div>
-                        <img src="../../../../assets/empanadas.jpeg" class="card-img-top" alt="Empanadas">
-                        <div class="card-body">
-                            <h5 class="card-title">Empanadas Criollas</h5>
-                            <p class="text-muted small">Carne picada, cebolla, huevo y aceitunas</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <p class="fw-bold text-danger mb-0">$2.50</p>
-                                </div>
-                                <button class="btn btn-sm btn-outline-danger rounded-circle">
-                                    <i class="bi bi-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Indicador de Carga -->
+            <div *ngIf="isLoadingPopular" class="text-center my-5">
+                <div class="spinner-border text-danger" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Cargando...</span>
                 </div>
-
-                <!-- Product Card 3 -->
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card product-card border-0 shadow-sm h-100">
-                        <div
-                            class="product-badge bg-primary text-white position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill">
-                            Clasico</div>
-
-                        <img src="../../../../assets/lomito.jpeg" class="card-img-top" alt="Lomito Completo">
-                        <div class="card-body">
-                            <h5 class="card-title">Lomito Completo</h5>
-                            <p class="text-muted small">Bife de lomo, jamón, queso, huevo, lechuga y tomate</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <p class="fw-bold text-danger mb-0">$9.99</p>
-                                </div>
-                                <button class="btn btn-sm btn-outline-danger rounded-circle">
-                                    <i class="bi bi-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Product Card 4 -->
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card product-card border-0 shadow-sm h-100">
-                        <div
-                            class="product-badge bg-primary text-white position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill">
-                            Popular</div>
-                        <img src="../../../../assets/cerveza.jpeg" class="card-img-top" alt="Cerveza Artesanal">
-                        <div class="card-body">
-                            <h5 class="card-title">Cerveza Artesanal</h5>
-                            <p class="text-muted small">IPA, rubia o negra (botella 500ml)</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <p class="fw-bold text-danger mb-0">$4.99</p>
-                                </div>
-                                <button class="btn btn-sm btn-outline-danger rounded-circle">
-                                    <i class="bi bi-cart-plus"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <p class="mt-2 text-muted">Cargando productos populares...</p>
             </div>
+
+            <!-- Mensaje de Error -->
+            <div *ngIf="errorPopular && !isLoadingPopular" class="alert alert-warning text-center">
+                <i class="bi bi-exclamation-triangle me-2"></i> {{ errorPopular }}
+            </div>
+
+            <!-- Contenedor para la lógica asíncrona y condicional -->
+            <ng-container *ngIf="!isLoadingPopular && !errorPopular">
+                <!-- Resolver el observable -->
+                <ng-container *ngIf="(popularProducts$ | async) as popularProducts">
+                    <!-- Comprobar si hay productos para mostrar la fila -->
+                    <div *ngIf="popularProducts.length > 0; else noPopularProductsTemplate" class="row g-4">
+                        <!-- Iterar y mostrar cada producto -->
+                        <div *ngFor="let product of popularProducts" class="col-6 col-sm-6 col-md-4 col-lg-3 d-flex">
+                            <div class="card product-card border-0 shadow-sm h-100 w-100">
+                                <!-- Badges (Corrección: sin comentarios internos) -->
+                                <ng-container *ngIf="product.tags && product.tags.length > 0">
+                                    <span *ngFor="let tag of product.tags | slice:0:1"
+                                        class="product-badge position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill small z-index-1"
+                                        [ngClass]="{
+                                            'bg-primary': tag === 'popular' || tag === 'favorita',
+                                            'text-white': tag === 'popular' || tag === 'favorita' || tag === 'nuevo',
+                                            'bg-success': tag === 'nuevo',
+                                            'bg-info': tag === 'clasico',
+                                            'text-dark': tag === 'clasico' || tag === 'oferta',
+                                            'bg-warning': tag === 'oferta'
+                                          }"> <!-- Corrección: ngClass sin comentarios -->
+                                        {{ tag | titlecase }}
+                                    </span> <!-- Etiqueta span cerrada correctamente -->
+                                </ng-container>
+
+                                <a [routerLink]="['/products', product.category.id, product.id]"
+                                    class="text-decoration-none">
+                                    <img [src]="product.imgUrl || 'assets/placeholder.png'"
+                                        class="card-img-top product-image" [alt]="product.name">
+                                </a>
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title product-name mb-1">
+                                        <a [routerLink]="['/products', product.category.id, product.id]"
+                                            class="text-dark text-decoration-none stretched-link">{{ product.name }}</a>
+                                    </h5>
+                                    <!-- Descripción (Corrección: lógica simplificada) -->
+                                    <p class="card-text small text-muted flex-grow-1 product-description mb-2">
+                                        {{ (product.description | slice:0:60) + (product.description &&
+                                        product.description.length > 60 ? '...' : '') }}
+                                    </p>
+                                    <div
+                                        class="d-flex flex-wrap justify-content-between align-items-center mt-auto pt-2">
+                                        <p class="fw-bold text-danger mb-0 h5 product-price">{{ product.priceWithTax |
+                                            currency }}</p>
+                                        <button class="btn btn-sm btn-success product-actions mt-2 mt-md-0 z-index-1"
+                                            (click)="$event.stopPropagation(); addToCart(product)"
+                                            [disabled]="productsBeingAdded[product.id] || product.stock <= 0"
+                                            title="Añadir al carrito">
+                                            <span *ngIf="productsBeingAdded[product.id]"
+                                                class="spinner-border spinner-border-sm" role="status"
+                                                aria-hidden="true"></span>
+                                            <i *ngIf="!productsBeingAdded[product.id]" class="bi bi-cart-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
+                <!-- Template de 'else' (movido fuera del *ngIf interno) -->
+                <ng-template #noPopularProductsTemplate>
+                    <p class="text-center text-muted fst-italic mt-4">No hay productos populares destacados por el
+                        momento.</p>
+                </ng-template>
+            </ng-container>
         </div>
     </section>
 
-    <!-- Benefits Section -->
+    <!-- Benefits Section (sin cambios) -->
     <section class="benefits-section py-5 bg-light">
+        <!-- ... (Código sin cambios) ... -->
         <div class="container">
             <div class="row g-4">
                 <div class="col-md-4">
@@ -222,60 +180,70 @@
         </div>
     </section>
 
-    <!-- Featured Combos Section -->
+    <!-- Featured Combos Section (DINÁMICO y CORREGIDO) -->
     <section class="featured-combos-section py-5">
         <div class="container">
             <h2 class="text-center mb-5">Combos para compartir</h2>
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-4">
-                    <div class="card combo-card border-0 shadow h-100">
-                        <div class="card-body text-center p-4">
-                            <h5 class="combo-title fw-bold">Combo Amigos</h5>
-                            <div class="combo-price display-6 text-danger my-3">$29.99</div>
-                            <ul class="list-unstyled combo-items">
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>1 Pizza grande (hasta 3
-                                    ingredientes)</li>
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>6 Empanadas a elección</li>
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>2 Cervezas o gaseosas grandes
-                                </li>
-                            </ul>
-                            <button class="btn btn-danger btn-lg w-100 mt-3">Pedir ahora</button>
-                        </div>
-                    </div>
+
+            <!-- Indicador de Carga -->
+            <div *ngIf="isLoadingCombos" class="text-center my-5">
+                <div class="spinner-border text-danger" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Cargando...</span>
                 </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="card combo-card border-0 shadow h-100 border-danger popular-combo">
-                        <div class="ribbon position-absolute"><span>MEJOR OPCIÓN</span></div>
-                        <div class="card-body text-center p-4">
-                            <h5 class="combo-title fw-bold">Combo Familiar</h5>
-                            <div class="combo-price display-6 text-danger my-3">$42.99</div>
-                            <ul class="list-unstyled combo-items">
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>2 Pizzas grandes (hasta 3
-                                    ingredientes)</li>
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>12 Empanadas a elección</li>
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>2 Lomitos simples</li>
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>4 Bebidas a elección</li>
-                            </ul>
-                            <button class="btn btn-danger btn-lg w-100 mt-3">Pedir ahora</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="card combo-card border-0 shadow h-100">
-                        <div class="card-body text-center p-4">
-                            <h5 class="combo-title fw-bold">Combo Pareja</h5>
-                            <div class="combo-price display-6 text-danger my-3">$22.99</div>
-                            <ul class="list-unstyled combo-items">
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>1 Pizza mediana (hasta 3
-                                    ingredientes)</li>
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>4 Empanadas a elección</li>
-                                <li><i class="bi bi-check2-circle text-success me-2"></i>2 Bebidas a elección</li>
-                            </ul>
-                            <button class="btn btn-danger btn-lg w-100 mt-3">Pedir ahora</button>
-                        </div>
-                    </div>
-                </div>
+                <p class="mt-2 text-muted">Cargando combos...</p>
             </div>
+
+            <!-- Mensaje de Error -->
+            <div *ngIf="errorCombos && !isLoadingCombos" class="alert alert-warning text-center">
+                <i class="bi bi-exclamation-triangle me-2"></i> {{ errorCombos }}
+            </div>
+
+            <!-- Lista Dinámica -->
+            <ng-container *ngIf="!isLoadingCombos && !errorCombos">
+                <ng-container *ngIf="(comboProducts$ | async) as comboProducts">
+                    <div *ngIf="comboProducts.length > 0; else noComboProductsTemplate"
+                        class="row g-4 justify-content-center">
+                        <div *ngFor="let combo of comboProducts" class="col-md-6 col-lg-4 d-flex">
+                            <div class="card combo-card border-0 shadow h-100 w-100"
+                                [class.popular-combo]="combo.tags?.includes('mejor opcion')">
+                                <div *ngIf="combo.tags?.includes('mejor opcion')" class="ribbon position-absolute">
+                                    <span>MEJOR OPCIÓN</span></div>
+                                <span
+                                    class="product-badge bg-warning text-dark position-absolute top-0 start-0 m-2 px-2 py-1 rounded-pill small z-index-1">
+                                    Combo
+                                </span>
+                                <a [routerLink]="['/products', combo.category.id, combo.id]">
+                                    <img [src]="combo.imgUrl || 'assets/placeholder.png'"
+                                        class="card-img-top product-image" [alt]="combo.name">
+                                </a>
+                                <div class="card-body text-center p-4 d-flex flex-column">
+                                    <h5 class="combo-title fw-bold">
+                                        <a [routerLink]="['/products', combo.category.id, combo.id]"
+                                            class="text-dark text-decoration-none stretched-link">{{ combo.name }}</a>
+                                    </h5>
+                                    <div class="combo-price display-6 text-danger my-3">{{ combo.priceWithTax | currency
+                                        }}</div>
+                                    <p class="combo-items flex-grow-1 text-muted small mb-3">
+                                        {{ combo.description }}
+                                    </p>
+                                    <button class="btn btn-danger btn-lg w-100 mt-auto z-index-1"
+                                        (click)="$event.stopPropagation(); addToCart(combo)"
+                                        [disabled]="productsBeingAdded[combo.id] || combo.stock <= 0">
+                                        <span *ngIf="productsBeingAdded[combo.id]"
+                                            class="spinner-border spinner-border-sm" role="status"
+                                            aria-hidden="true"></span>
+                                        <span *ngIf="!productsBeingAdded[combo.id]">Pedir ahora</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </ng-container>
+                <!-- Template de 'else' -->
+                <ng-template #noComboProductsTemplate>
+                    <p class="text-center text-muted fst-italic mt-4">No hay combos disponibles por el momento.</p>
+                </ng-template>
+            </ng-container>
         </div>
     </section>
 
@@ -297,7 +265,7 @@
                     </div>
                 </div>
                 <div class="col-lg-6 text-center">
-                    <img src="./../../../../assets/app.webp" alt="App móvil" class="img-fluid app-screenshot"
+                    <img src="assets/app.webp" alt="App móvil" class="img-fluid app-screenshot"
                         style="max-height: 500px;">
                 </div>
             </div>
