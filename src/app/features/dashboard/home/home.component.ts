@@ -37,6 +37,7 @@ export class HomeComponent implements OnInit {
     this.getAllCategories();
     this.loadPopularProducts();
     this.loadComboProducts();
+    console.log('HomeComponent initialized');
   }
 
   getAllCategories() {
