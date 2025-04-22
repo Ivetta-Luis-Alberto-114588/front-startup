@@ -1,30 +1,131 @@
-<div class="sidebar bg-light" [ngClass]="{'sidebar-expanded': !sidebarService.isSidebarCollapsed, 'sidebar-collapsed': sidebarService.isSidebarCollapsed}">
-    <div class="py-4 px-3">
-      <div class="sidebar-header mb-4">
-        <h5 *ngIf="!sidebarService.isSidebarCollapsed">Navegación</h5>
-        <span *ngIf="sidebarService.isSidebarCollapsed" class="icon-only">
-          <i class="bi bi-list"></i>
+<!-- src/app/shared/sidebar/sidebar.component.html -->
+<!-- Añadir ngClass para controlar la visibilidad general -->
+<div class="sidebar bg-light" [ngClass]="{
+       'sidebar-expanded': !(sidebarService.isSidebarCollapsed$ | async),
+       'sidebar-collapsed': (sidebarService.isSidebarCollapsed$ | async)
+     }">
+  <div class="py-4 px-3">
+    <!-- Header del Sidebar (sin cambios) -->
+    <div class="sidebar-header mb-4">
+      <h5 *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Navegación</h5>
+      <span *ngIf="(sidebarService.isSidebarCollapsed$ | async)" class="icon-only">
+        <i class="bi bi-list"></i>
+      </span>
+    </div>
+
+    <!-- Menú Principal (sin cambios) -->
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+          <i class="bi bi-house-door me-2"></i> <!-- Icono actualizado -->
+          <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Inicio</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" routerLink="/products" routerLinkActive="active">
+          <i class="bi bi-grid me-2"></i>
+          <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Menú</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" routerLink="/cart" routerLinkActive="active">
+          <i class="bi bi-cart3 me-2"></i> <!-- Icono actualizado -->
+          <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Carrito</span>
+        </a>
+      </li>
+      <!-- Añadir enlace a Mis Pedidos si está autenticado -->
+      <li class="nav-item" *ngIf="authService.isAuthenticated$ | async">
+        <a class="nav-link" routerLink="/my-orders" routerLinkActive="active">
+          <i class="bi bi-receipt me-2"></i> <!-- Icono actualizado -->
+          <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Mis Pedidos</span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- ***** INICIO: SECCIÓN ADMIN ***** -->
+    <!-- Usamos async pipe para verificar si es admin -->
+    <ng-container *ngIf="(authService.user$ | async)?.role?.includes('ADMIN_ROLE')">
+      <hr> <!-- Separador visual -->
+      <div class="sidebar-header mb-2 mt-3">
+        <h6 *ngIf="!(sidebarService.isSidebarCollapsed$ | async)" class="text-muted text-uppercase small">Administración
+        </h6>
+        <span *ngIf="(sidebarService.isSidebarCollapsed$ | async)" class="icon-only text-muted">
+          <i class="bi bi-shield-lock"></i> <!-- Icono para admin colapsado -->
         </span>
       </div>
       <ul class="nav flex-column">
+        <!-- Enlace al Dashboard de Admin (si tienes uno) -->
         <li class="nav-item">
-          <a class="nav-link" routerLink="/" routerLinkActive="active">
-            <i class="bi bi-house me-2"></i>
-            <span *ngIf="!sidebarService.isSidebarCollapsed">Inicio</span>
+          <a class="nav-link" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <i class="bi bi-speedometer2 me-2"></i>
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Dashboard Admin</span>
+          </a>
+        </li>
+        <!-- Enlace a Gestión de Categorías -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/categories" routerLinkActive="active">
+            <i class="bi bi-tags me-2"></i> <!-- Icono actualizado -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Categorías</span>
+          </a>
+        </li>
+        <!-- Aquí añadirás más enlaces de admin (Productos, Unidades, Usuarios, etc.) -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/products" routerLinkActive="active">
+            <i class="bi bi-box-seam me-2"></i> <!-- Icono para productos -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Productos</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" routerLink="/productos" routerLinkActive="active">
-            <i class="bi bi-grid me-2"></i>
-            <span *ngIf="!sidebarService.isSidebarCollapsed">Productos</span>
+          <a class="nav-link" routerLink="/admin/units" routerLinkActive="active">
+            <i class="bi bi-rulers me-2"></i> <!-- Icono para unidades -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Unidades</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" routerLink="/carrito" routerLinkActive="active">
-            <i class="bi bi-cart me-2"></i>
-            <span *ngIf="!sidebarService.isSidebarCollapsed">Carrito</span>
+          <a class="nav-link" routerLink="/admin/tags" routerLinkActive="active">
+            <i class="bi bi-bookmark-star me-2"></i> <!-- Icono para tags -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Etiquetas</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/orders" routerLinkActive="active">
+            <i class="bi bi-card-list me-2"></i> <!-- Icono para pedidos -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Pedidos</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/customers" routerLinkActive="active">
+            <i class="bi bi-people me-2"></i> <!-- Icono para clientes -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Clientes</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/users" routerLinkActive="active">
+            <i class="bi bi-person-gear me-2"></i> <!-- Icono para usuarios -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Usuarios</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/coupons" routerLinkActive="active">
+            <i class="bi bi-ticket-percent me-2"></i> <!-- Icono para cupones -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Cupones</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/cities" routerLinkActive="active">
+            <i class="bi bi-building me-2"></i> <!-- Icono para ciudades -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Ciudades</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/neighborhoods" routerLinkActive="active">
+            <i class="bi bi-geo-alt me-2"></i> <!-- Icono para barrios -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Barrios</span>
           </a>
         </li>
       </ul>
-    </div>
+    </ng-container>
+    <!-- ***** FIN: SECCIÓN ADMIN ***** -->
+
   </div>
+</div>

@@ -10,6 +10,7 @@ import { PaymentSuccessComponent } from './features/payments/components/payment-
 import { PaymentFailureComponent } from './features/payments/components/payment-failure/payment-failure.component';
 import { PaymentPendingComponent } from './features/payments/components/payment-pending/payment-pending.component';
 import { AuthGuard } from './auth/guards/auth.guard';
+import { AdminGuard } from './auth/guards/admin.guard'; // <<<--- IMPORTAR AdminGuard
 
 const routes: Routes = [
   // --- Rutas sin Layout ---
@@ -35,7 +36,8 @@ const routes: Routes = [
       },
       {
         path: 'cart',
-        loadChildren: () => import('./features/cart/cart.module').then(m => m.CartModule)
+        loadChildren: () => import('./features/cart/cart.module').then(m => m.CartModule),
+        canActivate: [AuthGuard] // Proteger carrito si es necesario
       },
       {
         path: 'terms',
@@ -48,24 +50,29 @@ const routes: Routes = [
       {
         path: 'checkout',
         loadChildren: () => import('./features/checkout/checkout.module').then(m => m.CheckoutModule),
-        canActivate: [AuthGuard]
+        canActivate: [AuthGuard] // Proteger checkout
       },
-
       {
         path: 'my-orders',
-        loadChildren: () => import('./features/orders/orders.module').then(m => m.OrdersModule)
+        loadChildren: () => import('./features/orders/orders.module').then(m => m.OrdersModule),
+        canActivate: [AuthGuard] // Proteger historial de órdenes
       },
-
+      // --- Ruta Admin (Lazy Loaded y Protegida) ---
+      {
+        path: 'admin',
+        loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule),
+        canActivate: [AuthGuard, AdminGuard] // <<<--- APLICAR AuthGuard Y AdminGuard
+      },
       // --- Rutas de Callback de Pago ---
       { path: 'payment/success', component: PaymentSuccessComponent },
       { path: 'payment/failure', component: PaymentFailureComponent },
       { path: 'payment/pending', component: PaymentPendingComponent },
+      // Redirección por defecto DENTRO del layout
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },
 
-
-  // --- Ruta 404 ---
+  // --- Ruta 404 (al final) ---
   { path: '**', component: NotpagefoundComponent }
 ];
 
