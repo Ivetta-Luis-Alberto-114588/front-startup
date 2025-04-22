@@ -1,13 +1,13 @@
 // src/app/features/dashboard/home/home.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CategoryService } from '../../products/services/category/category.service';
-import { ProductService, PaginatedProductsResponse } from '../../products/services/product/product.service'; // Importar ProductService y PaginatedProductsResponse
+import { ProductService, PaginatedProductsResponse } from '../../products/services/product/product.service';
 import { ICategory } from '../../products/model/icategory';
 import { IProduct } from '../../products/model/iproduct';
-import { Observable, of } from 'rxjs'; // Importar Observable y of
-import { catchError, map, finalize } from 'rxjs/operators'; // Asegúrate de importar map y finalize
-import { CartService } from '../../cart/services/cart.service'; // Importa CartService
-import { NotificationService } from 'src/app/shared/services/notification.service'; // Importa NotificationService
+import { Observable, of } from 'rxjs';
+import { catchError, map, finalize, tap } from 'rxjs/operators'; // Importar tap
+import { CartService } from '../../cart/services/cart.service';
+import { NotificationService } from 'src/app/shared/services/notification.service';
 
 @Component({
   selector: 'app-home',
@@ -17,30 +17,26 @@ import { NotificationService } from 'src/app/shared/services/notification.servic
 export class HomeComponent implements OnInit {
 
   public listCategories: ICategory[] = [];
-  // Observables para productos destacados (inicializados con array vacío)
   public popularProducts$: Observable<IProduct[]> = of([]);
   public comboProducts$: Observable<IProduct[]> = of([]);
 
-  // Flags de carga y error para cada sección
   public isLoadingPopular = true;
   public isLoadingCombos = true;
   public errorPopular: string | null = null;
   public errorCombos: string | null = null;
-
-  // Para manejar el estado de "añadiendo" por producto
   public productsBeingAdded: { [productId: string]: boolean } = {};
 
   constructor(
     private categoryService: CategoryService,
-    private productService: ProductService, // Inyectar ProductService
-    private cartService: CartService, // Inyectar CartService
-    private notificationService: NotificationService // Inyectar NotificationService
+    private productService: ProductService,
+    private cartService: CartService,
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
     this.getAllCategories();
-    this.loadPopularProducts(); // Cargar productos populares
-    this.loadComboProducts();   // Cargar combos
+    this.loadPopularProducts();
+    this.loadComboProducts();
   }
 
   getAllCategories() {
@@ -51,56 +47,66 @@ export class HomeComponent implements OnInit {
   }
 
   loadPopularProducts() {
-    this.isLoadingPopular = true;
+    this.isLoadingPopular = true; // Inicia carga
     this.errorPopular = null;
-    // Llamar al servicio para buscar productos con tag 'popular', limitando a 4
     this.popularProducts$ = this.productService.searchProducts({ tags: 'popular', limit: 4 })
       .pipe(
-        map((response: PaginatedProductsResponse) => response.products), // Extraer solo el array de productos
-        catchError(err => {
-          console.error("Error cargando productos populares:", err);
-          this.errorPopular = "No se pudieron cargar los productos populares.";
-          return of([]); // Devolver un array vacío en caso de error
+        tap(() => console.log('Popular products request started...')), // Log inicio
+        map((response: PaginatedProductsResponse) => {
+          console.log('Popular products received:', response.products.length); // Log éxito
+          this.isLoadingPopular = false; // <-- Detener carga en éxito
+          return response.products;
         }),
-        finalize(() => this.isLoadingPopular = false) // Asegurar que el loading se quite
+        catchError(err => {
+          console.error("Error cargando productos populares:", err); // Log error
+          this.errorPopular = "No se pudieron cargar los productos populares.";
+          this.isLoadingPopular = false; // <-- Detener carga en error
+          return of([]); // Devolver array vacío para que el async pipe no falle
+        })
+        // finalize(() => { // Finalize es bueno, pero asegurémonos en map/catchError primero
+        //   console.log('Finalizing popular products stream');
+        //   this.isLoadingPopular = false;
+        // })
       );
   }
 
   loadComboProducts() {
-    this.isLoadingCombos = true;
+    this.isLoadingCombos = true; // Inicia carga
     this.errorCombos = null;
-    // Llamar al servicio para buscar productos con tag 'combo', limitando a 3
     this.comboProducts$ = this.productService.searchProducts({ tags: 'combo', limit: 3 })
       .pipe(
-        map((response: PaginatedProductsResponse) => response.products), // Extraer solo el array de productos
-        catchError(err => {
-          console.error("Error cargando combos:", err);
-          this.errorCombos = "No se pudieron cargar los combos.";
-          return of([]); // Devolver array vacío
+        tap(() => console.log('Combo products request started...')), // Log inicio
+        map((response: PaginatedProductsResponse) => {
+          console.log('Combo products received:', response.products.length); // Log éxito
+          this.isLoadingCombos = false; // <-- Detener carga en éxito
+          return response.products;
         }),
-        finalize(() => this.isLoadingCombos = false) // Asegurar que el loading se quite
+        catchError(err => {
+          console.error("Error cargando combos:", err); // Log error
+          this.errorCombos = "No se pudieron cargar los combos.";
+          this.isLoadingCombos = false; // <-- Detener carga en error
+          return of([]); // Devolver array vacío
+        })
+        // finalize(() => {
+        //   console.log('Finalizing combo products stream');
+        //   this.isLoadingCombos = false;
+        // })
       );
   }
 
-  // Método para añadir al carrito (similar al de ProductListComponent)
+  // Método addToCart (sin cambios respecto a la versión anterior)
   addToCart(product: IProduct): void {
     if (!product || this.productsBeingAdded[product.id]) return;
+    this.productsBeingAdded[product.id] = true;
 
-    this.productsBeingAdded[product.id] = true; // Marcar como añadiendo
-
-    this.cartService.addItem(product.id, 1).pipe( // Añadir 1 unidad por defecto desde la home
+    this.cartService.addItem(product.id, 1).pipe(
       finalize(() => {
-        // Este bloque se ejecuta siempre, al completar o al dar error
-        delete this.productsBeingAdded[product.id]; // Quitar marca de añadiendo
+        delete this.productsBeingAdded[product.id];
       })
     ).subscribe({
-      // next: (updatedCart) => { // No necesitas hacer nada en next si CartService ya notifica
-      // El servicio ya muestra la notificación de éxito
-      // },
-      error: (err) => { // El servicio ya muestra la notificación de error
+      // next: () => {}, // El servicio notifica
+      error: (err) => {
         console.error(`[HomeComponent] Error al añadir ${product.name} al carrito:`, err);
-        // Podrías querer mostrar un error específico aquí si el servicio no lo hace
-        // this.notificationService.showError(`No se pudo añadir ${product.name} al carrito.`);
       }
     });
   }
