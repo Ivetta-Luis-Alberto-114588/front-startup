@@ -50,7 +50,6 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        console.error("Error fetching my orders:", err);
         this.error = 'No se pudo cargar tu historial de pedidos. Intenta de nuevo más tarde.';
         // Usar el mensaje de error del backend si está disponible
         if (err.error && err.error.error) {

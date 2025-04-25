@@ -39,7 +39,6 @@ export class AdminProductService {
 
   getProducts(pagination: PaginationDto): Observable<PaginatedAdminProductsResponse> {
     const token = this.authService.getToken();
-    console.log('[AdminProductService] getProducts - Token actual:', token ? 'Token Existe' : 'NO HAY TOKEN');
     let params = new HttpParams()
       .set('page', pagination.page.toString())
       .set('limit', pagination.limit.toString());

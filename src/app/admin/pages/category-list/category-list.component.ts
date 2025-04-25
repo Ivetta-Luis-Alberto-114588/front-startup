@@ -67,7 +67,6 @@ export class CategoryListComponent implements OnInit, OnDestroy {
           this.totalItems = data.length; // Asumiendo que no hay paginación real en API aún
         },
         error: (err) => {
-          console.error("Error loading categories:", err);
           this.error = 'No se pudieron cargar las categorías.';
           this.notificationService.showError(this.error, 'Error');
         }
@@ -111,7 +110,6 @@ export class CategoryListComponent implements OnInit, OnDestroy {
           this.loadCategories(); // Recargar la lista
         },
         error: (err) => {
-          console.error(`Error deleting category ${categoryId}:`, err);
           const errorMsg = err.error?.error || 'No se pudo eliminar la categoría.';
           this.notificationService.showError(errorMsg, 'Error al Eliminar');
         }

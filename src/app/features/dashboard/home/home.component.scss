@@ -53,3 +53,39 @@
 .cta-section {
     background: linear-gradient(45deg, #007bff, #0056b3);
 }
+
+
+
+
+
+// estilos del dedo
+
+.pointing-hand-animation {
+    display: inline-block;
+    font-size: 2.5rem;
+    color: var(--bs-danger);
+
+    // --- AÑADIDO: Rotar el icono ---
+    transform: rotate(180deg);
+    // --- FIN AÑADIDO ---
+
+    animation-name: pointDownBounce;
+    animation-duration: 1.5s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+}
+
+@keyframes pointDownBounce {
+
+    0%,
+    100% {
+        // La rotación se mantiene, solo animamos translateY
+        transform: rotate(180deg) translateY(0);
+    }
+
+    50% {
+        // --- MODIFICADO: translateY negativo para mover "hacia arriba" en el eje rotado ---
+        transform: rotate(180deg) translateY(-6px); // Ajusta el valor negativo
+        // --- FIN MODIFICADO ---
+    }
+}

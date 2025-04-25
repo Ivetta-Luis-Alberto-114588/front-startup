@@ -55,7 +55,7 @@
                     </td>
                     <td>{{ product.name | titlecase }}</td>
                     <!-- Asegurar acceso seguro a category y name -->
-                    <td>{{ (product.category?.name | titlecase) || 'N/A' }}</td>
+                    <td>{{ (product.category.name | titlecase) || 'N/A' }}</td>
                     <!-- Asegurar que priceWithTax existe y es número -->
                     <td class="text-end">{{ product.priceWithTax | currency }}</td>
                     <!-- Asegurar que stock existe y es número -->

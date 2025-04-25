@@ -65,7 +65,6 @@ export class UnitFormComponent implements OnInit, OnDestroy {
           this.unitForm.patchValue(unit);
         },
         error: (err: HttpErrorResponse) => {
-          console.error(`Error loading unit ${id}:`, err);
           this.error = err.error?.error || `No se pudo cargar la unidad (Status: ${err.status}).`;
           this.notificationService.showError(this.error || 'Unknown error', 'Error');
           if (err.status === 404) {
@@ -103,7 +102,6 @@ export class UnitFormComponent implements OnInit, OnDestroy {
           this.router.navigate(['/admin/units']); // Volver a la lista
         },
         error: (err: HttpErrorResponse) => {
-          console.error("Error saving unit:", err);
           if (err.error && typeof err.error.error === 'string') {
             this.error = err.error.error;
           } else {

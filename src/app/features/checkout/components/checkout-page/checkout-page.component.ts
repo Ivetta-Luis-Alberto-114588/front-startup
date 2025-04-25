@@ -277,7 +277,6 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         return this.paymentService.createPaymentPreference(createdOrder.id);
       }),
       catchError(err => {
-        console.error('Error creando orden o preferencia:', err);
         const message = err.error?.error || err.message || 'Ocurrió un error al procesar tu pedido.';
         this.notificationService.showError(message, 'Error');
         this.isProcessingOrder = false;
@@ -293,7 +292,6 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
           this.cartService.clearCart().subscribe(); // Llama a la API para limpiar
           window.location.href = preference.preference.init_point;
         } else {
-          console.error('Respuesta de preferencia inválida:', preference);
           this.notificationService.showError('No se pudo iniciar el proceso de pago.', 'Error');
         }
       }

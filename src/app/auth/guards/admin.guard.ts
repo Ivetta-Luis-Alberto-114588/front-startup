@@ -28,11 +28,9 @@ export class AdminGuard implements CanActivate {
         const isAdmin = !!user && user.role?.includes('ADMIN_ROLE');
 
         if (isAdmin) {
-          console.log('AdminGuard: Acceso permitido.');
           return true; // Permitir acceso si es admin
         } else {
           // Si no es admin, mostrar notificación y redirigir
-          console.warn('AdminGuard: Acceso denegado. Rol ADMIN requerido.');
           this.notificationService.showError('No tienes permisos para acceder a esta sección.', 'Acceso Denegado');
           // Redirigir al dashboard o a donde consideres apropiado
           return this.router.createUrlTree(['/dashboard']);

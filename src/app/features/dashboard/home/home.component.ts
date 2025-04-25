@@ -66,21 +66,17 @@ export class HomeComponent implements OnInit {
     this.popularSubscription = this.productService.searchProducts({ tags: 'popular', limit: 4 })
       .subscribe({
         next: (response) => {
-          console.log('RESPUESTA POPULAR RECIBIDA:', response.products.length);
           this.popularProducts$ = of(response.products);
           this.isLoadingPopular = false;
         },
         error: (err) => {
-          console.error("ERROR POPULAR RECIBIDO:", err);
           this.errorPopular = "No se pudieron cargar los productos populares.";
           this.isLoadingPopular = false;
           this.popularProducts$ = of([]);
         },
         complete: () => {
-          console.log('Observable Popular completado');
           if (this.isLoadingPopular) {
             this.isLoadingPopular = false;
-            console.warn("isLoadingPopular forzado a false en complete()");
           }
         }
       });
@@ -93,21 +89,17 @@ export class HomeComponent implements OnInit {
     this.comboSubscription = this.productService.searchProducts({ tags: 'combo', limit: 3 })
       .subscribe({
         next: (response) => {
-          console.log('RESPUESTA COMBOS RECIBIDA:', response.products.length);
           this.comboProducts$ = of(response.products);
           this.isLoadingCombos = false;
         },
         error: (err) => {
-          console.error("ERROR COMBOS RECIBIDO:", err);
           this.errorCombos = "No se pudieron cargar los combos.";
           this.isLoadingCombos = false;
           this.comboProducts$ = of([]);
         },
         complete: () => {
-          console.log('Observable Combos completado');
           if (this.isLoadingCombos) {
             this.isLoadingCombos = false;
-            console.warn("isLoadingCombos forzado a false en complete()");
           }
         }
       });
@@ -134,7 +126,6 @@ export class HomeComponent implements OnInit {
       finalize(() => { delete this.productsBeingAdded[product.id]; })
     ).subscribe({
       error: (err) => {
-        console.error(`[HomeComponent] Error al añadir ${product.name} al carrito:`, err);
       }
     });
   }

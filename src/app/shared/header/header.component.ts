@@ -40,12 +40,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
 
     // *** AÑADIR ESTA SUSCRIPCIÓN PARA DEBUG ***
-    console.log('HeaderComponent OnInit: Verificando estado inicial...');
     this.authSub = this.authService.isAuthenticated$.pipe(
       tap(isAuth => console.log('>>> HeaderComponent - isAuthenticated$ emitió:', isAuth))
     ).subscribe();
     // Loguear también el valor síncrono inicial (puede ser diferente si aún no se carga de localStorage)
-    console.log('>>> HeaderComponent - Valor síncrono inicial authService.isAuthenticated():', this.authService.isAuthenticated());
     // *** FIN DEBUG ***
   }
 

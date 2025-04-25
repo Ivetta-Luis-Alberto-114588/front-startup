@@ -62,7 +62,6 @@ export class CouponListComponent implements OnInit, OnDestroy {
           this.totalItems = data.length; // Ajustar si la API devuelve paginación real
         },
         error: (err) => {
-          console.error("Error loading coupons:", err);
           this.error = 'No se pudieron cargar los cupones.';
           this.notificationService.showError(this.error, 'Error');
         }
@@ -106,7 +105,6 @@ export class CouponListComponent implements OnInit, OnDestroy {
           this.loadCoupons(); // Recargar la lista
         },
         error: (err) => {
-          console.error(`Error deleting coupon ${couponId}:`, err);
           const errorMsg = err.error?.error || 'No se pudo eliminar el cupón.';
           this.notificationService.showError(errorMsg, 'Error al Eliminar');
         }

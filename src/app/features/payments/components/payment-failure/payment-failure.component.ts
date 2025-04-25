@@ -22,7 +22,6 @@ export class PaymentFailureComponent implements OnInit, OnDestroy { // Implement
       // Obtener el valor del parámetro 'saleId' de la URL
       this.orderId = params.get('saleId');
       // Opcional: Log para verificar
-      console.log('PaymentFailureComponent - Order ID from URL:', this.orderId);
     });
   }
 

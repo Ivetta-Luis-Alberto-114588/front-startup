@@ -62,7 +62,6 @@ export class NeighborhoodListComponent implements OnInit, OnDestroy {
           this.totalItems = data.length; // Ajustar si la API devuelve paginación real
         },
         error: (err) => {
-          console.error("Error loading neighborhoods:", err);
           this.error = 'No se pudieron cargar los barrios.';
           this.notificationService.showError(this.error, 'Error');
         }
@@ -106,7 +105,6 @@ export class NeighborhoodListComponent implements OnInit, OnDestroy {
           this.loadNeighborhoods(); // Recargar la lista
         },
         error: (err) => {
-          console.error(`Error deleting neighborhood ${neighborhoodId}:`, err);
           const errorMsg = err.error?.error || 'No se pudo eliminar el barrio.';
           this.notificationService.showError(errorMsg, 'Error al Eliminar');
         }

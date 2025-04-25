@@ -155,7 +155,6 @@ export class CartService {
       return throwError(() => new Error('Carrito no encontrado')); // Devolvemos un error simple que getCart puede manejar
     }
 
-    console.error(`Error en ${operation}:`, error);
     this.notificationService.showError(userMessage, 'Error en Carrito');
 
     // Propagar el error para que el componente que llamó también pueda reaccionar si es necesario
@@ -171,7 +170,6 @@ export class CartService {
       this.getCart().subscribe({
         error: (err) => {
           // El error ya se maneja en handleError, pero podríamos loguear aquí si falla la carga inicial
-          console.warn('No se pudo cargar el carrito inicial:', err.message);
         }
       });
     } else {

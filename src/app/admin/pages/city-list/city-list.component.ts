@@ -62,7 +62,6 @@ export class CityListComponent implements OnInit, OnDestroy {
           this.totalItems = data.length; // Ajustar si la API devuelve paginación real
         },
         error: (err) => {
-          console.error("Error loading cities:", err);
           this.error = 'No se pudieron cargar las ciudades.';
           this.notificationService.showError(this.error, 'Error');
         }
@@ -106,7 +105,6 @@ export class CityListComponent implements OnInit, OnDestroy {
           this.loadCities(); // Recargar la lista
         },
         error: (err) => {
-          console.error(`Error deleting city ${cityId}:`, err);
           const errorMsg = err.error?.error || 'No se pudo eliminar la ciudad.';
           this.notificationService.showError(errorMsg, 'Error al Eliminar');
         }

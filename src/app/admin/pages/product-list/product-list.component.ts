@@ -61,12 +61,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: PaginatedAdminProductsResponse) => {
           this.products = response.products;
-          console.log('Productos cargados:', response);
           this.totalItems = response.total;
           // Calcular totalPages si es necesario para la UI
         },
         error: (err) => {
-          console.error("Error loading products:", err);
           this.error = 'No se pudieron cargar los productos.';
           this.notificationService.showError(this.error, 'Error');
         }
@@ -113,7 +111,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
           // Opcional: this.loadProducts(); // Si prefieres recargar
         },
         error: (err) => {
-          console.error(`Error deleting product ${productId}:`, err);
           const errorMsg = err.error?.error || 'No se pudo eliminar el producto.';
           this.notificationService.showError(errorMsg, 'Error al Eliminar');
         }

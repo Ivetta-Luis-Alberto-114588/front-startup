@@ -24,8 +24,6 @@ export class AuthInterceptor implements HttpInterceptor {
     // Obtener el token de autenticación
     const token = this.authService.getToken();
 
-    console.log('[AuthInterceptor] Intercepting:', request.url); // <-- LOG URL
-    console.log('[AuthInterceptor] Token found:', token ? 'Yes' : 'No'); // <-- LOG TOKEN EXISTENCE
 
     // Si hay un token, adjuntarlo al header de la solicitud
     if (token) {
@@ -34,17 +32,13 @@ export class AuthInterceptor implements HttpInterceptor {
           Authorization: `Bearer ${token}`
         }
       });
-      console.log('[AuthInterceptor] Authorization header added.'); // <-- LOG HEADER ADDED
     } else {
-      console.warn('[AuthInterceptor] No token found, header not added.'); // <-- LOG NO TOKEN
     }
 
     // Continuar con la solicitud modificada
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
-        console.error('[AuthInterceptor] HTTP Error:', error.status, error.url); // <-- LOG ERROR STATUS
         if (error.status === 401) {
-          console.warn('[AuthInterceptor] Received 401, logging out...'); // <-- LOG LOGOUT
           this.authService.logout();
         }
         return throwError(() => error);

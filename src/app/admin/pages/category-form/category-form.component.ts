@@ -67,7 +67,6 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
           this.categoryForm.patchValue(category); // Rellenar formulario con datos existentes
         },
         error: (err: HttpErrorResponse) => { // Tipar el error
-          console.error(`Error loading category ${id}:`, err);
           // Intentar obtener el mensaje del backend
           this.error = err.error?.error || `No se pudo cargar la categoría (Status: ${err.status}).`;
           this.notificationService.showError(this.error ?? 'Unknown error occurred', 'Error');
@@ -107,7 +106,6 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
           this.router.navigate(['/admin/categories']); // Volver a la lista
         },
         error: (err: HttpErrorResponse) => { // Tipar el error
-          console.error("Error saving category:", err);
           // --- CORRECCIÓN AQUÍ ---
           // Ya no usamos 'instanceof CustomError'
           // Intentamos obtener el mensaje específico del backend desde err.error.error

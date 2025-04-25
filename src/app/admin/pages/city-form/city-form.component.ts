@@ -65,7 +65,6 @@ export class CityFormComponent implements OnInit, OnDestroy {
           this.cityForm.patchValue(city);
         },
         error: (err: HttpErrorResponse) => {
-          console.error(`Error loading city ${id}:`, err);
           this.error = err.error?.error || `No se pudo cargar la ciudad (Status: ${err.status}).`;
           this.notificationService.showError(this.error ?? 'Unknown error occurred', 'Error');
           if (err.status === 404) {
@@ -103,7 +102,6 @@ export class CityFormComponent implements OnInit, OnDestroy {
           this.router.navigate(['/admin/cities']);
         },
         error: (err: HttpErrorResponse) => {
-          console.error("Error saving city:", err);
           if (err.error && typeof err.error.error === 'string') {
             this.error = err.error.error;
           } else {

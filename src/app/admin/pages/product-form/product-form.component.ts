@@ -118,7 +118,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.availableTags = tags.filter(t => t.isActive).sort((a, b) => a.name.localeCompare(b.name)); // Filtrar activas y ordenar
         },
         error: (err) => {
-          console.error("Error loading dependencies:", err);
           this.notificationService.showError('Error al cargar datos necesarios (categorías, unidades o tags).', 'Error');
           this.error = 'No se pudieron cargar todos los datos necesarios.';
           // No finalizar isLoading aquí si estamos en modo edición
@@ -148,7 +147,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.existingImageUrl = product.imgUrl || null; // Guardar URL existente
         },
         error: (err: HttpErrorResponse) => {
-          console.error(`Error loading product ${id}:`, err);
           this.error = err.error?.error || `No se pudo cargar el producto (Status: ${err.status}).`;
           this.notificationService.showError(this.error ?? "Unknown Error", 'Error');
           if (err.status === 404) {
@@ -242,7 +240,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
           this.router.navigate(['/admin/products']); // Volver a la lista
         },
         error: (err: HttpErrorResponse) => {
-          console.error("Error saving product:", err);
           if (err.error && typeof err.error.error === 'string') {
             this.error = err.error.error;
           } else {

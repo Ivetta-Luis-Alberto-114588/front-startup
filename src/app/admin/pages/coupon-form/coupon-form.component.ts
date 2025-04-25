@@ -109,7 +109,6 @@ export class CouponFormComponent implements OnInit, OnDestroy {
           this.couponForm.patchValue(formattedCoupon);
         },
         error: (err: HttpErrorResponse) => {
-          console.error(`Error loading coupon ${id}:`, err);
           this.error = err.error?.error || `No se pudo cargar el cupón (Status: ${err.status}).`;
           this.notificationService.showError(this.error ?? "Unknown error", 'Error');
           if (err.status === 404) {
@@ -164,7 +163,6 @@ export class CouponFormComponent implements OnInit, OnDestroy {
           this.router.navigate(['/admin/coupons']);
         },
         error: (err: HttpErrorResponse) => {
-          console.error("Error saving coupon:", err);
           if (err.error && typeof err.error.error === 'string') {
             this.error = err.error.error;
           } else {

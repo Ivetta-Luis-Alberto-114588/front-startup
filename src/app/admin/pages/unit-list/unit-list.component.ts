@@ -66,7 +66,6 @@ export class UnitListComponent implements OnInit, OnDestroy {
           this.totalItems = data.length; // Asumiendo que no hay paginación real en API aún
         },
         error: (err) => {
-          console.error("Error loading units:", err);
           this.error = 'No se pudieron cargar las unidades de medida.';
           this.notificationService.showError(this.error, 'Error');
         }
@@ -110,7 +109,6 @@ export class UnitListComponent implements OnInit, OnDestroy {
           this.loadUnits(); // Recargar la lista
         },
         error: (err) => {
-          console.error(`Error deleting unit ${unitId}:`, err);
           const errorMsg = err.error?.error || 'No se pudo eliminar la unidad.';
           this.notificationService.showError(errorMsg, 'Error al Eliminar');
         }

@@ -138,7 +138,6 @@ export class CartPageComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         // El servicio ya muestra la notificación de error
-        console.error('Error al vaciar el carrito:', err);
         this.clearingCart = false; // Resetear estado en caso de error
       },
       complete: () => {

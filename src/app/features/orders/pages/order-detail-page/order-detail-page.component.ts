@@ -47,7 +47,6 @@ export class OrderDetailPageComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       },
       error: (err) => {
-        console.error("Error fetching order details:", err);
         this.error = 'No se pudo cargar el detalle del pedido.';
         if (err.error && err.error.error) {
           this.error = err.error.error;

@@ -62,7 +62,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
           this.getCategoryDetails(this.idCategory);
           this.loadProducts();
         } else if (!newCategoryId) {
-          console.error('[ProductList] No se encontró idCategory en la ruta.');
           this.error = "Categoría no especificada en la URL.";
           this.isLoading = false;
         }
@@ -86,7 +85,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
     this.productService.getProductsByCategory(this.idCategory, pagination).pipe(
       catchError(err => {
-        console.error('[ProductList] Error fetching products by category:', err);
         this.error = 'Error al cargar los productos. Por favor, intente más tarde.';
         this.listProducts = [];
         this.totalItems = 0;
@@ -114,7 +112,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.categoryService.getCategoryById(id).subscribe({
       next: (data: ICategory) => { this.category = data; },
       error: (error) => {
-        console.error('[ProductList] Error fetching category details:', error);
         this.category = { id: '', name: 'Categoría Desconocida', description: 'No se pudo cargar la información.', isActive: false };
       }
     });
@@ -124,7 +121,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
     if (this.idCategory && productId) {
       this.router.navigate(['/products', this.idCategory, productId]);
     } else {
-      console.error("[ProductList] No se puede navegar al detalle: falta idCategory o productId.", { category: this.idCategory, product: productId });
       this.error = "No se pudo abrir el detalle del producto.";
     }
   }

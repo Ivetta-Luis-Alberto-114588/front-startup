@@ -47,7 +47,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
         if (productId) {
           return this.productService.getProductsById(productId).pipe(
             catchError(err => {
-              console.error('Error fetching product details:', err);
               if (err.status === 404) {
                 this.error = 'Producto no encontrado.';
               } else {

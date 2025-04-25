@@ -63,7 +63,6 @@ export class TagListComponent implements OnInit, OnDestroy {
           this.totalItems = data.length; // Ajustar si la API devuelve paginación real
         },
         error: (err) => {
-          console.error("Error loading tags:", err);
           this.error = 'No se pudieron cargar las etiquetas.';
           this.notificationService.showError(this.error, 'Error');
         }
@@ -107,7 +106,6 @@ export class TagListComponent implements OnInit, OnDestroy {
           this.loadTags(); // Recargar la lista
         },
         error: (err) => {
-          console.error(`Error deleting tag ${tagId}:`, err);
           const errorMsg = err.error?.error || 'No se pudo eliminar la etiqueta.';
           this.notificationService.showError(errorMsg, 'Error al Eliminar');
         }

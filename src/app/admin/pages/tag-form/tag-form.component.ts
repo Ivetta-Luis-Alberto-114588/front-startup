@@ -71,7 +71,6 @@ export class TagFormComponent implements OnInit, OnDestroy {
           });
         },
         error: (err: HttpErrorResponse) => {
-          console.error(`Error loading tag ${id}:`, err);
           this.error = err.error?.error || `No se pudo cargar la etiqueta (Status: ${err.status}).`;
           this.notificationService.showError(this.error ?? 'Unknown error occurred', 'Error');
           if (err.status === 404) {
@@ -121,7 +120,6 @@ export class TagFormComponent implements OnInit, OnDestroy {
           this.router.navigate(['/admin/tags']); // Volver a la lista
         },
         error: (err: HttpErrorResponse) => {
-          console.error("Error saving tag:", err);
           if (err.error && typeof err.error.error === 'string') {
             this.error = err.error.error;
           } else {

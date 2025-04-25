@@ -70,7 +70,6 @@ export class RegisterComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         // ... (código existente de error) ...
         this.isLoading = false;
-        console.error('Error en el registro (Full Response):', err);
         let errorMessage = 'Ocurrió un error inesperado. Inténtalo de nuevo.'; // Default
         // ... (lógica para extraer mensaje de error) ...
         this.error = errorMessage;

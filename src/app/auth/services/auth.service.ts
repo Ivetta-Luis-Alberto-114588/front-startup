@@ -61,7 +61,6 @@ export class AuthService {
           localStorage.removeItem('user');
         }
       } catch (e) {
-        console.error('Error parsing user from localStorage:', e);
         localStorage.removeItem('user');
       }
     }
@@ -75,30 +74,24 @@ export class AuthService {
 
 
   login(email: string, password: string): Observable<any> {
-    console.log('%c[AuthService] login: Iniciando petición...', 'color: magenta;');
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password })
       .pipe(
         tap(response => {
-          console.log('%c[AuthService] login: Respuesta recibida del backend:', 'color: magenta;', response);
           // Estructura específica donde el token está dentro del objeto user
           if (response && typeof response === 'object' && response.user && typeof response.user === 'object' && typeof response.user.token === 'string') {
-            console.log('%c[AuthService] login: Token encontrado en respuesta. Llamando a storeToken y storeUser...', 'color: magenta;');
             const token = response.user.token;
             const userData = response.user;
             this.storeToken(token); // <--- Llamada clave
             const { token: _, ...userWithoutToken } = userData;
             this.storeUser(userWithoutToken); // <--- Llamada clave
             this.isAuthenticatedSubject.next(true);
-            console.log('%c[AuthService] login: Estado de autenticación actualizado a true.', 'color: magenta;');
           } else {
-            console.warn('%c[AuthService] login: La estructura de la respuesta de login no es la esperada.', 'color: orange;', response);
             // Considerar lanzar un error o manejarlo de otra forma
             // throw new Error('Respuesta de login inválida'); // Podría ser una opción
           }
         }),
         // Añadir catchError aquí si quieres manejar errores específicos del login en el servicio
         catchError(err => {
-          console.error('%c[AuthService] login: Error en la petición HTTP.', 'color: red;', err);
           // Limpiar estado si falla el login? Podría ser, pero el componente ya maneja el error.
           // this.isAuthenticatedSubject.next(false);
           // localStorage.removeItem('token');
@@ -148,26 +141,19 @@ export class AuthService {
   }
 
   private storeToken(token: string): void {
-    console.log('%c[AuthService] storeToken: Intentando guardar token...', 'color: blue;'); // Log inicio
     this.token = token;
     try {
       localStorage.setItem('token', token);
       // Verificar inmediatamente después de guardar
       const storedToken = localStorage.getItem('token');
       if (storedToken === token) {
-        console.log('%c[AuthService] storeToken: Token guardado CORRECTAMENTE en localStorage.', 'color: green;');
       } else {
-        console.error('%c[AuthService] storeToken: ¡FALLO AL VERIFICAR! El token en localStorage no coincide o es null.', 'color: red;');
-        console.log('Token que se intentó guardar:', token);
-        console.log('Token encontrado en localStorage:', storedToken);
       }
     } catch (e) {
-      console.error('%c[AuthService] storeToken: ¡ERROR AL GUARDAR en localStorage!', 'color: red;', e);
     }
   }
 
   private storeUser(user: User): void {
-    console.log('%c[AuthService] storeUser: Intentando guardar usuario...', 'color: blue;', user); // Log inicio
     this.user = user;
     this.userSubject.next(user); // Actualizar observable
     try {
@@ -175,12 +161,9 @@ export class AuthService {
       // Verificar inmediatamente después de guardar
       const storedUser = localStorage.getItem('user');
       if (storedUser && JSON.stringify(user) === storedUser) {
-        console.log('%c[AuthService] storeUser: Usuario guardado CORRECTAMENTE en localStorage.', 'color: green;');
       } else {
-        console.error('%c[AuthService] storeUser: ¡FALLO AL VERIFICAR! El usuario en localStorage no coincide o es null.', 'color: red;');
       }
     } catch (e) {
-      console.error('%c[AuthService] storeUser: ¡ERROR AL GUARDAR usuario en localStorage!', 'color: red;', e);
     }
   }
 }

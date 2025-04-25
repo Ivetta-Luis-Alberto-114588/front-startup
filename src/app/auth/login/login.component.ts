@@ -39,7 +39,6 @@ export class LoginComponent implements OnInit, OnDestroy { // Implementar OnDest
     // Obtener la URL de retorno de los query params
     this.queryParamsSubscription = this.route.queryParamMap.subscribe(params => {
       this.returnUrl = params.get('returnUrl') || '/dashboard';
-      console.log('LoginComponent - returnUrl:', this.returnUrl);
     });
   }
 
@@ -56,13 +55,11 @@ export class LoginComponent implements OnInit, OnDestroy { // Implementar OnDest
 
       this.authService.login(email, password).subscribe({
         next: (response) => {
-          console.log('Login exitoso, buscando acción pendiente...');
           // --- PROCESAR ACCIÓN PENDIENTE DEL CARRITO ---
           this.processPendingCartAction();
           // --- FIN PROCESAR ACCIÓN PENDIENTE ---
         },
         error: (err) => {
-          console.error('Login error:', err);
           this.isLoading = false;
           if (err.error && err.error.message) {
             this.error = err.error.message;
@@ -92,7 +89,6 @@ export class LoginComponent implements OnInit, OnDestroy { // Implementar OnDest
       try {
         const pendingAction = JSON.parse(pendingActionString);
         if (pendingAction && pendingAction.productId && pendingAction.quantity) {
-          console.log('Acción pendiente encontrada:', pendingAction);
           this.notificationService.showInfo('Añadiendo producto al carrito...');
 
           this.cartService.addItem(pendingAction.productId, pendingAction.quantity).pipe(
@@ -100,31 +96,25 @@ export class LoginComponent implements OnInit, OnDestroy { // Implementar OnDest
           ).subscribe({
             next: () => {
               this.notificationService.showSuccess('Producto añadido al carrito.');
-              console.log('Producto añadido, redirigiendo a:', this.returnUrl);
               this.isLoading = false; // Detener loading general
               this.router.navigateByUrl(this.returnUrl);
             },
             error: (cartErr) => {
-              console.error('Error al añadir producto pendiente al carrito:', cartErr);
               // El CartService ya debería haber mostrado un error
               // this.notificationService.showError('No se pudo añadir el producto pendiente al carrito.');
               this.isLoading = false; // Detener loading general
-              console.log('Error añadiendo, redirigiendo a:', this.returnUrl);
               this.router.navigateByUrl(this.returnUrl); // Redirigir igualmente
             }
           });
           // NO redirigir aquí, esperar a que addItem termine
           return; // Salir para no ejecutar la redirección de abajo
         } else {
-          console.warn('Datos de acción pendiente inválidos:', pendingAction);
         }
       } catch (e) {
-        console.error('Error parseando acción pendiente:', e);
       }
     }
 
     // Si no había acción pendiente o hubo error al procesarla, redirigir
-    console.log('No hay acción pendiente o error al procesarla, redirigiendo a:', this.returnUrl);
     this.isLoading = false; // Detener loading general
     this.router.navigateByUrl(this.returnUrl);
   }

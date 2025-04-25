@@ -28,7 +28,6 @@ export class AuthGuard implements CanActivate {
       return true;
     } else {
       // Si no hay token, redirige a login
-      console.warn('AuthGuard: Acceso denegado, no hay token. Redirigiendo a login.');
       this.notificationService.showWarning('Debes iniciar sesión para acceder a esta página.', 'Acceso Requerido');
       // Guarda la URL a la que intentaba ir para redirigir después del login
       return this.router.createUrlTree(['/auth/login'], { queryParams: { returnUrl: state.url } });

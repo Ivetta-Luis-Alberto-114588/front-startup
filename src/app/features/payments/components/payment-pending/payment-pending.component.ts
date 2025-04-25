@@ -22,7 +22,6 @@ export class PaymentPendingComponent implements OnInit, OnDestroy { // Implement
       // Obtener el valor del parámetro 'saleId' de la URL
       this.orderId = params.get('saleId');
       // Opcional: Log para verificar
-      console.log('PaymentPendingComponent - Order ID from URL:', this.orderId);
     });
   }
 

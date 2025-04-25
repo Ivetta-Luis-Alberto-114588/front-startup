@@ -78,7 +78,6 @@ export class NeighborhoodFormComponent implements OnInit, OnDestroy {
           this.cities = data.sort((a, b) => a.name.localeCompare(b.name)); // Ordenar alfabéticamente
         },
         error: (err) => {
-          console.error("Error loading cities:", err);
           this.notificationService.showError('No se pudieron cargar las ciudades para seleccionar.', 'Error');
         }
       });
@@ -97,7 +96,6 @@ export class NeighborhoodFormComponent implements OnInit, OnDestroy {
           });
         },
         error: (err: HttpErrorResponse) => {
-          console.error(`Error loading neighborhood ${id}:`, err);
           this.error = err.error?.error || `No se pudo cargar el barrio (Status: ${err.status}).`;
           this.notificationService.showError(this.error ?? 'Unknown error occurred', 'Error');
           if (err.status === 404) {
@@ -135,7 +133,6 @@ export class NeighborhoodFormComponent implements OnInit, OnDestroy {
           this.router.navigate(['/admin/neighborhoods']);
         },
         error: (err: HttpErrorResponse) => {
-          console.error("Error saving neighborhood:", err);
           if (err.error && typeof err.error.error === 'string') {
             this.error = err.error.error;
           } else {
