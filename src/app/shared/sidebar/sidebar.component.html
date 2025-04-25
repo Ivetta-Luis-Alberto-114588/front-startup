@@ -68,6 +68,16 @@
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Categorías</span>
           </a>
         </li>
+
+        <!-- === NUEVO ENLACE PARA UNIDADES === -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/units" routerLinkActive="active">
+            <i class="bi bi-rulers me-2"></i> <!-- Icono para unidades -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Unidades</span>
+          </a>
+        </li>
+        <!-- === FIN NUEVO ENLACE === -->
+
         <!-- Aquí añadirás más enlaces de admin (Productos, Unidades, Usuarios, etc.) -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/products" routerLinkActive="active">

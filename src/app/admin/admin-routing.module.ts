@@ -3,6 +3,9 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CategoryListComponent } from './pages/category-list/category-list.component';
 import { CategoryFormComponent } from './pages/category-form/category-form.component';
+// --- IMPORTAR COMPONENTES DE UNIDAD ---
+import { UnitListComponent } from './pages/unit-list/unit-list.component';
+import { UnitFormComponent } from './pages/unit-form/unit-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -23,13 +26,31 @@ const routes: Routes = [
     component: CategoryFormComponent
   },
 
-  // Ruta por defecto si se entra a /admin sin subruta específica
-  { path: '', redirectTo: 'categories', pathMatch: 'full' }, // Redirige a la lista de categorías por defecto
+  // --- RUTAS PARA UNIDADES ---
+  {
+    path: 'units', // -> /admin/units
+    component: UnitListComponent
+  },
+  {
+    path: 'units/new', // -> /admin/units/new
+    component: UnitFormComponent
+  },
+  {
+    path: 'units/edit/:id', // -> /admin/units/edit/456
+    component: UnitFormComponent
+  },
+  // --- FIN RUTAS UNIDADES ---
 
-  // Aquí añadirás las rutas para Productos, Unidades, Usuarios, etc.
+  // Ruta por defecto si se entra a /admin sin subruta específica
+  // Cambiar a un dashboard si lo creas, o mantener categorías
+  { path: '', redirectTo: 'categories', pathMatch: 'full' },
+
+  // Aquí añadirás las rutas para Productos, Tags, Usuarios, etc.
   // { path: 'products', component: ProductListComponent },
   // { path: 'products/new', component: ProductFormComponent },
   // { path: 'products/edit/:id', component: ProductFormComponent },
+  // { path: 'tags', component: TagListComponent },
+  // ...
 ];
 
 @NgModule({
