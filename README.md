@@ -35,16 +35,22 @@
 * **Manejo de Callbacks de Pago:**
   * Páginas dedicadas para mostrar mensajes de Éxito, Fallo o Pendiente tras la redirección desde Mercado Pago.
 * **Interfaz de Administración (CRUDs):**
-  * **Módulo Admin (`/admin`):** Sección protegida por rol (`AdminGuard` - *pendiente de implementación completa*).
+  * **Módulo Admin (`/admin`):** Sección protegida por rol (`AdminGuard` implementado).
   * **Gestión de Categorías:** Listar, Crear, Editar, Eliminar.
-  * **(Próximamente):** CRUDs para Unidades, Tags, Ciudades, Barrios, Productos (con subida de imagen), Cupones, Clientes, Usuarios y gestión de Pedidos.
+  * **Gestión de Unidades de Medida:** Listar, Crear, Editar, Eliminar.
+  * **Gestión de Etiquetas (Tags):** Listar, Crear, Editar, Eliminar.
+  * **Gestión de Ciudades:** Listar, Crear, Editar, Eliminar.
+  * **Gestión de Barrios:** Listar, Crear, Editar, Eliminar (depende de Ciudad).
+  * **Gestión de Productos:** Listar, Crear, Editar, Eliminar (incluye subida/gestión de imágenes y selección de Categoría, Unidad, Tags).
+  * **Gestión de Cupones:** Listar, Crear, Editar, Eliminar.
+  * **(Próximamente):** Gestión de Clientes, Usuarios (roles) y Pedidos (estados).
 * **UI/UX:**
   * Notificaciones visuales (Toastr) para feedback al usuario (éxito, error, info).
   * Indicadores de carga (spinners) durante operaciones asíncronas.
   * Diseño basado en Bootstrap con componentes NgBootstrap.
   * Navegación fluida con `RouterModule`.
-  * Sidebar y Header interactivos.
-  * Páginas estáticas (Términos y Condiciones, Política de Privacidad).
+  * Sidebar y Header interactivos y dinámicos según autenticación/rol.
+  * Páginas estáticas (Términos y Condiciones, Política de Privacidad) con botón "Volver".
 
 ## 🛠️ Tecnologías Utilizadas
 
@@ -79,13 +85,13 @@ El proyecto sigue una estructura modular estándar de Angular:
   * `payments/`: Componentes de callback de pago.
   * `products/`: Listado y detalle de productos.
 * **`admin/`**: Módulo (lazy loaded) para la interfaz de administración.
-  * `pages/`: Componentes de las páginas CRUD (List, Form).
-  * `services/`: Servicios para interactuar con la API de admin.
-  * `guards/`: Guardia para proteger el acceso a admin.
+  * `pages/`: Componentes de las páginas CRUD (List, Form) para Categorías, Unidades, Tags, Ciudades, Barrios, Productos, Cupones.
+  * `services/`: Servicios para interactuar con la API de admin (AdminCategoryService, AdminUnitService, etc.).
+  * `guards/`: `AdminGuard` para proteger el acceso a `/admin`.
 * **`shared/`**: Módulo con componentes, servicios, modelos y pipes reutilizables.
   * `components/`: Componentes comunes (Notpagefound).
   * `header/`, `sidebar/`, `layouts/`: Componentes de la estructura visual.
-  * `models/`: Interfaces comunes (IUser).
+  * `models/`: Interfaces comunes (IUser, ICoupon, etc.).
   * `pages/`: Páginas estáticas (Términos, Privacidad).
   * `services/`: Servicios compartidos (NotificationService).
   * `dtos/`: DTOs compartidos (PaginationDto).
@@ -117,17 +123,17 @@ El proyecto sigue una estructura modular estándar de Angular:
      ```typescript
      export const environment = {
        production: false,
-       apiUrl: 'http://localhost:3000' // <-- URL de tu API Backend local
+       apiUrl: 'http://localhost:3000' // <-- URL de tu API Backend local (VERIFICA EL PUERTO)
      };
      ```
    * Edita el archivo `src/environments/environment.prod.ts` para producción:
      ```typescript
      export const environment = {
        production: true,
-       apiUrl: 'https://tu-api-backend-en-produccion.com' // <-- URL de tu API Backend en producción
+       apiUrl: 'https://sistema-mongo.onrender.com' // <-- URL de tu API Backend en producción (YA LA TIENES)
      };
      ```
-   * **Importante:** Asegúrate de que la `apiUrl` en `environment.ts` coincida con la URL donde se está ejecutando tu backend localmente (probablemente `http://localhost:PORT`, donde `PORT` es el puerto configurado en el `.env` del backend, por defecto 3000).
+   * **Importante:** Asegúrate de que la `apiUrl` en `environment.ts` coincida con la URL donde se está ejecutando tu backend localmente.
 
 ## ▶️ Ejecutar la Aplicación
 
@@ -151,7 +157,7 @@ El proyecto sigue una estructura modular estándar de Angular:
   ```
 
   * Los archivos compilados se encontrarán en el directorio `dist/<nombre-del-proyecto>/`.
-  * Estos archivos estáticos (HTML, CSS, JS) deben ser desplegados en un servidor web (como Nginx, Apache, Firebase Hosting, Netlify, Vercel, etc.).
+  * Estos archivos estáticos (HTML, CSS, JS) deben ser desplegados en un servidor web.
 
 ## 🌐 Flujo de Autenticación
 
@@ -162,27 +168,34 @@ El proyecto sigue una estructura modular estándar de Angular:
 5. `AuthService` almacena el token y la información del usuario (sin el token) en `localStorage`.
 6. `AuthService` actualiza los `BehaviorSubject` (`isAuthenticatedSubject`, `userSubject`).
 7. El `AuthInterceptor` adjuntará el token (`Bearer <token>`) a las cabeceras `Authorization` de las peticiones HTTP subsiguientes a la API.
-8. El `AuthGuard` verifica la presencia del token (llamando a `AuthService.getToken()`) para permitir o denegar el acceso a rutas protegidas.
-9. Si una petición a la API devuelve un error 401, el `AuthInterceptor` llama a `AuthService.logout()`, limpiando `localStorage` y redirigiendo al login.
+8. El `AuthGuard` verifica la presencia del token para permitir o denegar el acceso a rutas protegidas.
+9. El `AdminGuard` verifica la presencia del token Y el rol `ADMIN_ROLE` para permitir el acceso a `/admin`.
+10. Si una petición a la API devuelve un error 401, el `AuthInterceptor` llama a `AuthService.logout()`, limpiando `localStorage` y redirigiendo al login.
 
 ## 🛡️ Sección de Administración (`/admin`)
 
-* Acceso protegido mediante `AdminGuard` (verifica rol `ADMIN_ROLE` del usuario autenticado - *pendiente de implementación completa*).
+* Acceso protegido mediante `AuthGuard` y `AdminGuard` (verifica token y rol `ADMIN_ROLE`).
 * Permite la gestión (CRUD - Crear, Leer, Actualizar, Eliminar) de las entidades principales de la tienda:
-  * **Categorías:** Implementado (Listar, Crear/Editar).
-  * **(Próximamente):** Unidades, Tags, Ciudades, Barrios, Productos (incluyendo subida de imágenes), Cupones, Clientes, Usuarios (gestión de roles), Pedidos (ver/actualizar estado).
-* Utiliza servicios específicos (ej: `AdminCategoryService`) que llaman a los endpoints `/api/admin/...` del backend.
+  * Categorías
+  * Unidades de Medida
+  * Etiquetas (Tags)
+  * Ciudades
+  * Barrios
+  * Productos (con subida/gestión de imágenes)
+  * Cupones
+* Utiliza servicios específicos (ej: `AdminCategoryService`, `AdminProductService`) que llaman a los endpoints `/api/admin/...` del backend.
 
 ## 🚧 Mejoras Futuras / TODO (Frontend)
 
-* **Implementar `AdminGuard`:** Asegurar que solo usuarios con `ADMIN_ROLE` accedan a `/admin`.
-* **Completar CRUDs Admin:** Desarrollar las interfaces para gestionar todas las entidades listadas en la sección Admin.
-  * **Productos Admin:** Incluir formulario con subida de imagen a Cloudinary (usando un servicio que llame al endpoint del backend que a su vez usa el adaptador de Cloudinary). Selector múltiple para Tags.
-* **UI Panel Admin:** Mejorar la navegación y presentación de la sección de administración (quizás un layout dedicado).
+* **Completar CRUDs Admin:**
+  * Gestión de Clientes (Listar, Ver, Editar Estado/Info básica).
+  * Gestión de Usuarios (Listar, Editar Roles - ¡Importante!).
+  * Gestión de Pedidos (Listar, Ver Detalles, Actualizar Estado).
+* **UI Panel Admin:** Mejorar la navegación y presentación (quizás un layout dedicado, dashboard admin).
 * **Chatbot UI:** Crear componente y servicio para interactuar con la API del chatbot (`/api/chatbot`).
-* **Filtros Avanzados Productos:** Implementar UI para usar todos los filtros de la API (`/api/products/search`): por precio, ordenamiento, tags.
-* **Gestión de Direcciones:** Crear sección en el perfil del usuario para añadir/editar/eliminar/marcar como default sus direcciones.
-* **UI "Olvidé Contraseña":** Añadir formularios y lógica para el flujo de reseteo de contraseña.
+* **Filtros Avanzados Productos:** Implementar UI para usar todos los filtros de la API (`/api/products/search`): por precio, ordenamiento.
+* **Gestión de Direcciones (Perfil Usuario):** Crear sección en el perfil del usuario para añadir/editar/eliminar/marcar como default sus direcciones (`/api/addresses`).
+* **UI "Olvidé Contraseña":** Añadir formularios y lógica para el flujo de reseteo de contraseña (`/api/auth/forgot-password`, `/api/auth/reset-password`).
 * **UI Wishlist:** Si se implementa en backend.
 * **UI Reseñas:** Si se implementa en backend.
 * **Pruebas:** Añadir pruebas unitarias (Karma/Jasmine) y E2E (Cypress/Protractor).
@@ -194,6 +207,9 @@ El proyecto sigue una estructura modular estándar de Angular:
 
 Las contribuciones son bienvenidas. Por favor, abre un issue o un Pull Request en el repositorio.
 
+
 ## 📄 Licencia
 
-(Opcional: Especifica tu licencia, ej. MIT)
+Copyright (c) 2025 Luis Alberto Ivetta. Todos los derechos reservados.
+
+Este software es propietario. El uso, copia, modificación, distribución o ejecución de este software o cualquier parte del mismo está estrictamente prohibido sin el permiso explícito por escrito del titular de los derechos de autor. Para consultas sobre licencias, por favor contacte a laivetta@gmail.com.
