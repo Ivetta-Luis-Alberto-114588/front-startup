@@ -9,6 +9,8 @@ import { UnitListComponent } from './pages/unit-list/unit-list.component';
 import { UnitFormComponent } from './pages/unit-form/unit-form.component';
 import { TagListComponent } from './pages/tag-list/tag-list.component';
 import { TagFormComponent } from './pages/tag-form/tag-form.component';
+import { CityListComponent } from './pages/city-list/city-list.component';
+import { CityFormComponent } from './pages/city-form/city-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 @NgModule({
@@ -19,6 +21,8 @@ import { TagFormComponent } from './pages/tag-form/tag-form.component';
     UnitFormComponent,
     TagListComponent,
     TagFormComponent,
+    CityListComponent,
+    CityFormComponent,
     // Declara aquí otros componentes de admin
   ],
   imports: [

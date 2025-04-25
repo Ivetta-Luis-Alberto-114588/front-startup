@@ -118,12 +118,16 @@
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Cupones</span>
           </a>
         </li>
+
+        <!-- === NUEVO ENLACE PARA CIUDADES === -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/cities" routerLinkActive="active">
             <i class="bi bi-building me-2"></i> <!-- Icono para ciudades -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Ciudades</span>
           </a>
         </li>
+        <!-- === FIN NUEVO ENLACE === -->
+
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/neighborhoods" routerLinkActive="active">
             <i class="bi bi-geo-alt me-2"></i> <!-- Icono para barrios -->

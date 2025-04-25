@@ -8,6 +8,8 @@ import { UnitListComponent } from './pages/unit-list/unit-list.component';
 import { UnitFormComponent } from './pages/unit-form/unit-form.component';
 import { TagListComponent } from './pages/tag-list/tag-list.component';
 import { TagFormComponent } from './pages/tag-form/tag-form.component';
+import { CityListComponent } from './pages/city-list/city-list.component';
+import { CityFormComponent } from './pages/city-form/city-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -57,6 +59,22 @@ const routes: Routes = [
     component: TagFormComponent
   },
   // --- FIN RUTAS TAGS ---
+
+
+  // --- RUTAS PARA CIUDADES ---
+  {
+    path: 'cities', // -> /admin/cities
+    component: CityListComponent
+  },
+  {
+    path: 'cities/new', // -> /admin/cities/new
+    component: CityFormComponent
+  },
+  {
+    path: 'cities/edit/:id', // -> /admin/cities/edit/abc
+    component: CityFormComponent
+  },
+  // --- FIN RUTAS CIUDADES ---
 
   // Ruta por defecto si se entra a /admin sin subruta específica
   // Cambiar a un dashboard si lo creas, o mantener categorías
