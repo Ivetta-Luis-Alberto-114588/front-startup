@@ -1,0 +1,88 @@
+<!-- src/app/admin/pages/tag-list/tag-list.component.html -->
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Gestión de Etiquetas (Tags)</h2>
+        <button class="btn btn-primary" (click)="goToCreateTag()">
+            <i class="bi bi-plus-lg me-2"></i> Nueva Etiqueta
+        </button>
+    </div>
+    <hr>
+
+    <!-- Indicador de Carga -->
+    <div *ngIf="isLoading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+
+    <!-- Mensaje de Error -->
+    <div *ngIf="error && !isLoading" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+        <button class="btn btn-sm btn-outline-secondary ms-3" (click)="loadTags()">Reintentar</button>
+    </div>
+
+    <!-- Mensaje si no hay etiquetas -->
+    <div *ngIf="!isLoading && !error && tags.length === 0" class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i> No hay etiquetas registradas.
+        <button class="btn btn-sm btn-link" (click)="goToCreateTag()">Crea la primera</button>
+    </div>
+
+    <!-- Tabla de Etiquetas -->
+    <div *ngIf="!isLoading && !error && tags.length > 0" class="table-responsive shadow-sm rounded">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Descripción</th>
+                    <th scope="col" class="text-center">Activo</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let tag of tags">
+                    <td><span class="badge bg-secondary">{{ tag.name }}</span></td> <!-- Mostrar como badge -->
+                    <td>{{ tag.description || '-' }}</td> <!-- Mostrar guión si no hay descripción -->
+                    <td class="text-center">
+                        <i class="bi"
+                            [ngClass]="tag.isActive ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'"></i>
+                    </td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary me-2" title="Editar"
+                            (click)="goToEditTag(tag.id)">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                            (click)="openDeleteConfirmation(tag)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación (si aplica) -->
+    <!-- <div *ngIf="!isLoading && totalItems > itemsPerPage" class="d-flex justify-content-center mt-4">
+      <ngb-pagination ...>
+      </ngb-pagination>
+    </div> -->
+
+</div>
+
+<!-- Modal de Confirmación para Eliminar -->
+<ng-template #confirmDeleteModal let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Confirmar Eliminación</h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <p><strong>¿Estás seguro de que quieres eliminar la etiqueta "{{ tagToDelete?.name }}"?</strong></p>
+        <p class="text-danger">Esta acción no se puede deshacer y podría quitar la etiqueta de los productos asociados.
+        </p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary"
+            (click)="modal.dismiss('cancel click')">Cancelar</button>
+        <button type="button" class="btn btn-danger" (click)="modal.close('confirm')">Eliminar</button>
+    </div>
+</ng-template>

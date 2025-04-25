@@ -7,6 +7,8 @@ import { CategoryListComponent } from './pages/category-list/category-list.compo
 import { CategoryFormComponent } from './pages/category-form/category-form.component';
 import { UnitListComponent } from './pages/unit-list/unit-list.component';
 import { UnitFormComponent } from './pages/unit-form/unit-form.component';
+import { TagListComponent } from './pages/tag-list/tag-list.component';
+import { TagFormComponent } from './pages/tag-form/tag-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 @NgModule({
@@ -15,6 +17,8 @@ import { UnitFormComponent } from './pages/unit-form/unit-form.component';
     CategoryFormComponent,
     UnitListComponent,
     UnitFormComponent,
+    TagListComponent,
+    TagFormComponent,
     // Declara aquí otros componentes de admin
   ],
   imports: [

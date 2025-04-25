@@ -6,6 +6,8 @@ import { CategoryFormComponent } from './pages/category-form/category-form.compo
 // --- IMPORTAR COMPONENTES DE UNIDAD ---
 import { UnitListComponent } from './pages/unit-list/unit-list.component';
 import { UnitFormComponent } from './pages/unit-form/unit-form.component';
+import { TagListComponent } from './pages/tag-list/tag-list.component';
+import { TagFormComponent } from './pages/tag-form/tag-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -40,6 +42,21 @@ const routes: Routes = [
     component: UnitFormComponent
   },
   // --- FIN RUTAS UNIDADES ---
+
+  // --- RUTAS PARA TAGS ---
+  {
+    path: 'tags', // -> /admin/tags
+    component: TagListComponent
+  },
+  {
+    path: 'tags/new', // -> /admin/tags/new
+    component: TagFormComponent
+  },
+  {
+    path: 'tags/edit/:id', // -> /admin/tags/edit/789
+    component: TagFormComponent
+  },
+  // --- FIN RUTAS TAGS ---
 
   // Ruta por defecto si se entra a /admin sin subruta específica
   // Cambiar a un dashboard si lo creas, o mantener categorías
