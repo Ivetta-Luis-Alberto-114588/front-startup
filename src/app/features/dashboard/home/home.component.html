@@ -1,3 +1,4 @@
+<!-- src/app/features/dashboard/home/home.component.html -->
 <div class="home-container">
     <!-- Hero Section -->
     <section class="hero-section">
@@ -30,11 +31,12 @@
                 <div class="spinner-border spinner-border-sm text-secondary ms-2" role="status"></div>
             </div>
             <div *ngIf="listCategories && listCategories.length > 0" class="row g-4">
-                <div class="col-6 col-md-3" *ngFor="let item of listCategories">
+                <!-- === MODIFICADO AQUÍ: Cambiar col-6 por col-12 === -->
+                <div class="col-12 col-sm-4 col-md-3" *ngFor="let item of listCategories">
+                    <!-- === FIN MODIFICACIÓN === -->
                     <div class="card category-card border-0 shadow-sm h-100">
                         <div class="category-icon-container text-center p-4">
-                            <i class="bi bi-hand-index-thumb-fill pointing-hand-animation"></i>
-                            <p>Click para ver productos</p>
+                            <i class="bi bi-tag-fill fs-1 text-danger"></i>
                         </div>
                         <div class="card-body text-center">
                             <h5 class="card-title">{{ item.name | titlecase }}</h5>
@@ -49,7 +51,7 @@
         </div>
     </section>
 
-    <!-- Featured Products Section (CORREGIDO) -->
+    <!-- Featured Products Section -->
     <section class="featured-products-section py-5">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -78,9 +80,10 @@
                     <!-- Comprobar si hay productos para mostrar la fila -->
                     <div *ngIf="popularProducts.length > 0; else noPopularProductsTemplate" class="row g-4">
                         <!-- Iterar y mostrar cada producto -->
-                        <div *ngFor="let product of popularProducts" class="col-6 col-sm-6 col-md-4 col-lg-3 d-flex">
+                        <!-- MODIFICADO: col-12 (1 por fila en xs), col-sm-6 (2 por fila en sm+), col-md-4 (3 en md+), col-lg-3 (4 en lg+) -->
+                        <div *ngFor="let product of popularProducts" class="col-12 col-sm-6 col-md-4 col-lg-3 d-flex">
                             <div class="card product-card border-0 shadow-sm h-100 w-100">
-                                <!-- Badges (Corrección: sin comentarios internos) -->
+                                <!-- Badges -->
                                 <ng-container *ngIf="product.tags && product.tags.length > 0">
                                     <span *ngFor="let tag of product.tags | slice:0:1"
                                         class="product-badge position-absolute top-0 end-0 m-2 px-2 py-1 rounded-pill small z-index-1"
@@ -91,9 +94,9 @@
                                             'bg-info': tag === 'clasico',
                                             'text-dark': tag === 'clasico' || tag === 'oferta',
                                             'bg-warning': tag === 'oferta'
-                                          }"> <!-- Corrección: ngClass sin comentarios -->
+                                          }">
                                         {{ tag | titlecase }}
-                                    </span> <!-- Etiqueta span cerrada correctamente -->
+                                    </span>
                                 </ng-container>
 
                                 <a [routerLink]="['/products', product.category.id, product.id]"
@@ -106,7 +109,7 @@
                                         <a [routerLink]="['/products', product.category.id, product.id]"
                                             class="text-dark text-decoration-none stretched-link">{{ product.name }}</a>
                                     </h5>
-                                    <!-- Descripción (Corrección: lógica simplificada) -->
+                                    <!-- Descripción -->
                                     <p class="card-text small text-muted flex-grow-1 product-description mb-2">
                                         {{ (product.description | slice:0:60) + (product.description &&
                                         product.description.length > 60 ? '...' : '') }}
@@ -130,7 +133,7 @@
                         </div>
                     </div>
                 </ng-container>
-                <!-- Template de 'else' (movido fuera del *ngIf interno) -->
+                <!-- Template de 'else' -->
                 <ng-template #noPopularProductsTemplate>
                     <p class="text-center text-muted fst-italic mt-4">No hay productos populares destacados por el
                         momento.</p>
@@ -139,9 +142,8 @@
         </div>
     </section>
 
-    <!-- Benefits Section (sin cambios) -->
+    <!-- Benefits Section -->
     <section class="benefits-section py-5 bg-light">
-        <!-- ... (Código sin cambios) ... -->
         <div class="container">
             <div class="row g-4">
                 <div class="col-md-4">
@@ -181,7 +183,7 @@
         </div>
     </section>
 
-    <!-- Featured Combos Section (DINÁMICO y CORREGIDO) -->
+    <!-- Featured Combos Section -->
     <section class="featured-combos-section py-5">
         <div class="container">
             <h2 class="text-center mb-5">Combos para compartir</h2>
@@ -204,7 +206,8 @@
                 <ng-container *ngIf="(comboProducts$ | async) as comboProducts">
                     <div *ngIf="comboProducts.length > 0; else noComboProductsTemplate"
                         class="row g-4 justify-content-center">
-                        <div *ngFor="let combo of comboProducts" class="col-md-6 col-lg-4 d-flex">
+                        <!-- MODIFICADO: col-12 (1 por fila en xs/sm), col-md-6 (2 en md+), col-lg-4 (3 en lg+) -->
+                        <div *ngFor="let combo of comboProducts" class="col-12 col-md-6 col-lg-4 d-flex">
                             <div class="card combo-card border-0 shadow h-100 w-100"
                                 [class.popular-combo]="combo.tags?.includes('mejor opcion')">
                                 <div *ngIf="combo.tags?.includes('mejor opcion')" class="ribbon position-absolute">
