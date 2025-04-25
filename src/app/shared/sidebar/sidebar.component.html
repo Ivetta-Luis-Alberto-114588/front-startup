@@ -55,12 +55,12 @@
       </div>
       <ul class="nav flex-column">
         <!-- Enlace al Dashboard de Admin (si tienes uno) -->
-        <li class="nav-item">
+        <!-- <li class="nav-item">
           <a class="nav-link" routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
             <i class="bi bi-speedometer2 me-2"></i>
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Dashboard Admin</span>
           </a>
-        </li>
+        </li> -->
         <!-- Enlace a Gestión de Categorías -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/categories" routerLinkActive="active">
@@ -78,13 +78,15 @@
         </li>
         <!-- === FIN NUEVO ENLACE === -->
 
-        <!-- Aquí añadirás más enlaces de admin (Productos, Unidades, Usuarios, etc.) -->
+        <!-- === NUEVO ENLACE PARA PRODUCTOS === -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/products" routerLinkActive="active">
             <i class="bi bi-box-seam me-2"></i> <!-- Icono para productos -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Productos</span>
           </a>
         </li>
+        <!-- === FIN NUEVO ENLACE === -->
+
 
         <!-- === NUEVO ENLACE PARA TAGS === -->
         <li class="nav-item">
@@ -112,9 +114,10 @@
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Usuarios</span>
           </a>
         </li>
+        <!-- === NUEVO ENLACE PARA CUPONES === -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/coupons" routerLinkActive="active">
-            <i class="bi bi-ticket-percent me-2"></i> <!-- Icono para cupones -->
+            <i class="bi bi-gift me-2"></i> <!-- Icono para cupones -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Cupones</span>
           </a>
         </li>

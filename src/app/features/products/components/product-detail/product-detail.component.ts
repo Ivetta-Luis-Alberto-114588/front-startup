@@ -126,4 +126,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+
 }

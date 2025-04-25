@@ -37,11 +37,12 @@ export class AdminNeighborhoodService {
 
   // POST /api/admin/neighborhoods
   createNeighborhood(neighborhoodData: { name: string, description: string, cityId: string, isActive?: boolean }): Observable<INeighborhood> {
-    // Renombrar cityId a city para que coincida con el backend DTO
+    // --- CORRECCIÓN: Enviar 'cityId' directamente ---
+    // El backend espera 'cityId' según el DTO CreateNeighborhoodDto
     const payload = {
       name: neighborhoodData.name,
       description: neighborhoodData.description,
-      city: neighborhoodData.cityId, // <-- Cambio de nombre
+      cityId: neighborhoodData.cityId, // <-- Enviar como cityId
       isActive: neighborhoodData.isActive
     };
     return this.http.post<INeighborhood>(this.adminApiUrl, payload);
@@ -49,12 +50,10 @@ export class AdminNeighborhoodService {
 
   // PUT /api/admin/neighborhoods/:id
   updateNeighborhood(id: string, neighborhoodData: { name?: string, description?: string, cityId?: string, isActive?: boolean }): Observable<INeighborhood> {
-    // Renombrar cityId a city si se envía
+    // --- CORRECCIÓN: Enviar 'cityId' si existe ---
+    // El backend espera 'cityId' en el DTO UpdateNeighborhoodDto (implícito)
     const payload: any = { ...neighborhoodData };
-    if (payload.cityId) {
-      payload.city = payload.cityId;
-      delete payload.cityId;
-    }
+    // No es necesario renombrar, solo enviar los campos que llegan
     return this.http.put<INeighborhood>(`${this.adminApiUrl}/${id}`, payload);
   }
 

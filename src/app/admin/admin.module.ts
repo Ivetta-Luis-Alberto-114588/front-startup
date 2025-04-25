@@ -13,6 +13,10 @@ import { CityListComponent } from './pages/city-list/city-list.component';
 import { CityFormComponent } from './pages/city-form/city-form.component';
 import { NeighborhoodListComponent } from './pages/neighborhood-list/neighborhood-list.component';
 import { NeighborhoodFormComponent } from './pages/neighborhood-form/neighborhood-form.component';
+import { ProductListComponent } from './pages/product-list/product-list.component';
+import { ProductFormComponent } from './pages/product-form/product-form.component';
+import { CouponListComponent } from './pages/coupon-list/coupon-list.component';
+import { CouponFormComponent } from './pages/coupon-form/coupon-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 @NgModule({
@@ -27,6 +31,10 @@ import { NeighborhoodFormComponent } from './pages/neighborhood-form/neighborhoo
     CityFormComponent,
     NeighborhoodListComponent,
     NeighborhoodFormComponent,
+    ProductListComponent,
+    ProductFormComponent,
+    CouponListComponent,
+    CouponFormComponent,
     // Declara aquí otros componentes de admin
   ],
   imports: [

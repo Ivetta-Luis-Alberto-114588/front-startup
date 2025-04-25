@@ -1,3 +1,4 @@
+// src/app/features/products/model/iproduct.ts
 import { ICategory } from "./icategory";
 import { IUnit } from "./iunit";
 
@@ -6,13 +7,13 @@ export interface IProduct {
     name: string;
     price: number;
     stock: number;
-    category: ICategory; // el uuid de  'pizzas', 'empanadas', 'lomitos', 'bebidas'
-    unit: IUnit; // el uuid de 'unidad', 'docena', 'litro'
-    isActive: boolean;
+    category: ICategory; // <-- ¿Es ICategory o any? Debe ser ICategory
+    unit: IUnit;     // <-- ¿Es IUnit o any? Debe ser IUnit
+    isActive: boolean; // <-- ¿Es boolean?
     description: string;
     taxRate: number;
-    priceWithTax: number; // Precio CON IVA
-    tags?: string[]
+    priceWithTax: number; // <-- ¿Es number?
+    tags?: string[];
     imgUrl?: string;
     createdAt?: Date;
     updatedAt?: Date;

@@ -12,6 +12,10 @@ import { CityListComponent } from './pages/city-list/city-list.component';
 import { CityFormComponent } from './pages/city-form/city-form.component';
 import { NeighborhoodListComponent } from './pages/neighborhood-list/neighborhood-list.component';
 import { NeighborhoodFormComponent } from './pages/neighborhood-form/neighborhood-form.component';
+import { ProductListComponent } from './pages/product-list/product-list.component';
+import { ProductFormComponent } from './pages/product-form/product-form.component';
+import { CouponListComponent } from './pages/coupon-list/coupon-list.component';
+import { CouponFormComponent } from './pages/coupon-form/coupon-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -93,6 +97,42 @@ const routes: Routes = [
     component: NeighborhoodFormComponent
   },
   // --- FIN RUTAS BARRIOS ---
+
+
+
+  // --- RUTAS PARA PRODUCTOS ---
+  {
+    path: 'products', // -> /admin/products
+    component: ProductListComponent
+  },
+  {
+    path: 'products/new', // -> /admin/products/new
+    component: ProductFormComponent
+  },
+  {
+    path: 'products/edit/:id', // -> /admin/products/edit/prod123
+    component: ProductFormComponent
+  },
+  // --- FIN RUTAS PRODUCTOS ---
+
+
+  // --- RUTAS PARA CUPONES ---
+  {
+    path: 'coupons', // -> /admin/coupons
+    component: CouponListComponent
+  },
+  {
+    path: 'coupons/new', // -> /admin/coupons/new
+    component: CouponFormComponent
+  },
+  {
+    path: 'coupons/edit/:id', // -> /admin/coupons/edit/coupon123
+    component: CouponFormComponent
+  },
+  // --- FIN RUTAS CUPONES ---
+
+
+
 
   // Ruta por defecto si se entra a /admin sin subruta específica
   // Cambiar a un dashboard si lo creas, o mantener categorías

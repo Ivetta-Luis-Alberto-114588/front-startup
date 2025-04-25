@@ -3,6 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, EMPTY } from 'rxjs';
 import { catchError, finalize, tap } from 'rxjs/operators';
+import { Location } from '@angular/common';
 
 import { IProduct } from '../../model/iproduct';
 import { ICategory } from '../../model/icategory';
@@ -41,7 +42,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
     private activatedRoute: ActivatedRoute,
     private cartService: CartService,
     private notificationService: NotificationService,
-    private authService: AuthService // <<<--- INYECTAR AuthService
+    private authService: AuthService,
+    private location: Location
   ) { }
 
   // ... (ngOnInit, ngOnDestroy, loadProducts, loadPage, getCategoryDetails, viewProductDetail sin cambios)...
@@ -70,6 +72,10 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.routeSubscription?.unsubscribe();
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   loadProducts(): void {

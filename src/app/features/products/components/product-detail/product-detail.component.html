@@ -1,5 +1,12 @@
 <!-- src/app/features/products/components/product-detail/product-detail.component.html -->
 <div class="container mt-4">
+
+    <div class="mb-3"> <!-- Contenedor para el botón -->
+        <button class="btn btn-outline-secondary" (click)="goBack()">
+            <i class="bi bi-arrow-left me-1"></i> Volver
+        </button>
+    </div>
+
     <div *ngIf="isLoading" class="text-center">
         <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Cargando...</span>
@@ -14,13 +21,7 @@
             <!-- Añadido placeholder por si no hay imagen -->
         </div>
         <div class="col-md-7">
-            <div class="mb-3">
-                <!-- Considera usar un método goBack() en TS en lugar de depender de product.category aquí -->
-                <!-- <a routerLink="/products/{{product.category}}" class="text-decoration-none"> -->
-                <a (click)="goBack()" href="javascript:void(0)" class="text-decoration-none">
-                    <i class="bi bi-arrow-left"></i> Volver
-                </a>
-            </div>
+
             <h2 class="mb-3">{{ product.name }}</h2>
             <p class="lead mb-4">{{ product.description }}</p>
             <div class="mb-4">
