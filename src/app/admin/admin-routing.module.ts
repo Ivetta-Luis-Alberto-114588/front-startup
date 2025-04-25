@@ -10,6 +10,8 @@ import { TagListComponent } from './pages/tag-list/tag-list.component';
 import { TagFormComponent } from './pages/tag-form/tag-form.component';
 import { CityListComponent } from './pages/city-list/city-list.component';
 import { CityFormComponent } from './pages/city-form/city-form.component';
+import { NeighborhoodListComponent } from './pages/neighborhood-list/neighborhood-list.component';
+import { NeighborhoodFormComponent } from './pages/neighborhood-form/neighborhood-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -75,6 +77,22 @@ const routes: Routes = [
     component: CityFormComponent
   },
   // --- FIN RUTAS CIUDADES ---
+
+
+  // --- RUTAS PARA BARRIOS ---
+  {
+    path: 'neighborhoods', // -> /admin/neighborhoods
+    component: NeighborhoodListComponent
+  },
+  {
+    path: 'neighborhoods/new', // -> /admin/neighborhoods/new
+    component: NeighborhoodFormComponent
+  },
+  {
+    path: 'neighborhoods/edit/:id', // -> /admin/neighborhoods/edit/xyz
+    component: NeighborhoodFormComponent
+  },
+  // --- FIN RUTAS BARRIOS ---
 
   // Ruta por defecto si se entra a /admin sin subruta específica
   // Cambiar a un dashboard si lo creas, o mantener categorías

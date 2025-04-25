@@ -11,6 +11,8 @@ import { TagListComponent } from './pages/tag-list/tag-list.component';
 import { TagFormComponent } from './pages/tag-form/tag-form.component';
 import { CityListComponent } from './pages/city-list/city-list.component';
 import { CityFormComponent } from './pages/city-form/city-form.component';
+import { NeighborhoodListComponent } from './pages/neighborhood-list/neighborhood-list.component';
+import { NeighborhoodFormComponent } from './pages/neighborhood-form/neighborhood-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 @NgModule({
@@ -23,6 +25,8 @@ import { CityFormComponent } from './pages/city-form/city-form.component';
     TagFormComponent,
     CityListComponent,
     CityFormComponent,
+    NeighborhoodListComponent,
+    NeighborhoodFormComponent,
     // Declara aquí otros componentes de admin
   ],
   imports: [
