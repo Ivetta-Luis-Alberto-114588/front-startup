@@ -2,10 +2,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { IOrder } from '../../models/iorder';
-import { OrderService } from '../../services/order.service';
+import { OrderService } from '../../services/order.service'; // <-- Importa la interfaz si la tienes en el servicio
+import { PaginatedOrdersResponse } from '../../models/IPaginatedOrdersResponse'; // <-- Importa la interfaz de respuesta paginada
 import { NotificationService } from 'src/app/shared/services/notification.service';
-import { Location } from '@angular/common'; // <<<--- IMPORTAR Location
-import { Router } from '@angular/router'; // <<<--- IMPORTAR Router (si usas viewOrderDetails)
+import { Location } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-my-orders-page',
@@ -17,13 +18,16 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
   orders: IOrder[] = [];
   isLoading = false;
   error: string | null = null;
+  totalItems = 0; // Añadir para paginación futura
+  currentPage = 1; // Añadir para paginación futura
+  itemsPerPage = 10; // Añadir para paginación futura
   private orderSub: Subscription | null = null;
 
   constructor(
     private orderService: OrderService,
     private notificationService: NotificationService,
-    private location: Location, // <<<--- INYECTAR Location
-    private router: Router      // <<<--- INYECTAR Router (si usas viewOrderDetails)
+    private location: Location,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -35,23 +39,38 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
   }
 
   loadOrders(): void {
-    // ... (lógica existente) ...
     this.isLoading = true;
     this.error = null;
     this.orders = []; // Limpiar antes de cargar
+    // Podrías pasar la paginación aquí si el servicio la soporta
+    // const pagination = { page: this.currentPage, limit: this.itemsPerPage };
 
-    this.orderSub = this.orderService.getMyOrders().subscribe({
-      next: (data) => {
-        this.orders = data;
+    // --- AJUSTE AQUÍ ---
+    // Especifica el tipo de respuesta esperado si lo tienes definido en el servicio
+    this.orderSub = this.orderService.getMyOrders(/* pagination */).subscribe({
+      // Espera un objeto con 'total' y 'orders'
+      next: (response: PaginatedOrdersResponse | any) => { // Usa 'any' si no tienes la interfaz
+        // Verificar si la respuesta tiene la estructura esperada
+        if (response && Array.isArray(response.orders)) {
+          this.orders = response.orders; // <-- Asigna el array de pedidos
+          this.totalItems = response.total ?? response.orders.length; // <-- Asigna el total
+          console.log('Pedidos cargados:', this.orders); // Ahora debería mostrar solo el array
+          console.log('Total de pedidos:', this.totalItems);
+        } else {
+          // Si la respuesta no tiene la estructura esperada
+          console.error("Respuesta inválida de la API getMyOrders:", response);
+          this.orders = [];
+          this.totalItems = 0;
+          this.error = 'Respuesta inesperada del servidor al cargar mis pedidos.';
+          this.notificationService.showError(this.error, 'Error');
+        }
         this.isLoading = false;
-        if (this.orders.length === 0) {
-          // Opcional: Mostrar un mensaje si no hay pedidos
+        if (this.orders.length === 0 && !this.error) { // Mostrar mensaje solo si no hay error
           // this.notificationService.showInfo("No tienes pedidos anteriores.", "Historial Vacío");
         }
       },
       error: (err) => {
         this.error = 'No se pudo cargar tu historial de pedidos. Intenta de nuevo más tarde.';
-        // Usar el mensaje de error del backend si está disponible
         if (err.error && err.error.error) {
           this.error = err.error.error;
         } else if (err.status === 401 || err.status === 403) {
@@ -59,31 +78,38 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
         }
         this.notificationService.showError(this.error ?? 'Error desconocido', 'Error al Cargar Pedidos');
         this.isLoading = false;
+        this.orders = []; // Asegurar array vacío en error
+        this.totalItems = 0;
       }
     });
+    // --- FIN AJUSTE ---
   }
 
-  // --- Helper para formatear estado (opcional) ---
   // --- Helper para formatear estado ---
   getFormattedStatus(status: string): string {
     switch (status) {
       case 'pending': return 'Pendiente';
       case 'completed': return 'Completado';
       case 'cancelled': return 'Cancelado';
-      case 'shipped': return 'Enviado'; // Si lo añades
-      default: return status.charAt(0).toUpperCase() + status.slice(1);
+      case 'shipped': return 'Enviado';
+      default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Desconocido';
     }
   }
 
-  // --- Método para ver detalles (futuro) ---
+  // --- Método para ver detalles ---
   viewOrderDetails(orderId: string): void {
-    // ... (lógica existente) ...
     this.router.navigate(['/my-orders', orderId]);
   }
 
-  // --- NUEVO MÉTODO goBack ---
+  // --- Método goBack ---
   goBack(): void {
-    this.location.back(); // Navega a la página anterior en el historial del navegador
+    this.location.back();
   }
-  // --- FIN NUEVO MÉTODO ---
+
+  // --- Método para paginación (si la implementas) ---
+  // loadPage(page: number): void {
+  //   if (page === this.currentPage || this.isLoading) return;
+  //   this.currentPage = page;
+  //   this.loadOrders();
+  // }
 }
