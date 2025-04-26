@@ -13,7 +13,7 @@ export interface IOrder {
     discountAmount: number;
     total: number;
     date: string | Date; // O solo Date si lo conviertes en el servicio
-    status: 'pending' | 'completed' | 'cancelled';
+    status: 'pending' | 'completed' | 'cancelled' | 'shipped';
     notes?: string;
     shippingDetails?: IShippingDetails; // Deberías tener una interfaz IShippingDetails aquí
     createdAt?: string | Date;

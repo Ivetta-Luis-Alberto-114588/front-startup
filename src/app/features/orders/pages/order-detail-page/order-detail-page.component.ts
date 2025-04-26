@@ -74,12 +74,16 @@ export class OrderDetailPageComponent implements OnInit, OnDestroy {
   }
 
   // Helper para formatear estado (igual que en la lista)
-  getFormattedStatus(status: 'pending' | 'completed' | 'cancelled'): string {
+  getFormattedStatus(status: 'pending' | 'completed' | 'cancelled' | 'shipped'): string {
     switch (status) {
-      case 'pending': return 'Pendiente';
-      case 'completed': return 'Completado';
-      case 'cancelled': return 'Cancelado';
-      default: return status;
+      case 'pending':
+        return 'Pendiente';
+      case 'completed':
+        return 'Completado';
+      case 'cancelled':
+        return 'Cancelado';
+      case 'shipped':
+        return 'Enviado';
     }
   }
 }

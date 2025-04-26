@@ -16,6 +16,8 @@ import { ProductListComponent } from './pages/product-list/product-list.componen
 import { ProductFormComponent } from './pages/product-form/product-form.component';
 import { CouponListComponent } from './pages/coupon-list/coupon-list.component';
 import { CouponFormComponent } from './pages/coupon-form/coupon-form.component';
+import { OrderListComponent } from './pages/order-list/order-list.component';
+import { OrderDetailComponent } from './pages/order-detail/order-detail.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -130,6 +132,19 @@ const routes: Routes = [
     component: CouponFormComponent
   },
   // --- FIN RUTAS CUPONES ---
+
+
+
+  // --- RUTAS PARA PEDIDOS (ADMIN) ---
+  {
+    path: 'orders', // -> /admin/orders
+    component: OrderListComponent
+  },
+  {
+    path: 'orders/:id', // -> /admin/orders/order123 (Ruta para ver detalle)
+    component: OrderDetailComponent // Usar el componente de detalle
+  },
+  // --- FIN RUTAS PEDIDOS ---
 
 
 

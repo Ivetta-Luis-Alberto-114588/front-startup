@@ -1,0 +1,92 @@
+<!-- src/app/admin/pages/order-list/order-list.component.html -->
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Gestión de Pedidos</h2>
+        <!-- Podrías añadir filtros aquí -->
+    </div>
+    <hr>
+
+    <!-- Indicador de Carga -->
+    <div *ngIf="isLoading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+
+    <!-- Mensaje de Error -->
+    <div *ngIf="error && !isLoading" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+        <button class="btn btn-sm btn-outline-secondary ms-3" (click)="loadOrders()">Reintentar</button>
+    </div>
+
+    <!-- Mensaje si no hay pedidos -->
+    <div *ngIf="!isLoading && !error && orders.length === 0" class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i> No hay pedidos registrados.
+    </div>
+
+    <!-- Tabla de Pedidos -->
+    <div *ngIf="!isLoading && !error && orders.length > 0" class="table-responsive shadow-sm rounded">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Pedido #</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Cliente</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end">Total</th>
+                    <th scope="col" class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let order of orders">
+                    <td><code>{{ order.id | slice:0:8 }}...</code></td>
+                    <td>{{ order.date | date:'dd/MM/yy HH:mm' }}</td>
+                    <td>{{ order.customer?.name ? (order.customer.name | titlecase) : order.customer?.email }}</td>
+                    <td>
+                        <!-- Selector de Estado -->
+                        <select class="form-select form-select-sm" [(ngModel)]="order.status"
+                            (change)="onStatusChange(order, $event)" [disabled]="isUpdatingStatus[order.id]" [ngClass]="{
+                                    'bg-warning text-dark': order.status === 'pending',
+                                    'bg-success text-white': order.status === 'completed',
+                                    'bg-danger text-white': order.status === 'cancelled',
+                                    'bg-info text-dark': order.status === 'shipped'
+                                }">
+                            <option value="pending">Pendiente</option>
+                            <option value="completed">Completado</option>
+                            <option value="cancelled">Cancelado</option>
+                            <!-- Añade más estados si los tienes -->
+                            <!-- <option value="shipped">Enviado</option> -->
+                        </select>
+                        <div *ngIf="isUpdatingStatus[order.id]"
+                            class="spinner-border spinner-border-sm text-secondary ms-2" role="status">
+                            <span class="visually-hidden">Actualizando...</span>
+                        </div>
+                    </td>
+                    <td class="text-end fw-bold">{{ order.total | currency }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary" title="Ver Detalles"
+                            (click)="goToOrderDetail(order.id)">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <!-- Podrías añadir botón de cancelar aquí si el estado es 'pending' -->
+                        <!-- <button *ngIf="order.status === 'pending'"
+                                class="btn btn-sm btn-outline-danger ms-2"
+                                title="Cancelar Pedido"
+                                (click)="updateStatusDirectly(order, 'cancelled')"
+                                [disabled]="isUpdatingStatus[order.id]">
+                            <i class="bi bi-x-circle"></i>
+                        </button> -->
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    <div *ngIf="!isLoading && totalItems > itemsPerPage" class="d-flex justify-content-center mt-4">
+        <ngb-pagination [collectionSize]="totalItems" [pageSize]="itemsPerPage" [(page)]="currentPage" [maxSize]="5"
+            [rotate]="true" [boundaryLinks]="true" (pageChange)="loadPage($event)">
+        </ngb-pagination>
+    </div>
+
+</div>

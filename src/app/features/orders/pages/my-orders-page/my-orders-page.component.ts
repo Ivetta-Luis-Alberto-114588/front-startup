@@ -64,13 +64,14 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
   }
 
   // --- Helper para formatear estado (opcional) ---
-  getFormattedStatus(status: 'pending' | 'completed' | 'cancelled'): string {
-    // ... (lógica existente) ...
+  // --- Helper para formatear estado ---
+  getFormattedStatus(status: string): string {
     switch (status) {
       case 'pending': return 'Pendiente';
       case 'completed': return 'Completado';
       case 'cancelled': return 'Cancelado';
-      default: return status;
+      case 'shipped': return 'Enviado'; // Si lo añades
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
     }
   }
 

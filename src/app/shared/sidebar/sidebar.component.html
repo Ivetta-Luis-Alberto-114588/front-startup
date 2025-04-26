@@ -139,6 +139,18 @@
           </a>
         </li>
         <!-- === FIN NUEVO ENLACE === -->
+
+
+        <!-- === NUEVO ENLACE PARA PEDIDOS === -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/orders" routerLinkActive="active">
+            <i class="bi bi-card-list me-2"></i> <!-- Icono para pedidos -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Pedidos</span>
+          </a>
+        </li>
+        <!-- === FIN NUEVO ENLACE === -->
+
+
       </ul>
     </ng-container>
     <!-- ***** FIN: SECCIÓN ADMIN ***** -->
