@@ -1,6 +1,6 @@
 // src/app/auth/reset-password/reset-password.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms'; // Importar AbstractControl
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, finalize } from 'rxjs';
 import { AuthService, ResetPasswordPayload } from '../services/auth.service';
@@ -35,7 +35,7 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
       password: ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required]
     }, {
-      validators: passwordMatchValidator
+      validators: passwordMatchValidator // Aplicar validador de coincidencia
     });
   }
 
@@ -44,14 +44,13 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
       this.token = params.get('token');
       if (!this.token) {
         this.isTokenValid = false;
-        this.error = 'El enlace de restablecimiento no es válido o ha expirado. Por favor, solicita uno nuevo.';
+        this.error = 'El enlace de restablecimiento no es válido o ha expirado (falta token). Por favor, solicita uno nuevo.';
         this.notificationService.showError(this.error, 'Token Inválido');
         // Considera redirigir a forgot-password
         // this.router.navigate(['/auth/forgot-password']);
       } else {
         this.isTokenValid = true;
-        // Opcional: Podrías hacer una llamada al backend para validar el token aquí mismo
-        // antes de mostrar el formulario, pero la validación principal se hará al enviar.
+        // Opcional: Validar token con backend aquí si quieres feedback inmediato
       }
     });
   }
@@ -64,9 +63,10 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
   get confirmPassword() { return this.resetPasswordForm.get('confirmPassword'); }
 
   onSubmit(): void {
-    this.resetPasswordForm.markAllAsTouched(); // Marcar para mostrar errores de coincidencia
+    this.resetPasswordForm.markAllAsTouched(); // Marcar para mostrar errores
 
     if (this.resetPasswordForm.invalid || !this.token) {
+      // Si el formulario es inválido (incluyendo la no coincidencia) o no hay token, no continuar
       return;
     }
 
@@ -87,21 +87,23 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
         this.successMessage = response.message;
         this.notificationService.showSuccess(this.successMessage, 'Contraseña Actualizada');
         this.resetPasswordForm.reset();
-        // Opcional: Redirigir a login después de un breve momento
+        // Redirigir a login después de un breve momento
         setTimeout(() => {
           this.router.navigate(['/auth/login']);
-        }, 3000); // Redirige después de 3 segundos
+        }, 3500); // Aumentar un poco el tiempo
       },
       error: (err: HttpErrorResponse) => {
         if (err.error && err.error.error) {
           this.error = err.error.error;
-        } else if (err.status === 401 || err.status === 400) {
-          this.error = 'El enlace de restablecimiento es inválido o ha expirado. Solicita uno nuevo.';
-          this.isTokenValid = false; // Marcar como inválido si falla
+          // Si el error específico indica token inválido/expirado
+          if (err.status === 401 || err.status === 400) { // Asumiendo que el backend usa estos códigos
+            this.isTokenValid = false; // Marcar token como inválido
+            this.error = 'El enlace de restablecimiento es inválido o ha expirado. Solicita uno nuevo.'; // Mensaje claro
+          }
         } else {
           this.error = 'Ocurrió un error al restablecer la contraseña. Inténtalo más tarde.';
         }
-        this.notificationService.showError(this.error ?? "Unknown error", 'Error');
+        this.notificationService.showError(this.error ?? 'Error desconocido', 'Error');
       }
     });
   }

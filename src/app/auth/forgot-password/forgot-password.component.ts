@@ -55,10 +55,12 @@ export class ForgotPasswordComponent {
       error: (err: HttpErrorResponse) => {
         if (err.error && err.error.error) {
           this.error = err.error.error;
+        } else if (err.status === 0) {
+          this.error = 'No se pudo conectar con el servidor.';
         } else {
           this.error = 'Ocurrió un error al enviar la solicitud. Inténtalo más tarde.';
         }
-        this.notificationService.showError(this.error ?? "Unknown error", 'Error');
+        this.notificationService.showError(this.error ?? 'Error desconocido', 'Error');
       }
     });
   }

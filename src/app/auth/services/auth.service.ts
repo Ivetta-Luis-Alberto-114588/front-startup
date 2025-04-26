@@ -77,6 +77,7 @@ export class AuthService {
           localStorage.removeItem('user');
         }
       } catch (e) {
+        console.error("Error parsing user from localStorage", e);
         localStorage.removeItem('user');
       }
     }
@@ -100,9 +101,13 @@ export class AuthService {
             const { token: _, ...userWithoutToken } = userData;
             this.storeUser(userWithoutToken);
             this.isAuthenticatedSubject.next(true);
+          } else {
+            console.error("Invalid login response structure:", response);
+            throw new Error('Respuesta de login inválida del servidor.'); // Lanza error si la estructura no es la esperada
           }
         }),
         catchError(err => {
+          // El componente manejará el error de UI
           return throwError(() => err);
         })
       );
@@ -145,11 +150,15 @@ export class AuthService {
   }
 
   getUser(): User | null {
+    if (!this.user) { // Intentar cargar si no está en memoria
+      this.loadUserAndToken();
+    }
     return this.user;
   }
 
   isAuthenticated(): boolean {
-    return !!this.token;
+    // Verifica también si hay token en localStorage por si acaso
+    return !!this.getToken();
   }
 
   private storeToken(token: string): void {

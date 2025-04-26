@@ -35,7 +35,6 @@
                   [ngClass]="{'is-invalid': loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)}"
                   placeholder="ejemplo@correo.com">
               </div>
-              <!-- Mensajes de error de validación para Email -->
               <div
                 *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)"
                 class="text-danger mt-1 small">
@@ -48,9 +47,9 @@
             <div class="mb-3">
               <div class="d-flex justify-content-between">
                 <label for="password" class="form-label">Contraseña</label>
-
+                <!-- ***** ENLACE AQUÍ ***** -->
                 <a routerLink="/auth/forgot-password" class="text-decoration-none small">¿Olvidaste tu contraseña?</a>
-
+                <!-- ***** FIN ENLACE ***** -->
               </div>
               <div class="input-group">
                 <span class="input-group-text">
@@ -64,7 +63,6 @@
                   <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                 </button>
               </div>
-              <!-- Mensajes de error de validación para Contraseña -->
               <div
                 *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)"
                 class="text-danger mt-1 small">
@@ -81,34 +79,12 @@
             <!-- Botón de login -->
             <div class="d-grid mb-3">
               <button type="submit" class="btn btn-primary" [disabled]="loginForm.invalid || isLoading">
-                <!-- Añadido loginForm.invalid -->
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
                   aria-hidden="true"></span>
                 Iniciar Sesión
               </button>
             </div>
 
-            <!-- Separador y Botones de redes sociales -->
-            <!-- COMENTADO: Separador "O" y botones de redes sociales (Google/Facebook) - Funcionalidad futura -->
-            <!--
-            <div class="d-flex align-items-center mb-3">
-              <hr class="flex-grow-1">
-              <span class="px-2 text-muted small">O</span>
-              <hr class="flex-grow-1">
-            </div>
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <button type="button" class="btn btn-outline-primary w-100" disabled>
-                  <i class="bi bi-google me-2"></i>Google
-                </button>
-              </div>
-              <div class="col-6">
-                <button type="button" class="btn btn-outline-primary w-100" disabled>
-                  <i class="bi bi-facebook me-2"></i>Facebook
-                </button>
-              </div>
-            </div>
-            -->
           </form>
         </div>
 
