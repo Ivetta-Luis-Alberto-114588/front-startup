@@ -18,6 +18,10 @@ import { CouponListComponent } from './pages/coupon-list/coupon-list.component';
 import { CouponFormComponent } from './pages/coupon-form/coupon-form.component';
 import { OrderListComponent } from './pages/order-list/order-list.component';
 import { OrderDetailComponent } from './pages/order-detail/order-detail.component';
+import { CustomerListComponent } from './pages/customer-list/customer-list.component';
+import { CustomerFormComponent } from './pages/customer-form/customer-form.component';
+import { UserListComponent } from './pages/user-list/user-list.component';
+import { UserFormComponent } from './pages/user-form/user-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -148,6 +152,32 @@ const routes: Routes = [
 
 
 
+  // --- RUTAS PARA CLIENTES (ADMIN) ---
+  {
+    path: 'customers', // -> /admin/customers
+    component: CustomerListComponent
+  },
+  {
+    path: 'customers/edit/:id', // -> /admin/customers/edit/cust123 (Usamos 'edit' como convención)
+    component: CustomerFormComponent // Usaremos el mismo form para ver/editar
+  },
+  // Si necesitas una ruta solo para ver (sin edición), puedes añadir:
+  // { path: 'customers/view/:id', component: CustomerDetailComponent }, // Necesitarías crear CustomerDetailComponent
+  // --- FIN RUTAS CLIENTES ---
+
+
+
+
+  // --- RUTAS PARA USUARIOS (ADMIN) ---
+  {
+    path: 'users', // -> /admin/users
+    component: UserListComponent
+  },
+  {
+    path: 'users/edit/:id', // -> /admin/users/edit/user123
+    component: UserFormComponent // Formulario para editar (principalmente roles)
+  },
+  // --- FIN RUTAS USUARIOS ---
 
   // Ruta por defecto si se entra a /admin sin subruta específica
   // Cambiar a un dashboard si lo creas, o mantener categorías

@@ -19,6 +19,10 @@ import { CouponListComponent } from './pages/coupon-list/coupon-list.component';
 import { CouponFormComponent } from './pages/coupon-form/coupon-form.component';
 import { OrderListComponent } from './pages/order-list/order-list.component';
 import { OrderDetailComponent } from './pages/order-detail/order-detail.component';
+import { CustomerListComponent } from './pages/customer-list/customer-list.component';
+import { CustomerFormComponent } from './pages/customer-form/customer-form.component';
+import { UserListComponent } from './pages/user-list/user-list.component';
+import { UserFormComponent } from './pages/user-form/user-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 @NgModule({
@@ -39,6 +43,10 @@ import { OrderDetailComponent } from './pages/order-detail/order-detail.componen
     CouponFormComponent,
     OrderListComponent,
     OrderDetailComponent,
+    CustomerListComponent,
+    CustomerFormComponent,
+    UserListComponent,
+    UserFormComponent,
     // Declara aquí otros componentes de admin
   ],
   imports: [

@@ -1,0 +1,100 @@
+<!-- src/app/admin/pages/user-list/user-list.component.html -->
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Gestión de Usuarios</h2>
+        <!-- No suele haber botón de "Nuevo Usuario" aquí, se crean por registro -->
+    </div>
+    <hr>
+
+    <!-- TODO: Añadir filtros (por nombre, email, rol) -->
+
+    <!-- Indicador de Carga -->
+    <div *ngIf="isLoading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando usuarios...</span>
+        </div>
+    </div>
+
+    <!-- Mensaje de Error -->
+    <div *ngIf="error && !isLoading" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+        <button class="btn btn-sm btn-outline-secondary ms-3" (click)="loadUsers()">Reintentar</button>
+    </div>
+
+    <!-- Mensaje si no hay usuarios -->
+    <div *ngIf="!isLoading && !error && users.length === 0" class="alert alert-info text-center">
+        <i class="bi bi-info-circle me-2"></i> No hay usuarios registrados.
+    </div>
+
+    <!-- Tabla de Usuarios -->
+    <div *ngIf="!isLoading && !error && users.length > 0" class="table-responsive shadow-sm rounded">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Roles</th>
+                    <!-- <th scope="col" class="text-center">Activo</th> -->
+                    <!-- Opcional si tienes estado activo para User -->
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let user of users">
+                    <td>{{ user.name | titlecase }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        <!-- Mostrar roles como badges -->
+                        <span *ngFor="let role of user.role" class="badge me-1"
+                            [ngClass]="{'bg-primary': role === 'ADMIN_ROLE', 'bg-secondary': role === 'USER_ROLE'}">
+                            {{ role === 'ADMIN_ROLE' ? 'Admin' : 'Usuario' }}
+                        </span>
+                    </td>
+                    <!-- <td class="text-center"> -->
+                    <!-- Icono si tienes isActive en User -->
+                    <!-- <i class="bi" [ngClass]="user.isActive ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'"></i> -->
+                    <!-- </td> -->
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary me-2" title="Editar Roles"
+                            (click)="goToEditUser(user.id)">
+                            <i class="bi bi-person-gear"></i> <!-- Icono específico para roles -->
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" title="Eliminar Usuario"
+                            (click)="openDeleteConfirmation(user)" [disabled]="isCurrentUser(user.id)">
+                            <!-- Deshabilitar borrado propio -->
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación (si aplica) -->
+    <div *ngIf="!isLoading && totalItems > itemsPerPage" class="d-flex justify-content-center mt-4">
+        <ngb-pagination [collectionSize]="totalItems" [pageSize]="itemsPerPage" [(page)]="currentPage" [maxSize]="5"
+            [rotate]="true" [boundaryLinks]="true" (pageChange)="loadPage($event)">
+        </ngb-pagination>
+    </div>
+
+</div>
+
+<!-- Modal de Confirmación para Eliminar -->
+<ng-template #confirmDeleteModal let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">Confirmar Eliminación</h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <p><strong>¿Estás seguro de que quieres eliminar la cuenta de usuario de "{{ userToDelete?.name | titlecase }}"
+                ({{ userToDelete?.email }})?</strong></p>
+        <p class="text-danger fw-bold">¡Esta acción es irreversible!</p>
+        <p class="text-warning">Se eliminará la cuenta de acceso y potencialmente los datos del cliente asociado (si el
+            backend lo maneja así).</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary"
+            (click)="modal.dismiss('cancel click')">Cancelar</button>
+        <button type="button" class="btn btn-danger" (click)="modal.close('confirm')">Eliminar Usuario</button>
+    </div>
+</ng-template>

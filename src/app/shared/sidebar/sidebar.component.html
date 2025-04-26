@@ -97,18 +97,26 @@
         </li>
         <!-- === FIN NUEVO ENLACE === -->
 
+        <!-- Nuevo Enlace para Clientes -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/customers" routerLinkActive="active">
             <i class="bi bi-people me-2"></i> <!-- Icono para clientes -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Clientes</span>
           </a>
         </li>
+        <!-- Fin Enlace para Clientes -->
+
+
+        <!-- Enlace para Usuarios -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/users" routerLinkActive="active">
-            <i class="bi bi-person-gear me-2"></i> <!-- Icono para usuarios -->
+            <i class="bi bi-person-gear me-2"></i> <!-- Icono -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Usuarios</span>
           </a>
         </li>
+        <!-- Fin Enlace para Usuarios -->
+
+
         <!-- === NUEVO ENLACE PARA CUPONES === -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/coupons" routerLinkActive="active">

@@ -1,0 +1,99 @@
+<!-- src/app/admin/pages/user-form/user-form.component.html -->
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Editar Usuario</h2>
+        <button class="btn btn-outline-secondary" (click)="goBack()">
+            <i class="bi bi-arrow-left me-1"></i> Volver a la Lista
+        </button>
+    </div>
+    <hr>
+
+    <!-- Indicador de Carga -->
+    <div *ngIf="isLoading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando datos del usuario...</span>
+        </div>
+    </div>
+
+    <!-- Mensaje de Error General -->
+    <div *ngIf="error && !isLoading" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+    </div>
+
+    <!-- Formulario (solo si no está cargando y no hay error) -->
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" *ngIf="!isLoading && !error">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Columna Izquierda: Info Básica (mayormente lectura) -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">ID Usuario:</label>
+                            <input type="text" class="form-control" [value]="userId" readonly disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nombre:</label>
+                            <!-- Opcional: Permitir editar nombre -->
+                            <input type="text" class="form-control" id="name" formControlName="name"
+                                [ngClass]="{'is-invalid': name?.invalid && name?.touched}">
+                            <div *ngIf="name?.invalid && name?.touched" class="invalid-feedback">
+                                El nombre es obligatorio.
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email:</label>
+                            <input type="email" class="form-control" id="email" formControlName="email" readonly
+                                [disabled]="true">
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Roles y Estado -->
+                    <div class="col-md-6">
+                        <!-- Selección de Roles -->
+                        <div class="mb-3">
+                            <label class="form-label">Roles <span class="text-danger">*</span></label>
+                            <div id="roles">
+                                <div class="form-check" *ngFor="let role of availableRoles">
+                                    <input class="form-check-input" type="checkbox" [value]="role.value"
+                                        [id]="'role_' + role.value" (change)="onRoleChange($event)"
+                                        [checked]="userRoles.includes(role.value)">
+                                    <label class="form-check-label" [for]="'role_' + role.value">
+                                        {{ role.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div *ngIf="userForm.hasError('minRoles') && userForm.get('roles')?.touched"
+                                class="text-danger mt-1 small">
+                                Debe seleccionar al menos un rol.
+                            </div>
+                        </div>
+
+                        <!-- Estado Activo (Opcional: Si lo implementas) -->
+                        <!-- <div class="mb-3">
+                            <label class="form-label d-block">Estado Cuenta</label>
+                             <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="isActive"
+                                    formControlName="isActive">
+                                <label class="form-check-label" for="isActive">
+                                    {{ isActive?.value ? 'Activa' : 'Inactiva' }}
+                                </label>
+                            </div>
+                        </div> -->
+
+                    </div> <!-- Fin Columna Derecha -->
+                </div> <!-- Fin Row -->
+            </div> <!-- Fin card-body -->
+
+            <div class="card-footer text-end">
+                <button type="button" class="btn btn-secondary me-2" (click)="goBack()">Cancelar</button>
+                <button type="submit" class="btn btn-primary"
+                    [disabled]="userForm.invalid || isSubmitting || !hasChanges">
+                    <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"
+                        aria-hidden="true"></span>
+                    {{ isSubmitting ? 'Guardando...' : 'Actualizar Usuario' }}
+                </button>
+            </div><!-- Fin card-footer -->
+
+        </div><!-- Fin card -->
+    </form>
+</div>
