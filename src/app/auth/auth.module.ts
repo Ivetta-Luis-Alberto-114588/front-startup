@@ -6,6 +6,8 @@ import { FormsModule, ReactiveFormsModule } from "@angular/forms"; // Añade Rea
 import { RegisterComponent } from './register/register.component';
 import { LoginComponent } from './login/login.component';
 import { AuthRoutingModule } from './auth-routing.module';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './reset-password/reset-password.component';
 
 
 
@@ -13,6 +15,8 @@ import { AuthRoutingModule } from './auth-routing.module';
   declarations: [
     RegisterComponent,
     LoginComponent,
+    ForgotPasswordComponent,
+    ResetPasswordComponent,
   ],
   imports: [CommonModule, RouterModule, AuthRoutingModule, FormsModule, ReactiveFormsModule],
   exports: []
