@@ -11,6 +11,7 @@ import { PaymentFailureComponent } from './features/payments/components/payment-
 import { PaymentPendingComponent } from './features/payments/components/payment-pending/payment-pending.component';
 import { AuthGuard } from './auth/guards/auth.guard';
 import { AdminGuard } from './auth/guards/admin.guard'; // <<<--- IMPORTAR AdminGuard
+import { ResetPasswordComponent } from './auth/reset-password/reset-password.component';
 
 const routes: Routes = [
   // --- Rutas sin Layout ---
@@ -20,6 +21,7 @@ const routes: Routes = [
   },
   { path: 'login', redirectTo: 'auth/login', pathMatch: 'full' },
   { path: 'registro', redirectTo: 'auth/registro', pathMatch: 'full' },
+  { path: 'reset-password', component: ResetPasswordComponent },
 
   // --- Rutas CON Layout Principal ---
   {
