@@ -12,3 +12,37 @@
 .navbar-hidden {
   transform: translateY(-100%);
 }
+
+// Asegurar que el dropdown del usuario funcione bien alineado a la derecha
+.navbar-nav .dropdown-menu {
+  position: absolute; // Necesario para dropdowns en navbar
+}
+
+// Estilo opcional para el enlace del carrito activo
+a.active-cart-link {
+  // color: #ffc107; // Amarillo Bootstrap para destacar
+  font-weight: bold; // O negrita
+}
+
+// Ajustar padding del toggler si es necesario en móvil
+@media (max-width: 991.98px) {
+
+  // Breakpoint lg de Bootstrap
+  .navbar-toggler {
+    // padding: 0.25rem 0.5rem; // Más pequeño si es necesario
+    font-size: 1rem;
+  }
+
+  // Centrar items en menú colapsado
+  .navbar-collapse .navbar-nav {
+    text-align: center;
+  }
+
+  .navbar-collapse .nav-item {
+    margin-bottom: 0.5rem; // Espacio entre items en móvil
+  }
+
+  .navbar-collapse .dropdown-menu {
+    text-align: center; // Centrar items del dropdown en móvil
+  }
+}

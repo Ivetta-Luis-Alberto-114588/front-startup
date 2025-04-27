@@ -3,41 +3,67 @@
   [ngClass]="{'navbar-scrolled': isScrolled, 'navbar-hidden': !headerVisible}">
   <div class="container-fluid">
 
-    <!-- Botón Sidebar (sin cambios) -->
+    <!-- Botón Sidebar (Izquierda) -->
     <button class="btn btn-outline-light me-2" (click)="toggleSidebar()">
       <i class="bi" [ngClass]="(sidebarService.isSidebarCollapsed$ | async) ? 'bi-list' : 'bi-x'"></i>
     </button>
 
+    <!-- Marca (Izquierda) -->
     <a class="navbar-brand" routerLink="/dashboard">Mi Pizzería</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+
+    <!-- Botón Hamburguesa (Derecha, visible solo en móvil) -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavContent"
+      aria-controls="navbarNavContent" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <!-- Mover la lista fuera del ng-container condicional -->
-      <ul class="navbar-nav ms-auto align-items-center">
+    <!-- Contenido Colapsable (Menú y Carrito) -->
+    <div class="collapse navbar-collapse" id="navbarNavContent">
 
-        <!-- Enlaces Siempre Visibles -->
-        <li class="nav-item">
+      <!-- Lista Principal del Menú (Alineada a la derecha en pantallas grandes) -->
+      <!-- CORRECCIÓN: Eliminado comentario inválido -->
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+
+        <!-- Enlaces Principales -->
+        <!-- <li class="nav-item">
           <a class="nav-link" routerLink="/dashboard" routerLinkActive="active"
             [routerLinkActiveOptions]="{exact: true}">Inicio</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" routerLink="/products" routerLinkActive="active">Menú</a>
+        </li> -->
+
+        <!-- Separador Opcional (Solo visible en pantallas grandes) -->
+        <li class="nav-item d-none d-lg-block mx-2">
+          <span class="text-muted">|</span>
         </li>
 
-        <!-- Bloque Condicional para Autenticación -->
-        <!-- Usamos *ngIf; else para mostrar un bloque u otro -->
+        <!-- Enlace Carrito (Ahora dentro de la lista principal) -->
+        <li class="nav-item">
+          <a class="nav-link position-relative" routerLink="/cart" routerLinkActive="active-cart-link">
+            <i class="bi bi-cart fs-5"></i>
+            <!-- Texto "Carrito" solo visible en el menú colapsado (móvil) -->
+            <span class="d-lg-none ms-1">Carrito</span>
+            <!-- Badge contador -->
+            <span *ngIf="(cartService.cart$ | async)?.totalItems as totalItems"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+              style="font-size: 0.65em; line-height: 1;">
+              {{ totalItems > 9 ? '9+' : totalItems }}
+              <span class="visually-hidden">items en el carrito</span>
+            </span>
+          </a>
+        </li>
+
+        <!-- Bloque Condicional Login/Usuario -->
         <ng-container *ngIf="(authService.isAuthenticated$ | async); else showLoginRegister">
           <!-- Opciones Usuario Autenticado -->
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown"
               aria-expanded="false">
               <i class="bi bi-person-circle me-1"></i>
-              <!-- Usamos async pipe también para el usuario -->
               {{ (authService.user$ | async)?.name || (authService.user$ | async)?.email || 'Usuario' }}
             </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
+            <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="navbarDropdownUser">
               <li><a class="dropdown-item" routerLink="/my-orders">Mis Pedidos</a></li>
               <li><a class="dropdown-item" routerLink="/addresses">Mis Direcciones</a></li>
               <li>
@@ -51,9 +77,8 @@
             </ul>
           </li>
         </ng-container>
-
-        <!-- Plantilla para mostrar si NO está autenticado -->
         <ng-template #showLoginRegister>
+          <!-- Opciones Login/Registro -->
           <li class="nav-item">
             <a class="nav-link" routerLink="/auth/login">Login</a>
           </li>
@@ -63,21 +88,8 @@
         </ng-template>
         <!-- Fin Bloque Condicional -->
 
-        <!-- Enlace Carrito (Siempre Visible) -->
-        <li class="nav-item">
-          <a class="nav-link position-relative" routerLink="/cart" routerLinkActive="active">
-            <i class="bi bi-cart"></i> Carrito
-            <!-- Badge con contador (sin cambios) -->
-            <span *ngIf="(cartService.cart$ | async)?.totalItems as totalItems"
-              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-              style="font-size: 0.65em; line-height: 1;">
-              {{ totalItems > 9 ? '9+' : totalItems }}
-              <span class="visually-hidden">items en el carrito</span>
-            </span>
-          </a>
-        </li>
-
       </ul>
     </div> <!-- Fin .collapse -->
+
   </div> <!-- Fin .container-fluid -->
 </nav>
