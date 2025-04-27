@@ -207,9 +207,8 @@ El proyecto sigue una estructura modular estándar de Angular:
 
 Las contribuciones son bienvenidas. Por favor, abre un issue o un Pull Request en el repositorio.
 
-
 ## 📄 Licencia
 
 Copyright (c) 2025 Luis Alberto Ivetta. Todos los derechos reservados.
 
-Este software es propietario. El uso, copia, modificación, distribución o ejecución de este software o cualquier parte del mismo está estrictamente prohibido sin el permiso explícito por escrito del titular de los derechos de autor. Para consultas sobre licencias, por favor contacte a laivetta@gmail.com.
+Este software es propietario. El uso, copia, modificación, distribución o ejecución de este software o cualquier parte del mismo está estrictamente prohibido sin el permiso explícito por escrito del titular de los derechos de autor. Para consultas sobre licencias, por favor contacte a laivetta@gmail.com
