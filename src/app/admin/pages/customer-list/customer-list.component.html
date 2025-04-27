@@ -51,8 +51,8 @@
                     <td>{{ customer.name | titlecase }}</td>
                     <td>{{ customer.email }}</td>
                     <td>{{ customer.phone || '-' }}</td>
-                    <td>{{ customer.neighborhood?.name | titlecase }}</td>
-                    <td>{{ customer.neighborhood?.city?.name | titlecase }}</td>
+                    <td>{{ customer.neighborhood.name | titlecase }}</td>
+                    <td>{{ customer.neighborhood.city.name | titlecase }}</td>
                     <td class="text-center">
                         <i *ngIf="customer.userId" class="bi bi-person-check-fill text-success"
                             title="Usuario Registrado"></i>
