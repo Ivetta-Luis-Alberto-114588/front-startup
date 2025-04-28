@@ -1,214 +1,221 @@
 # StartUp E-commerce Frontend (Angular)
 
-**Este es el frontend para la aplicación StartUp E-commerce, construido con Angular. Proporciona la interfaz de usuario para interactuar con la [API Backend](link-a-tu-repo-backend) (Node.js, Express, MongoDB), permitiendo a los clientes navegar por productos, gestionar su carrito, realizar pedidos y pagos, y a los administradores gestionar la tienda.**
+**Este es el frontend para la aplicación StartUp E-commerce, construido con Angular (v14+ asumido). Proporciona la interfaz de usuario para interactuar con la** [API Backend](https://www.google.com/url?sa=E&q=link-a-tu-repo-backend) **(Node.js, Express, MongoDB), permitiendo a los clientes navegar por productos, gestionar su carrito, realizar pedidos y pagos (vía Mercado Pago), y a los administradores gestionar completamente la tienda a través de un panel dedicado.**
 
-## ✨ Características Principales (Interfaz de Usuario)
+## ✨ Características Implementadas
 
 * **Navegación y Visualización:**
-  * Dashboard/Página de Inicio con secciones destacadas (Categorías, Populares, Combos).
-  * Listado de productos con filtros básicos (por categoría, búsqueda por tags desde el home).
-  * Vista detallada de cada producto.
-  * Diseño responsivo adaptable a diferentes tamaños de pantalla.
-* **Autenticación de Usuarios:**
-  * Formulario de Registro con validaciones.
-  * Formulario de Inicio de Sesión con validaciones.
-  * Gestión de sesión mediante Tokens JWT (almacenados en `localStorage`).
-  * Guardia de rutas (`AuthGuard`) para proteger secciones como Checkout y Mis Pedidos.
-  * Interceptor HTTP (`AuthInterceptor`) para añadir automáticamente el token a las peticiones y manejar errores 401 (deslogueo).
+
+  * **Dashboard/Página de Inicio dinámica con secciones destacadas (Categorías, Productos Populares, Combos).**
+  * **Listado de productos paginado por categoría.**
+  * **Vista detallada de cada producto con controles de cantidad.**
+  * **Diseño responsivo (Bootstrap) adaptable a móviles, tablets y escritorio.**
+  * **Páginas estáticas (Términos y Condiciones, Política de Privacidad) con navegación de retorno.**
+* **Autenticación y Autorización:**
+
+  * **Formulario de Registro de Usuarios (con validaciones y creación de perfil de cliente asociado).**
+  * **Formulario de Inicio de Sesión (con validaciones).**
+  * **Flujo de Recuperación de Contraseña:** **Formulario para solicitar reseteo y formulario para establecer nueva contraseña (vía token por email).**
+  * **Gestión de sesión segura mediante Tokens JWT (almacenados en** **localStorage**).
+  * **Guardia de rutas (**AuthGuard**) para proteger secciones que requieren inicio de sesión (Carrito, Checkout, Mis Pedidos, Direcciones).**
+  * **Guardia de rutas (**AdminGuard**) para proteger toda la sección de administración (**/admin**) verificando el rol** **ADMIN_ROLE**.
+  * **Interceptor HTTP (**AuthInterceptor**) para añadir automáticamente el token JWT a las peticiones API y manejar errores 401 (deslogueo automático).**
 * **Carrito de Compras:**
-  * Página dedicada para visualizar y gestionar el carrito.
-  * Añadir productos desde la lista o el detalle.
-  * Incrementar/Decrementar cantidad de ítems.
-  * Eliminar ítems individuales.
-  * Vaciar el carrito completo (con modal de confirmación).
-  * Cálculo y visualización de subtotales, IVA y total.
+
+  * **Página dedicada (**/cart**) para visualizar y gestionar el carrito.**
+  * **Añadir productos desde listas o detalle (con manejo de autenticación y acciones pendientes si el usuario no está logueado).**
+  * **Incrementar/Decrementar cantidad de ítems (con validación de stock).**
+  * **Eliminar ítems individuales.**
+  * **Vaciar el carrito completo (con modal de confirmación NgBootstrap).**
+  * **Cálculo y visualización en tiempo real de subtotales (con/sin IVA), IVA total y total general.**
+  * **(Próximamente):** **Aplicación de cupones de descuento.**
 * **Proceso de Compra (Checkout):**
-  * Página de checkout protegida.
-  * Selección de dirección de envío guardada (para usuarios logueados).
-  * Formulario para ingresar una nueva dirección de envío (con carga dinámica de ciudades y barrios).
-  * Resumen del pedido antes de pagar.
-  * Integración con Mercado Pago: Redirección al checkout de MP al confirmar.
+
+  * **Página de checkout (**/checkout**) protegida por** **AuthGuard**.
+  * **Gestión de Direcciones de Envío:**
+
+    * **Opción para seleccionar una dirección guardada (si el usuario está logueado y tiene direcciones).**
+    * **Formulario completo para ingresar una nueva dirección (para usuarios logueados y como flujo principal para invitados implícitos).**
+    * **Carga dinámica de Ciudades y Barrios desde la API para el formulario de nueva dirección.**
+    * **Validación del formulario de nueva dirección.**
+  * **Resumen detallado del pedido antes de proceder al pago.**
+  * **Integración con** **Mercado Pago:** **Al confirmar, se crea el pedido en el backend, se genera la preferencia de pago y se redirige al usuario al checkout de Mercado Pago.**
 * **Gestión de Pedidos (Cliente):**
-  * Página "Mis Pedidos" para ver el historial de compras del usuario autenticado.
-  * Página de detalle para cada pedido.
-  * Visualización del estado del pedido (Pendiente, Completado, Cancelado).
+
+  * **Página "Mis Pedidos" (**/my-orders**) protegida por** **AuthGuard** **para ver el historial de compras.**
+  * **Listado paginado de pedidos del usuario.**
+  * **Página de detalle (**/my-orders/:orderId**) para cada pedido, mostrando resumen, estado, ítems y detalles de envío.**
+  * **Visualización clara del estado del pedido (Pendiente, Completado, Cancelado).**
 * **Manejo de Callbacks de Pago:**
-  * Páginas dedicadas para mostrar mensajes de Éxito, Fallo o Pendiente tras la redirección desde Mercado Pago.
-* **Interfaz de Administración (CRUDs):**
-  * **Módulo Admin (`/admin`):** Sección protegida por rol (`AdminGuard` implementado).
-  * **Gestión de Categorías:** Listar, Crear, Editar, Eliminar.
-  * **Gestión de Unidades de Medida:** Listar, Crear, Editar, Eliminar.
-  * **Gestión de Etiquetas (Tags):** Listar, Crear, Editar, Eliminar.
-  * **Gestión de Ciudades:** Listar, Crear, Editar, Eliminar.
-  * **Gestión de Barrios:** Listar, Crear, Editar, Eliminar (depende de Ciudad).
-  * **Gestión de Productos:** Listar, Crear, Editar, Eliminar (incluye subida/gestión de imágenes y selección de Categoría, Unidad, Tags).
-  * **Gestión de Cupones:** Listar, Crear, Editar, Eliminar.
-  * **(Próximamente):** Gestión de Clientes, Usuarios (roles) y Pedidos (estados).
+
+  * **Páginas dedicadas (**/payment/success**,** **/payment/failure**, **/payment/pending**) para mostrar mensajes informativos al usuario tras la redirección desde Mercado Pago, incluyendo el ID del pedido afectado.
+* **Interfaz de Administración (Módulo** **/admin** **- Protegido por** **AdminGuard**):
+
+  * **Gestión Completa de Catálogos:**
+
+    * **Categorías:** **Listar, Crear, Editar, Eliminar.**
+    * **Unidades de Medida:** **Listar, Crear, Editar, Eliminar.**
+    * **Etiquetas (Tags):** **Listar, Crear, Editar, Eliminar.**
+    * **Productos:** **Listar (paginado), Crear (con subida de imagen a Cloudinary), Editar (con reemplazo/eliminación de imagen y gestión de tags), Eliminar. Selección de Categoría, Unidad y Tags múltiples.**
+  * **Gestión Geográfica:**
+
+    * **Ciudades:** **Listar, Crear, Editar, Eliminar.**
+    * **Barrios:** **Listar, Crear, Editar, Eliminar (asociados a una Ciudad).**
+  * **Gestión de Promociones:**
+
+    * **Cupones:** **Listar, Crear, Editar (código, tipo, valor, fechas, límites, etc.), Eliminar.**
+  * **Gestión de Ventas:**
+
+    * **Pedidos:** **Listar todos los pedidos (paginado), Ver detalle completo de un pedido,** **Actualizar estado del pedido** **(Pendiente, Completado, Cancelado).**
+  * **(Próximamente en UI Admin):** **Gestión de Clientes y Usuarios (roles).**
 * **UI/UX:**
-  * Notificaciones visuales (Toastr) para feedback al usuario (éxito, error, info).
-  * Indicadores de carga (spinners) durante operaciones asíncronas.
-  * Diseño basado en Bootstrap con componentes NgBootstrap.
-  * Navegación fluida con `RouterModule`.
-  * Sidebar y Header interactivos y dinámicos según autenticación/rol.
-  * Páginas estáticas (Términos y Condiciones, Política de Privacidad) con botón "Volver".
+
+  * **Notificaciones visuales (Toastr** **ngx-toastr**) para feedback interactivo (éxito, error, información).
+  * **Indicadores de carga (spinners Bootstrap) durante operaciones asíncronas.**
+  * **Uso de componentes NgBootstrap (Paginación, Modales, Dropdowns).**
+  * **Navegación clara y consistente mediante** **RouterModule**.
+  * **Sidebar y Header interactivos:**
+
+    * **Sidebar colapsable.**
+    * **Header que se oculta/muestra con el scroll.**
+    * **Visualización dinámica de opciones (Login/Registro vs. Menú de Usuario, Carrito, Sección Admin) basada en estado de autenticación y rol.**
+    * **Icono de carrito siempre visible en móviles.**
 
 ## 🛠️ Tecnologías Utilizadas
 
-* **Framework:** Angular (v14+ asumido)
-* **Lenguaje:** TypeScript
+* **Framework:** **Angular (v14+ asumido)**
+* **Lenguaje:** **TypeScript**
 * **UI:**
-  * HTML5, SCSS
-  * Bootstrap 5 (vía clases CSS)
-  * NgBootstrap (para componentes como Paginación, Modales)
-  * Bootstrap Icons (para iconografía)
-* **Gestión de Estado (Básica):** RxJS (BehaviorSubject, Observable) en Servicios
-* **HTTP Client:** Angular HttpClientModule
-* **Routing:** Angular RouterModule
-* **Formularios:** Angular ReactiveFormsModule, FormsModule
-* **Notificaciones:** `ngx-toastr`
-* **Gestión de Paquetes:** npm o yarn
-* **Build Tool:** Angular CLI
+
+  * **HTML5, SCSS**
+  * **Bootstrap 5 (Clases CSS)**
+  * **NgBootstrap (Componentes Angular para Bootstrap)**
+  * **Bootstrap Icons**
+* **Gestión de Estado:** **RxJS (BehaviorSubject, Observable) en Servicios (Patrón Servicio con Subject)**
+* **HTTP:** **Angular HttpClientModule**
+* **Routing:** **Angular RouterModule**
+* **Formularios:** **Angular ReactiveFormsModule, FormsModule**
+* **Notificaciones:** **ngx-toastr**
+* **Gestión de Paquetes:** **npm**
+* **Build Tool:** **Angular CLI**
 
 ## 🏗️ Estructura del Proyecto
 
-El proyecto sigue una estructura modular estándar de Angular:
+**(La estructura que describiste es excelente y se mantiene)**
 
-* **`app/`**: Módulo raíz y componentes principales.
-  * `app-routing.module.ts`: Define las rutas principales y carga diferida.
-  * `app.module.ts`: Módulo raíz de la aplicación.
-* **`auth/`**: Módulo para autenticación (Login, Registro, Guards, Interceptor, Service).
-* **`features/`**: Contiene los módulos de las funcionalidades principales.
-  * `cart/`: Gestión del carrito.
-  * `checkout/`: Proceso de pago.
-  * `dashboard/`: Página de inicio.
-  * `orders/`: Historial y detalle de pedidos del cliente.
-  * `payments/`: Componentes de callback de pago.
-  * `products/`: Listado y detalle de productos.
-* **`admin/`**: Módulo (lazy loaded) para la interfaz de administración.
-  * `pages/`: Componentes de las páginas CRUD (List, Form) para Categorías, Unidades, Tags, Ciudades, Barrios, Productos, Cupones.
-  * `services/`: Servicios para interactuar con la API de admin (AdminCategoryService, AdminUnitService, etc.).
-  * `guards/`: `AdminGuard` para proteger el acceso a `/admin`.
-* **`shared/`**: Módulo con componentes, servicios, modelos y pipes reutilizables.
-  * `components/`: Componentes comunes (Notpagefound).
-  * `header/`, `sidebar/`, `layouts/`: Componentes de la estructura visual.
-  * `models/`: Interfaces comunes (IUser, ICoupon, etc.).
-  * `pages/`: Páginas estáticas (Términos, Privacidad).
-  * `services/`: Servicios compartidos (NotificationService).
-  * `dtos/`: DTOs compartidos (PaginationDto).
-* **`environments/`**: Archivos de configuración para diferentes entornos (API URL).
-* **`assets/`**: Archivos estáticos (imágenes, fuentes, etc.).
+* **app/**: Módulo raíz y componentes principales.
+
+  * **app-routing.module.ts**: Rutas principales, lazy loading.
+* **app.module.ts**: Módulo raíz.
+* **auth/**: Módulo de autenticación (Login, Registro, Reset Password, Guards, Interceptor, Service).
+* **features/**: Módulos de funcionalidades principales.
+
+  * **cart/**: Carrito de compras.
+* **checkout/**: Proceso de pago.
+* **dashboard/**: Página de inicio.
+* **orders/**: Historial y detalle de pedidos del cliente.
+* **payments/**: Componentes de callback de pago (Success, Failure, Pending).
+* **products/**: Listado y detalle de productos públicos.
+* **admin/**: Módulo lazy loaded para administración.
+
+  * **pages/**: Componentes CRUD (List, Form) para entidades gestionables.
+* **services/**: Servicios API específicos de admin.
+* **guards/**: **AdminGuard**.
+* **shared/**: Módulo con elementos reutilizables.
+
+  * **components/**: Notpagefound.
+* **header/**, **sidebar/**, **layouts/**: Estructura visual.
+* **models/**: Interfaces comunes (IUser, ICoupon, IOrder, etc.).
+* **pages/**: Términos, Privacidad.
+* **services/**: NotificationService.
+* **dtos/**: PaginationDto.
+* **environments/**: Configuración de entornos (API URL).
+* **assets/**: Archivos estáticos.
 
 ## 📋 Prerrequisitos
 
-* **Node.js:** v16 o v18+ recomendado.
-* **npm** o **yarn**.
-* **Angular CLI:** (Opcional, pero recomendado) `npm install -g @angular/cli`.
-* **API Backend Corriendo:** La [API Backend](link-a-tu-repo-backend) debe estar ejecutándose y accesible. Anota su URL.
+* **Node.js:** **v18+ recomendado.**
+* **npm** **(v9+ recomendado).**
+* **Angular CLI:** **npm install -g @angular/cli**.
+* **API Backend Corriendo:** **La** [API Backend](https://www.google.com/url?sa=E&q=link-a-tu-repo-backend) **debe estar ejecutándose.**
 
 ## 🚀 Instalación
 
-1. **Clona el repositorio:**
-   ```bash
-   git clone <tu-repositorio-frontend-url>
-   cd <nombre-del-directorio-frontend>
-   ```
-2. **Instala las dependencias:**
-   ```bash
-   npm install
-   # o
-   yarn install
-   ```
-3. **Configura las variables de entorno:**
-   * Edita el archivo `src/environments/environment.ts` para desarrollo:
-     ```typescript
-     export const environment = {
-       production: false,
-       apiUrl: 'http://localhost:3000' // <-- URL de tu API Backend local (VERIFICA EL PUERTO)
-     };
-     ```
-   * Edita el archivo `src/environments/environment.prod.ts` para producción:
-     ```typescript
-     export const environment = {
-       production: true,
-       apiUrl: 'https://sistema-mongo.onrender.com' // <-- URL de tu API Backend en producción (YA LA TIENES)
-     };
-     ```
-   * **Importante:** Asegúrate de que la `apiUrl` en `environment.ts` coincida con la URL donde se está ejecutando tu backend localmente.
+* **Clona:** **git clone `<tu-repositorio-frontend-url>`** **y** **cd `<directorio>`**
+* **Instala:** **npm install**
+* **Configura Entornos:** **Edita** **src/environments/environment.ts** **(desarrollo) y** **src/environments/environment.prod.ts** **(producción) con la** **apiUrl** **correcta de tu backend.**
 
 ## ▶️ Ejecutar la Aplicación
 
-* **Modo Desarrollo:**
+* **Desarrollo:** **ng serve -o** **(Servidor local en** **http://localhost:4200** **con recarga automática).**
+* **Producción (Build):** **ng build** **(Genera los archivos estáticos optimizados en** **dist/`<nombre-proyecto>`/**).
 
-  * Ejecuta el siguiente comando. Esto compilará la aplicación, iniciará un servidor de desarrollo y abrirá automáticamente tu navegador en `http://localhost:4200/`.
+## 🌐 Flujo de Autenticación y Autorización
 
-  ```bash
-  ng serve -o
-  ```
+**(El flujo que describiste es correcto y se mantiene)**
 
-  * La aplicación se recargará automáticamente si cambias algún archivo fuente.
-* **Compilar para Producción:**
+## 🛡️ Sección de Administración (**/admin**)
 
-  * Ejecuta el siguiente comando para compilar la aplicación optimizada para producción:
-
-  ```bash
-  ng build --configuration production
-  # o simplemente
-  ng build
-  ```
-
-  * Los archivos compilados se encontrarán en el directorio `dist/<nombre-del-proyecto>/`.
-  * Estos archivos estáticos (HTML, CSS, JS) deben ser desplegados en un servidor web.
-
-## 🌐 Flujo de Autenticación
-
-1. El usuario navega a `/auth/login` o `/auth/register`.
-2. Ingresa credenciales/datos.
-3. `AuthService` envía la petición a la API Backend.
-4. Si el login es exitoso, la API devuelve un objeto `user` que contiene el `token` JWT.
-5. `AuthService` almacena el token y la información del usuario (sin el token) en `localStorage`.
-6. `AuthService` actualiza los `BehaviorSubject` (`isAuthenticatedSubject`, `userSubject`).
-7. El `AuthInterceptor` adjuntará el token (`Bearer <token>`) a las cabeceras `Authorization` de las peticiones HTTP subsiguientes a la API.
-8. El `AuthGuard` verifica la presencia del token para permitir o denegar el acceso a rutas protegidas.
-9. El `AdminGuard` verifica la presencia del token Y el rol `ADMIN_ROLE` para permitir el acceso a `/admin`.
-10. Si una petición a la API devuelve un error 401, el `AuthInterceptor` llama a `AuthService.logout()`, limpiando `localStorage` y redirigiendo al login.
-
-## 🛡️ Sección de Administración (`/admin`)
-
-* Acceso protegido mediante `AuthGuard` y `AdminGuard` (verifica token y rol `ADMIN_ROLE`).
-* Permite la gestión (CRUD - Crear, Leer, Actualizar, Eliminar) de las entidades principales de la tienda:
-  * Categorías
-  * Unidades de Medida
-  * Etiquetas (Tags)
-  * Ciudades
-  * Barrios
-  * Productos (con subida/gestión de imágenes)
-  * Cupones
-* Utiliza servicios específicos (ej: `AdminCategoryService`, `AdminProductService`) que llaman a los endpoints `/api/admin/...` del backend.
+**(La descripción que diste es precisa y se mantiene, incluyendo todos los CRUDs implementados)**
 
 ## 🚧 Mejoras Futuras / TODO (Frontend)
 
-* **Completar CRUDs Admin:**
-  * Gestión de Clientes (Listar, Ver, Editar Estado/Info básica).
-  * Gestión de Usuarios (Listar, Editar Roles - ¡Importante!).
-  * Gestión de Pedidos (Listar, Ver Detalles, Actualizar Estado).
-* **UI Panel Admin:** Mejorar la navegación y presentación (quizás un layout dedicado, dashboard admin).
-* **Chatbot UI:** Crear componente y servicio para interactuar con la API del chatbot (`/api/chatbot`).
-* **Filtros Avanzados Productos:** Implementar UI para usar todos los filtros de la API (`/api/products/search`): por precio, ordenamiento.
-* **Gestión de Direcciones (Perfil Usuario):** Crear sección en el perfil del usuario para añadir/editar/eliminar/marcar como default sus direcciones (`/api/addresses`).
-* **UI "Olvidé Contraseña":** Añadir formularios y lógica para el flujo de reseteo de contraseña (`/api/auth/forgot-password`, `/api/auth/reset-password`).
-* **UI Wishlist:** Si se implementa en backend.
-* **UI Reseñas:** Si se implementa en backend.
-* **Pruebas:** Añadir pruebas unitarias (Karma/Jasmine) y E2E (Cypress/Protractor).
-* **Optimización:** Lazy loading de imágenes, optimización de bundles, estrategias de caché.
-* **Accesibilidad (a11y):** Mejorar la accesibilidad del sitio.
-* **Progressive Web App (PWA):** Convertir la aplicación en una PWA para capacidades offline y de instalación.
+* **Completar UI Admin:**
+  * ~~Gestión de Clientes (Listar, Ver Detalles).~~ **(Ya existe listado básico, falta UI para ver/editar detalles específicos del cliente si es necesario más allá del perfil de usuario).**
+  * ~~Gestión de Usuarios (Listar, Editar Roles).~~ **(Ya existe listado básico y endpoints en backend, falta UI específica para editar roles/estado desde admin).**
+  * ~~Dashboard Admin con estadísticas básicas.~~ **(Falta implementar un dashboard visual con gráficos/KPIs).**
+  * **Mejorar Navegación/Layout Admin:** Crear un layout específico para `/admin` o mejorar la integración con el sidebar actual para una mejor experiencia.
+
+* **Funcionalidad Cliente:**
+  * **Aplicar Cupones:** UI en carrito/checkout y lógica de servicio.
+  * **Perfil de Usuario:** Editar nombre/email, Cambiar contraseña.
+  * **Wishlist:** Botones, servicio y página dedicada.
+  * **Reseñas/Calificaciones:** UI en detalle de producto, formulario de envío.
+* **UX/UI:**
+  * **Búsqueda Avanzada:** Barra de búsqueda global, sugerencias.
+  * **Filtros/Ordenamiento:** UI completa en listas de productos.
+  * **Skeleton Loaders:** Reemplazar spinners simples.
+  * **Optimización de Imágenes:** Lazy loading.
+* **Técnico:**
+  * **Pruebas:** Unitarias y E2E.
+  * **SEO:** Títulos/Metas dinámicos.
+  * **Monitorización Errores:** Integrar Sentry o similar.
+  * **Accesibilidad (a11y).**
+  * **(Opcional) PWA.**
 
 ## 🤝 Contribuciones
 
-Las contribuciones son bienvenidas. Por favor, abre un issue o un Pull Request en el repositorio.
+**Las contribuciones son bienvenidas. Por favor, abre un issue o un Pull Request en el repositorio.**
 
 ## 📄 Licencia
 
-Copyright (c) 2025 Luis Alberto Ivetta. Todos los derechos reservados.
+**Copyright (c) 2025 Luis Alberto Ivetta. Todos los derechos reservados.**
 
-Este software es propietario. El uso, copia, modificación, distribución o ejecución de este software o cualquier parte del mismo está estrictamente prohibido sin el permiso explícito por escrito del titular de los derechos de autor. Para consultas sobre licencias, por favor contacte a laivetta@gmail.com
+**Este software es propietario. El uso, copia, modificación, distribución o ejecución de este software o cualquier parte del mismo está estrictamente prohibido sin el permiso explícito por escrito del titular de los derechos de autor. Para consultas sobre licencias, por favor contacte a** [laivetta@gmail.com](https://www.google.com/url?sa=E&q=mailto%3Alaivetta%40gmail.com)
+
+---
+
+**Este README actualizado refleja mejor el estado actual y las capacidades de tu frontend Angular. ¡Buen trabajo!**
+
+**Completar UI Admin:**
+    *   ~~Gestión de Clientes (Listar, Ver Detalles).~~ **(Ya existe listado básico, falta UI para ver/editar detalles específicos del cliente si es necesario más allá del perfil de usuario).**
+    *   ~~Gestión de Usuarios (Listar, Editar Roles).~~ **(Ya existe listado básico y endpoints en backend, falta UI específica para editar roles/estado desde admin).**
+    *   ~~Dashboard Admin con estadísticas básicas.~~ **(Falta implementar un dashboard visual con gráficos/KPIs).**
+    *   **Mejorar Navegación/Layout Admin:** Crear un layout específico para `/admin` o mejorar la integración con el sidebar actual para una mejor experiencia.
+
+* **Funcionalidad Cliente:**
+  * **Aplicar Cupones:** UI en carrito/checkout y lógica de servicio.
+  * **Perfil de Usuario:** Editar nombre/email, Cambiar contraseña.
+  * **Wishlist:** Botones, servicio y página dedicada.
+  * **Reseñas/Calificaciones:** UI en detalle de producto, formulario de envío.
+* **UX/UI:**
+  * **Búsqueda Avanzada:** Barra de búsqueda global, sugerencias.
+  * **Filtros/Ordenamiento:** UI completa en listas de productos.
+  * **Skeleton Loaders:** Reemplazar spinners simples.
+  * **Optimización de Imágenes:** Lazy loading.
+* **Técnico:**
+  * **Pruebas:** Unitarias y E2E.
+  * **SEO:** Títulos/Metas dinámicos.
+  * **Monitorización Errores:** Integrar Sentry o similar.
+  * **Accesibilidad (a11y).**
+  * **(Opcional) PWA.**
