@@ -2,7 +2,7 @@
 <div class="container mt-4 mb-5">
 
 
-    <!-- ***** BOTÓN VOLVER (AÑADIDO DE NUEVO) ***** -->
+    <!-- ***** BOTÓN VOLVER  -->
     <div class="mb-3">
         <button class="btn btn-outline-secondary" (click)="goBack()">
             <i class="bi bi-arrow-left"></i> Volver
@@ -14,7 +14,6 @@
     <h2>Tu Carrito de Compras</h2>
     <hr>
 
-    <!-- ... (Estados de Carga y Error sin cambios) ... -->
 
     <!-- Contenido del Carrito -->
     <ng-container *ngIf="cart$ | async as cart; else emptyCart">
