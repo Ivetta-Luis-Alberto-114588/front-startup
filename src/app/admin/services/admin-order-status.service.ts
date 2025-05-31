@@ -36,37 +36,96 @@ export interface ITransitionValidationResponse {
 export class AdminOrderStatusService {
     private apiUrl = `${environment.apiUrl}/api/order-statuses`;
 
-    constructor(private http: HttpClient) { }    /**
-     * Obtiene todos los estados de pedido con paginación cliente
+    constructor(private http: HttpClient) { }
+
+    /**
+     * Transforma datos del backend al formato esperado por el frontend
      */
-    getOrderStatuses(pagination?: PaginationDto): Observable<IOrderStatusesResponse> {
-        // Usar el endpoint existente sin parámetros de paginación
-        return this.http.get<IOrderStatusesResponse>(this.apiUrl).pipe(
-            map((response: IOrderStatusesResponse) => {
-                // Si no hay paginación, devolver todo
-                if (!pagination || !pagination.page || !pagination.limit) {
-                    return response;
+    private transformOrderStatus(data: any): IOrderStatus {
+        return {
+            _id: data._id || data.id, // Usar _id si existe, sino usar id
+            name: data.name,
+            description: data.description,
+            color: data.color,
+            priority: data.priority || data.order || 0,
+            isFinal: data.isFinal || !data.isActive,
+            allowedTransitions: data.allowedTransitions || data.canTransitionTo || [],
+            createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+            updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined
+        };
+    }/**
+     * Obtiene todos los estados de pedido con paginación cliente
+     */    getOrderStatuses(pagination?: PaginationDto): Observable<IOrderStatusesResponse> {
+        // Try the real API first, with better error handling for different response formats
+        return this.http.get<any>(this.apiUrl).pipe(            map((response: any) => {
+                let rawOrderStatuses: any[] = [];
+                let total = 0;
+                
+                // Handle different possible response formats
+                if (Array.isArray(response)) {
+                    // Response is directly an array of order statuses
+                    rawOrderStatuses = response;
+                    total = response.length;
+                } else if (response && response.orderStatuses && Array.isArray(response.orderStatuses)) {
+                    // Response is wrapped in an object with orderStatuses property
+                    rawOrderStatuses = response.orderStatuses;
+                    total = response.total || response.orderStatuses.length;
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    // Response is wrapped in an object with data property
+                    rawOrderStatuses = response.data;
+                    total = response.total || response.data.length;
+                } else {
+                    throw new Error('Unexpected API response format');
                 }
 
-                // Implementar paginación del lado cliente
-                const page = pagination.page || 1;
-                const limit = pagination.limit || 10;
-                const startIndex = (page - 1) * limit;
-                const endIndex = startIndex + limit;
+                // Transform raw data to IOrderStatus format
+                const orderStatuses: IOrderStatus[] = rawOrderStatuses.map(data => this.transformOrderStatus(data));
                 
-                const paginatedOrderStatuses = response.orderStatuses.slice(startIndex, endIndex);
+                // Apply pagination if requested
+                if (pagination && pagination.page && pagination.limit) {
+                    const page = pagination.page;
+                    const limit = pagination.limit;
+                    const startIndex = (page - 1) * limit;
+                    const endIndex = startIndex + limit;
+                    
+                    const paginatedOrderStatuses = orderStatuses.slice(startIndex, endIndex);
+                    
+                    return {
+                        orderStatuses: paginatedOrderStatuses,
+                        total: total
+                    };
+                }
                 
                 return {
-                    orderStatuses: paginatedOrderStatuses,
-                    total: response.total || response.orderStatuses.length
+                    orderStatuses: orderStatuses,
+                    total: total
                 };
-            }),
-            catchError((error) => {
-                console.error('Error in getOrderStatuses:', error);
-                // Devolver datos mock en caso de error para testing
+            }),            catchError((error) => {
+                console.error('Error loading order statuses from API, using mock data:', error);
+                
+                const mockData = this.getMockOrderStatuses();
+                console.log('DEBUG - Mock data generated:', mockData);
+                
+                // Apply pagination to mock data if requested
+                if (pagination && pagination.page && pagination.limit) {
+                    const page = pagination.page;
+                    const limit = pagination.limit;
+                    const startIndex = (page - 1) * limit;
+                    const endIndex = startIndex + limit;
+                    
+                    const paginatedMockData = mockData.slice(startIndex, endIndex);
+                    console.log('DEBUG - Paginated mock data:', paginatedMockData);
+                    
+                    return of({
+                        orderStatuses: paginatedMockData,
+                        total: mockData.length
+                    });
+                }
+                
+                console.log('DEBUG - Returning full mock data:', mockData);
                 return of({
-                    orderStatuses: this.getMockOrderStatuses(),
-                    total: this.getMockOrderStatuses().length
+                    orderStatuses: mockData,
+                    total: mockData.length
                 });
             })
         );
@@ -154,25 +213,25 @@ export class AdminOrderStatusService {
      * Obtiene un estado de pedido por ID
      */
     getOrderStatusById(id: string): Observable<IOrderStatus> {
-        return this.http.get<IOrderStatus>(`${this.apiUrl}/${id}`).pipe(
+        return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+            map(response => this.transformOrderStatus(response)),
             catchError((error) => {
                 console.error('Error getting order status by ID:', error);
                 // Buscar en los datos mock
                 const mockData = this.getMockOrderStatuses();
-                const found = mockData.find(status => status._id === id);
+                const found = mockData.find(status => status._id === id || (status as any).id === id);
                 if (found) {
                     return of(found);
                 }
                 return throwError(() => error);
             })
         );
-    }
-
-    /**
+    }    /**
      * Crea un nuevo estado de pedido
      */
     createOrderStatus(orderStatus: IOrderStatusCreateDto): Observable<IOrderStatus> {
-        return this.http.post<IOrderStatus>(this.apiUrl, orderStatus).pipe(
+        return this.http.post<any>(this.apiUrl, orderStatus).pipe(
+            map(response => this.transformOrderStatus(response)),
             catchError((error) => {
                 console.error('Error creating order status:', error);
                 // Simular creación exitosa para desarrollo
@@ -190,13 +249,12 @@ export class AdminOrderStatusService {
                 return of(newOrderStatus);
             })
         );
-    }
-
-    /**
+    }    /**
      * Actualiza un estado de pedido existente
      */
     updateOrderStatus(id: string, orderStatus: IOrderStatusUpdateDto): Observable<IOrderStatus> {
-        return this.http.put<IOrderStatus>(`${this.apiUrl}/${id}`, orderStatus).pipe(
+        return this.http.put<any>(`${this.apiUrl}/${id}`, orderStatus).pipe(
+            map(response => this.transformOrderStatus(response)),
             catchError((error) => {
                 console.error('Error updating order status:', error);
                 // Simular actualización exitosa para desarrollo

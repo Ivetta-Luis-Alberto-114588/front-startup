@@ -36,8 +36,7 @@
 
             <!-- Tabla con datos -->
             <div *ngIf="orderStatuses.length > 0" class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
+                <table class="table table-hover">                    <thead class="table-light">
                         <tr>
                             <th>Color</th>
                             <th>Nombre</th>
@@ -48,8 +47,7 @@
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr *ngFor="let orderStatus of orderStatuses">
+                    <tbody>                        <tr *ngFor="let orderStatus of orderStatuses">
                             <td>
                                 <div 
                                     class="color-preview rounded-circle" 
@@ -81,18 +79,19 @@
                                 <span class="badge bg-light text-dark">
                                     {{ orderStatus.allowedTransitions?.length || 0 }} transiciones
                                 </span>
-                            </td>
-                            <td class="text-center">
+                            </td>                            <td class="text-center">
                                 <div class="btn-group btn-group-sm" role="group">
                                     <button 
                                         class="btn btn-outline-primary" 
                                         (click)="editOrderStatus(orderStatus)"
+                                        [disabled]="!hasValidId(orderStatus)"
                                         title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button 
                                         class="btn btn-outline-danger" 
                                         (click)="openDeleteModal(orderStatus)"
+                                        [disabled]="!hasValidId(orderStatus)"
                                         title="Eliminar">
                                         <i class="bi bi-trash"></i>
                                     </button>

@@ -51,7 +51,6 @@ export class OrderStatusListComponent implements OnInit, OnDestroy {
       this.deleteModal.dispose();
     }
   }
-
   loadOrderStatuses(): void {
     this.isLoading = true;
     this.error = null;
@@ -64,9 +63,7 @@ export class OrderStatusListComponent implements OnInit, OnDestroy {
     this.orderStatusService.getOrderStatuses(pagination)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading = false)
-      )
-      .subscribe({
+        finalize(() => this.isLoading = false)      )      .subscribe({
         next: (response) => {
           this.orderStatuses = response.orderStatuses;
           this.totalItems = response.total;
@@ -81,25 +78,45 @@ export class OrderStatusListComponent implements OnInit, OnDestroy {
 
   goToCreateOrderStatus(): void {
     this.router.navigate(['/admin/order-statuses/new']);
-  }
-
-  editOrderStatus(orderStatus: IOrderStatus): void {
-    this.router.navigate(['/admin/order-statuses/edit', orderStatus._id]);
-  }
-
-  openDeleteModal(orderStatus: IOrderStatus): void {
+  }  editOrderStatus(orderStatus: IOrderStatus): void {
+    // El backend devuelve 'id' en lugar de '_id'
+    const statusId = orderStatus._id || (orderStatus as any).id;
+    
+    if (!statusId) {
+      this.error = 'Error: El ID del estado no está definido';
+      return;
+    }
+    
+    this.router.navigate(['/admin/order-statuses/edit', statusId]);
+  }openDeleteModal(orderStatus: IOrderStatus): void {
+    // El backend devuelve 'id' en lugar de '_id'
+    const statusId = orderStatus._id || (orderStatus as any).id;
+    
+    if (!statusId) {
+      this.error = 'Error: El ID del estado no está definido';
+      return;
+    }
+    
     this.selectedOrderStatus = orderStatus;
     const modalElement = document.getElementById('deleteModal');
+    
     if (modalElement) {
       this.deleteModal = new bootstrap.Modal(modalElement);
       this.deleteModal.show();
     }
   }
-
   confirmDelete(): void {
     if (!this.selectedOrderStatus) return;
 
-    this.orderStatusService.deleteOrderStatus(this.selectedOrderStatus._id)
+    // El backend devuelve 'id' en lugar de '_id'
+    const statusId = this.selectedOrderStatus._id || (this.selectedOrderStatus as any).id;
+    
+    if (!statusId) {
+      this.error = 'Error: El ID del estado no está definido';
+      return;
+    }
+
+    this.orderStatusService.deleteOrderStatus(statusId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -120,7 +137,6 @@ export class OrderStatusListComponent implements OnInit, OnDestroy {
     this.currentPage = page;
     this.loadOrderStatuses();
   }
-
   getPriorityClass(priority: number): string {
     if (priority <= 30) return 'low';
     if (priority <= 70) return 'medium';
@@ -131,5 +147,9 @@ export class OrderStatusListComponent implements OnInit, OnDestroy {
     if (priority <= 30) return 'bg-success';
     if (priority <= 70) return 'bg-warning';
     return 'bg-danger';
+  }
+
+  hasValidId(orderStatus: IOrderStatus): boolean {
+    return !!(orderStatus._id || (orderStatus as any).id);
   }
 }
