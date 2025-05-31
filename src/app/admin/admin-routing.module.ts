@@ -22,6 +22,7 @@ import { CustomerListComponent } from './pages/customer-list/customer-list.compo
 import { CustomerFormComponent } from './pages/customer-form/customer-form.component';
 import { UserListComponent } from './pages/user-list/user-list.component';
 import { UserFormComponent } from './pages/user-form/user-form.component';
+import { OrderStatusDashboardComponent } from './pages/order-status-dashboard/order-status-dashboard.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -138,7 +139,6 @@ const routes: Routes = [
   // --- FIN RUTAS CUPONES ---
 
 
-
   // --- RUTAS PARA PEDIDOS (ADMIN) ---
   {
     path: 'orders', // -> /admin/orders
@@ -147,6 +147,10 @@ const routes: Routes = [
   {
     path: 'orders/:id', // -> /admin/orders/order123 (Ruta para ver detalle)
     component: OrderDetailComponent // Usar el componente de detalle
+  },
+  {
+    path: 'order-status-dashboard', // -> /admin/order-status-dashboard
+    component: OrderStatusDashboardComponent
   },
   // --- FIN RUTAS PEDIDOS ---
 
