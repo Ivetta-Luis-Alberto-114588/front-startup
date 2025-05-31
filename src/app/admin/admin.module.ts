@@ -24,6 +24,8 @@ import { CustomerFormComponent } from './pages/customer-form/customer-form.compo
 import { UserListComponent } from './pages/user-list/user-list.component';
 import { UserFormComponent } from './pages/user-form/user-form.component';
 import { OrderStatusDashboardComponent } from './pages/order-status-dashboard/order-status-dashboard.component';
+import { OrderStatusListComponent } from './pages/order-status-list/order-status-list.component';
+import { OrderStatusFormComponent } from './pages/order-status-form/order-status-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 @NgModule({
@@ -44,10 +46,10 @@ import { OrderStatusDashboardComponent } from './pages/order-status-dashboard/or
     CouponFormComponent,
     OrderListComponent,
     OrderDetailComponent,
-    CustomerListComponent, CustomerFormComponent,
-    UserListComponent,
-    UserFormComponent,
+    CustomerListComponent, CustomerFormComponent,    UserListComponent,    UserFormComponent,
     OrderStatusDashboardComponent,
+    OrderStatusListComponent,
+    OrderStatusFormComponent,
     // Declara aquí otros componentes de admin
   ],
   imports: [

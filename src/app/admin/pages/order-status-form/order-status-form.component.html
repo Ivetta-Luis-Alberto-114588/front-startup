@@ -1,0 +1,276 @@
+<!-- src/app/admin/pages/order-status-form/order-status-form.component.html -->
+<div class="container-fluid mt-4">
+    <!-- Botón Volver -->
+    <div class="mb-3">
+        <button class="btn btn-outline-secondary" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i> Volver
+        </button>
+    </div>
+
+    <!-- Título -->
+    <div class="text-left mb-3">
+        <h2>{{ isEditMode ? 'Editar Estado de Pedido' : 'Nuevo Estado de Pedido' }}</h2>
+    </div>
+
+    <hr>
+
+    <!-- Indicador de Carga -->
+    <div *ngIf="isLoading && isEditMode" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando datos...</span>
+        </div>
+    </div>
+
+    <!-- Mensaje de Error -->
+    <div *ngIf="error && !isLoading" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+    </div>
+
+    <!-- Formulario -->
+    <div *ngIf="!isLoading" class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form [formGroup]="orderStatusForm" (ngSubmit)="onSubmit()">
+                          <!-- Nombre -->
+                        <div class="mb-3">
+                            <label for="name" class="form-label">
+                                Nombre <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="name"
+                                class="form-control" 
+                                formControlName="name"
+                                [class.is-invalid]="name?.invalid && (name?.dirty || name?.touched)"
+                                placeholder="Ej: Pendiente, En proceso, Completado">
+                            <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="invalid-feedback">
+                                <div *ngIf="name?.errors?.['required']">El nombre es requerido</div>
+                                <div *ngIf="name?.errors?.['minlength']">El nombre debe tener al menos 2 caracteres</div>
+                                <div *ngIf="name?.errors?.['maxlength']">El nombre no puede exceder 50 caracteres</div>
+                            </div>
+                        </div>
+
+                        <!-- Código -->
+                        <div class="mb-3">
+                            <label for="code" class="form-label">
+                                Código <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="code"
+                                class="form-control" 
+                                formControlName="code"
+                                [class.is-invalid]="code?.invalid && (code?.dirty || code?.touched)"
+                                placeholder="Ej: pending, in_process, completed">
+                            <div *ngIf="code?.invalid && (code?.dirty || code?.touched)" class="invalid-feedback">
+                                <div *ngIf="code?.errors?.['required']">El código es requerido</div>
+                                <div *ngIf="code?.errors?.['minlength']">El código debe tener al menos 2 caracteres</div>
+                                <div *ngIf="code?.errors?.['maxlength']">El código no puede exceder 20 caracteres</div>
+                            </div>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción</label>
+                            <textarea 
+                                id="description"
+                                class="form-control" 
+                                formControlName="description"
+                                rows="3"
+                                [class.is-invalid]="description?.invalid && (description?.dirty || description?.touched)"
+                                placeholder="Descripción opcional del estado"></textarea>
+                            <div *ngIf="description?.invalid && (description?.dirty || description?.touched)" class="invalid-feedback">
+                                <div *ngIf="description?.errors?.['maxlength']">La descripción no puede exceder 200 caracteres</div>
+                            </div>
+                        </div>
+
+                        <!-- Color -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Color <span class="text-danger">*</span>
+                            </label>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input 
+                                        type="color" 
+                                        class="form-control form-control-color" 
+                                        formControlName="color"
+                                        [class.is-invalid]="color?.invalid && (color?.dirty || color?.touched)"
+                                        title="Seleccionar color">
+                                    <div *ngIf="color?.invalid && (color?.dirty || color?.touched)" class="invalid-feedback">
+                                        <div *ngIf="color?.errors?.['required']">El color es requerido</div>
+                                        <div *ngIf="color?.errors?.['pattern']">Formato de color inválido</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-2">Vista previa:</span>
+                                        <div 
+                                            class="rounded-circle border" 
+                                            [style.background-color]="orderStatusForm.get('color')?.value"
+                                            style="width: 30px; height: 30px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Colores predefinidos -->
+                            <div class="mt-2">
+                                <small class="text-muted">Colores predefinidos:</small>
+                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                    <button 
+                                        *ngFor="let predefinedColor of predefinedColors"
+                                        type="button"
+                                        class="btn p-0 border rounded-circle"
+                                        [style.background-color]="predefinedColor"
+                                        [class.border-primary]="orderStatusForm.get('color')?.value === predefinedColor"
+                                        style="width: 30px; height: 30px;"
+                                        (click)="selectColor(predefinedColor)"
+                                        [title]="predefinedColor">
+                                    </button>
+                                </div>
+                            </div>
+                        </div>                        <!-- Orden -->
+                        <div class="mb-3">
+                            <label for="order" class="form-label">
+                                Orden <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="order"
+                                class="form-control" 
+                                formControlName="order"
+                                min="1" 
+                                max="100"
+                                [class.is-invalid]="order?.invalid && (order?.dirty || order?.touched)"
+                                placeholder="1-100">
+                            <div class="form-text">
+                                Valores más bajos = mayor prioridad. Rango: 1-100
+                            </div>
+                            <div *ngIf="order?.invalid && (order?.dirty || order?.touched)" class="invalid-feedback">
+                                <div *ngIf="order?.errors?.['required']">El orden es requerido</div>
+                                <div *ngIf="order?.errors?.['min']">El orden mínimo es 1</div>
+                                <div *ngIf="order?.errors?.['max']">El orden máximo es 100</div>
+                            </div>
+                        </div>
+
+                        <!-- Estado Activo -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input 
+                                    class="form-check-input" 
+                                    type="checkbox" 
+                                    id="isActive"
+                                    formControlName="isActive">
+                                <label class="form-check-label" for="isActive">
+                                    Estado activo
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Los estados inactivos no se mostrarán en la aplicación
+                            </div>
+                        </div>
+
+                        <!-- Estado por Defecto -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input 
+                                    class="form-check-input" 
+                                    type="checkbox" 
+                                    id="isDefault"
+                                    formControlName="isDefault">
+                                <label class="form-check-label" for="isDefault">
+                                    Estado por defecto
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Los estados finales no permiten transiciones a otros estados
+                            </div>
+                        </div>                        <!-- Transiciones Permitidas -->
+                        <div class="mb-4" *ngIf="orderStatusForm.get('isActive')?.value">
+                            <label class="form-label">Transiciones Permitidas</label>
+                            <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <div *ngIf="availableOrderStatuses.length === 0" class="text-muted text-center">
+                                    <small>No hay otros estados disponibles</small>
+                                </div>
+                                <div *ngFor="let orderStatus of availableOrderStatuses">
+                                    <div class="form-check" *ngIf="!isEditMode || orderStatus._id !== orderStatusId">
+                                        <input 
+                                            class="form-check-input" 
+                                            type="checkbox" 
+                                            [id]="'transition-' + orderStatus._id"
+                                            [checked]="isTransitionSelected(orderStatus._id)"
+                                            (change)="onTransitionChange(orderStatus._id, $event)">
+                                        <label class="form-check-label" [for]="'transition-' + orderStatus._id">
+                                            <div class="d-flex align-items-center">
+                                                <div 
+                                                    class="rounded-circle me-2" 
+                                                    [style.background-color]="orderStatus.color"
+                                                    style="width: 15px; height: 15px;">
+                                                </div>
+                                                {{ orderStatus.name }}
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text">
+                                Selecciona a qué estados puede transicionar este estado
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex gap-2">
+                            <button 
+                                type="submit" 
+                                class="btn btn-primary"
+                                [disabled]="isSaving || orderStatusForm.invalid">
+                                <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+                                <i *ngIf="!isSaving" class="bi bi-check-lg me-2"></i>
+                                {{ isEditMode ? 'Actualizar' : 'Crear' }} Estado
+                            </button>
+                            <button type="button" class="btn btn-secondary" (click)="goBack()">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de información -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Información
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Nombre:</strong>
+                        <div class="text-muted">Identificador único del estado</div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Color:</strong>
+                        <div class="text-muted">Color visual para identificar el estado</div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Prioridad:</strong>
+                        <div class="text-muted">Orden de los estados (1 = más importante)</div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Estado Final:</strong>
+                        <div class="text-muted">Estados que terminan el flujo del pedido</div>
+                    </div>
+                    <div>
+                        <strong>Transiciones:</strong>
+                        <div class="text-muted">Estados a los que puede cambiar directamente</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

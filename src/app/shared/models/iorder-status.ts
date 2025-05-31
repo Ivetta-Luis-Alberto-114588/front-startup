@@ -1,14 +1,14 @@
 // src/app/shared/models/iorder-status.ts
 export interface IOrderStatus {
-    id: string;
-    code: string;
+    _id: string;
     name: string;
-    description: string;
+    description?: string;
     color: string;
-    order: number;
-    isActive: boolean;
-    isDefault: boolean;
-    canTransitionTo: string[];
+    priority: number;
+    isFinal: boolean;
+    allowedTransitions?: string[];
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface IOrderStatusesResponse {

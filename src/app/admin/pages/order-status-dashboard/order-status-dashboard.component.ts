@@ -73,11 +73,8 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
                         this.errorMessage = 'Error: La respuesta del servidor para estados de pedidos no es válida.';
                         this.isLoading = false;
                         return;
-                    }
-
-                    this.orderStatuses = response.orderStatuses
-                        .filter((status: IOrderStatus) => status.isActive)
-                        .sort((a: IOrderStatus, b: IOrderStatus) => a.order - b.order);
+                    }                    this.orderStatuses = response.orderStatuses
+                        .sort((a: IOrderStatus, b: IOrderStatus) => a.priority - b.priority);
                     
                     console.log('Order statuses loaded:', this.orderStatuses.length, 'active statuses');
                     
@@ -134,9 +131,7 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
                     console.warn('Dashboard funcionando en modo limitado - solo se muestran los estados sin órdenes');
                 }
             });
-    }
-
-    /**
+    }    /**
      * Agrupa las órdenes por código de estado
      */
     private groupOrdersByStatus(): void {
@@ -144,14 +139,16 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
 
         // Inicializar grupos para todos los estados
         this.orderStatuses.forEach(status => {
-            this.ordersGroupedByStatus[status.code] = [];
-        });    // Agrupar órdenes por estado
+            this.ordersGroupedByStatus[status.name] = [];
+        });
+
+        // Agrupar órdenes por estado
         this.allOrders.forEach(order => {
             if (order.status) {
-                // Mapear status del order a código de estado del order status
-                const statusCodeMap: { [key: string]: string } = {
+                // Mapear status del order a nombre de estado del order status
+                const statusNameMap: { [key: string]: string } = {
                     'pending': 'PENDING',
-                    'processing': 'PROCESSING',
+                    'processing': 'PROCESSING', 
                     'paid': 'PAID',
                     'preparing': 'PREPARING',
                     'ready': 'READY',
@@ -160,14 +157,16 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
                     'cancelled': 'CANCELLED'
                 };
 
-                const statusCode = statusCodeMap[order.status];
-                if (statusCode && this.ordersGroupedByStatus[statusCode]) {
-                    this.ordersGroupedByStatus[statusCode].push(order);
+                const statusName = statusNameMap[order.status];
+                if (statusName && this.ordersGroupedByStatus[statusName]) {
+                    this.ordersGroupedByStatus[statusName].push(order);
                 }
             }
-        });        // Ordenar órdenes dentro de cada grupo por fecha (más recientes primero)
-        Object.keys(this.ordersGroupedByStatus).forEach(statusCode => {
-            this.ordersGroupedByStatus[statusCode].sort((a: IOrder, b: IOrder) => {
+        });
+
+        // Ordenar órdenes dentro de cada grupo por fecha (más recientes primero)
+        Object.keys(this.ordersGroupedByStatus).forEach(statusName => {
+            this.ordersGroupedByStatus[statusName].sort((a: IOrder, b: IOrder) => {
                 const dateA = new Date(a.createdAt || 0).getTime();
                 const dateB = new Date(b.createdAt || 0).getTime();
                 return dateB - dateA;
@@ -201,12 +200,11 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
      */
     getOrdersByStatus(statusCode: string): IOrder[] {
         return this.ordersGroupedByStatus[statusCode] || [];
-    }
-    /**
+    }    /**
      * Obtiene los estados a los que puede transicionar una orden
      */
     getTransitionableStatuses(currentStatus: string): IOrderStatus[] {
-        // Mapear status del order a ID del order status
+        // Mapear status del order a nombre del order status
         const statusMap: { [key: string]: string } = {
             'pending': 'PENDING',
             'processing': 'PROCESSING',
@@ -218,12 +216,14 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
             'cancelled': 'CANCELLED'
         };
 
-        const statusCode = statusMap[currentStatus];
-        if (!statusCode) return [];
+        const statusName = statusMap[currentStatus];
+        if (!statusName) return [];
 
-        const currentOrderStatus = this.orderStatuses.find(s => s.code === statusCode);
-        if (!currentOrderStatus) return [];        return currentOrderStatus.canTransitionTo
-            .map((id: string) => this.orderStatuses.find(s => s.id === id))
+        const currentOrderStatus = this.orderStatuses.find(s => s.name === statusName);
+        if (!currentOrderStatus || !currentOrderStatus.allowedTransitions) return [];
+
+        return currentOrderStatus.allowedTransitions
+            .map((id: string) => this.orderStatuses.find(s => s._id === id))
             .filter((status: IOrderStatus | undefined) => status !== undefined) as IOrderStatus[];
     }
 
@@ -241,9 +241,7 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
             this.statusChangeModal = new bootstrap.Modal(modalElement);
             this.statusChangeModal.show();
         }
-    }
-
-    /**
+    }    /**
      * Actualiza el estado de una orden
      */
     updateOrderStatus(): void {
@@ -253,14 +251,14 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
 
         this.isUpdatingStatus = true;
 
-        const newStatus = this.orderStatuses.find(s => s.id === this.newStatusId);
+        const newStatus = this.orderStatuses.find(s => s._id === this.newStatusId);
         if (!newStatus) {
             this.isUpdatingStatus = false;
             return;
         }
 
-        // Mapear el código de estado al formato esperado por el backend
-        const statusCodeMap: { [key: string]: string } = {
+        // Mapear el nombre de estado al formato esperado por el backend
+        const statusNameMap: { [key: string]: string } = {
             'PENDING': 'pending',
             'PROCESSING': 'processing',
             'PAID': 'paid',
@@ -272,7 +270,7 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
         };
 
         const payload: UpdateOrderStatusPayload = {
-            status: statusCodeMap[newStatus.code] as any || 'pending',
+            status: statusNameMap[newStatus.name] as any || 'pending',
             notes: this.statusChangeNotes || undefined
         };
 
@@ -324,13 +322,11 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
             month: '2-digit',
             year: 'numeric'
         });
-    }
-
-    /**
+    }    /**
      * TrackBy functions para mejorar performance
      */
     trackByStatusId(index: number, status: IOrderStatus): string {
-        return status.id;
+        return status._id;
     }
 
     trackByOrderId(index: number, order: IOrder): string {
