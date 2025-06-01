@@ -27,4 +27,4 @@ export class AppComponent implements OnInit {
     // Llama al método del servicio para actualizar el estado
     this.sidebarService.setSidebarCollapsed(isMobileNow);
   }
-}
+}// trigger rebuild

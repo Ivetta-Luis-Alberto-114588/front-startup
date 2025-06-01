@@ -6,6 +6,7 @@ import { IOrder } from '../../models/iorder';
 import { OrderService } from '../../services/order.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { Location } from '@angular/common'; // Para botón "Volver"
+import { AuthService } from 'src/app/auth/services/auth.service'; // Para debug del token
 
 @Component({
   selector: 'app-order-detail-page',
@@ -18,20 +19,29 @@ export class OrderDetailPageComponent implements OnInit, OnDestroy {
   isLoading = false;
   error: string | null = null;
   private routeSub: Subscription | null = null;
-
   constructor(
     private route: ActivatedRoute,
     private orderService: OrderService,
     private notificationService: NotificationService,
     private location: Location, // Inyectar Location
-    private router: Router // Inyectar Router
-  ) { }
-
-  ngOnInit(): void {
+    private router: Router, // Inyectar Router
+    private authService: AuthService // Para debug del token
+  ) { }  ngOnInit(): void {
     this.isLoading = true;
+    
+    // DEBUG: Check authentication status
+    console.log('DEBUG - OrderDetailPage ngOnInit');
+    console.log('DEBUG - User authenticated?', this.authService.getToken() ? 'YES' : 'NO');
+    console.log('DEBUG - Token value:', this.authService.getToken());
+    
     this.routeSub = this.route.paramMap.pipe(
       switchMap(params => {
         const orderId = params.get('orderId');
+        console.log('DEBUG - OrderDetailPage route params:', params);
+        console.log('DEBUG - orderId from route:', orderId);
+        console.log('DEBUG - typeof orderId:', typeof orderId);
+        console.log('DEBUG - orderId length:', orderId?.length);
+        
         if (!orderId) {
           this.error = 'No se proporcionó ID de pedido.';
           this.notificationService.showError(this.error, 'Error');
@@ -39,6 +49,7 @@ export class OrderDetailPageComponent implements OnInit, OnDestroy {
           this.goBack(); // Volver si no hay ID
           throw new Error(this.error); // Lanzar error para detener el switchMap
         }
+        
         return this.orderService.getOrderById(orderId);
       })
     ).subscribe({
@@ -47,6 +58,13 @@ export class OrderDetailPageComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       },
       error: (err) => {
+        console.error('DEBUG - OrderDetailPage error:', err);
+        console.error('DEBUG - Error status:', err.status);
+        console.error('DEBUG - Error message:', err.message);
+        if (err.error) {
+          console.error('DEBUG - Server error details:', err.error);
+        }
+        
         this.error = 'No se pudo cargar el detalle del pedido.';
         if (err.error && err.error.error) {
           this.error = err.error.error;
@@ -54,6 +72,8 @@ export class OrderDetailPageComponent implements OnInit, OnDestroy {
           this.error = 'Pedido no encontrado.';
         } else if (err.status === 401 || err.status === 403) {
           this.error = 'No tienes permiso para ver este pedido.';
+        } else if (err.status === 400) {
+          this.error = 'ID de pedido inválido o no autorizado.';
         }
         this.notificationService.showError(this.error ?? 'Error desconocido', 'Error al Cargar Detalle');
         this.isLoading = false;
