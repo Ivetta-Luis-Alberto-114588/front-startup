@@ -31,7 +31,9 @@
             <span class="visually-hidden">Cargando...</span>
         </div>
         <p class="mt-3 text-muted">Cargando estados de pedidos...</p>
-    </div>    <!-- Error State -->
+    </div>
+
+    <!-- Error State -->
     <div *ngIf="errorMessage && !isLoading && !hasOrderStatuses()" class="alert alert-danger" role="alert">
         <i class="bi bi-exclamation-triangle me-2"></i>
         {{ errorMessage }}
@@ -40,170 +42,49 @@
         </button>
     </div>
 
-    <!-- Warning State (Limited Mode) -->
-    <div *ngIf="isLimitedMode()" class="alert alert-warning" role="alert">
-        <i class="bi bi-exclamation-triangle me-2"></i>
-        <strong>Modo Limitado:</strong> Los estados de pedidos se han cargado correctamente, pero hay un problema con los datos de las órdenes en el servidor. 
-        Solo se muestran los estados disponibles sin órdenes asociadas.
-        <div class="mt-2">
-            <small class="text-muted">{{ errorMessage }}</small>
-        </div>
-        <button class="btn btn-sm btn-outline-warning ms-2" (click)="refreshData()">
-            Reintentar cargar órdenes
-        </button>
-    </div>
-
     <!-- Dashboard Content -->
-    <div *ngIf="!isLoading && hasOrderStatuses()" class="row">
-        <!-- Summary Cards -->
-        <div class="col-12 mb-4">
-            <div class="row g-3">
-                <div class="col-xl-3 col-lg-4 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                                        <i class="bi bi-receipt text-primary fs-4"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1 text-muted">Total de Pedidos</h6>
-                                    <h4 class="mb-0">{{ getTotalOrders() }}</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <div *ngIf="!isLoading && hasOrderStatuses()" class="row" cdkDropListGroup>
+        <div *ngFor="let group of dashboardData; trackBy: trackByStatusId" class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header text-white" [style.backgroundColor]="group.status.color">
+                    <h5 class="mb-0 d-flex justify-content-between align-items-center">
+                        <span>
+                            <i [class]="orderStatusService.getStatusIcon(group.status.name)" class="me-2"></i>
+                            {{ group.status.name }}
+                        </span>
+                        <span class="badge bg-light text-dark">{{ group.orders.length }}</span>
+                    </h5>
                 </div>
-
-                <div class="col-xl-3 col-lg-4 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="bg-warning bg-opacity-10 rounded-circle p-3">
-                                        <i class="bi bi-clock-history text-warning fs-4"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1 text-muted">Pendientes</h6>
-                                    <h4 class="mb-0">{{ getOrderCountByStatus('PENDING') }}</h4>
-                                </div>
-                            </div>
-                        </div>
+                <div class="card-body order-list-container p-2" cdkDropList [cdkDropListData]="group.orders"
+                    (cdkDropListDropped)="drop($event)">
+                    <div *ngIf="group.orders.length === 0" class="text-center text-muted p-3">
+                        <small>No hay pedidos en este estado.</small>
                     </div>
-                </div>
-
-                <div class="col-xl-3 col-lg-4 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="bg-info bg-opacity-10 rounded-circle p-3">
-                                        <i class="bi bi-gear text-info fs-4"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1 text-muted">En Proceso</h6>
-                                    <h4 class="mb-0">{{ getOrderCountByStatus('PROCESSING') }}</h4>
-                                </div>
+                    <div *ngFor="let order of group.orders; trackBy: trackByOrderId" cdkDrag [cdkDragData]="order"
+                        class="order-card card mb-2 shadow-sm">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h6 class="card-title small mb-1">#{{ order.id.substring(0, 8) }}...</h6>
+                                <span class="fw-bold small">{{ order.total | currency }}</span>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-lg-4 col-md-6">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="bg-success bg-opacity-10 rounded-circle p-3">
-                                        <i class="bi bi-check-circle text-success fs-4"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="mb-1 text-muted">Completados</h6>
-                                    <h4 class="mb-0">{{ getOrderCountByStatus('COMPLETED') }}</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Order Status Columns -->
-        <div class="col-12">
-            <div class="row g-3">
-                <div *ngFor="let status of orderStatuses; trackBy: trackByStatusId" class="col-xl-3 col-lg-4 col-md-6">
-
-                    <!-- Status Column Header -->
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header border-0 pb-0" [style.background-color]="status.color + '20'">
-                            <div class="d-flex align-items-center justify-content-between">                                <div class="d-flex align-items-center">
-                                    <i [class]="orderStatusService.getStatusIcon(status.name)"
-                                        [style.color]="status.color" class="me-2 fs-5"></i>
-                                    <div>
-                                        <h6 class="mb-1 fw-bold">{{ status.name }}</h6>
-                                        <small class="text-muted">{{ status.description }}</small>
-                                    </div>
-                                </div>
-                                <span class="badge rounded-pill" [style.background-color]="status.color">
-                                    {{ getOrdersByStatus(status.name).length }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Orders List -->
-                        <div class="card-body pt-3">
-                            <div class="order-list" style="max-height: 400px; overflow-y: auto;">                                <!-- No orders message -->
-                                <div *ngIf="getOrdersByStatus(status.name).length === 0"
-                                    class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
-                                    <small>No hay pedidos en este estado</small>
-                                </div>
-
-                                <!-- Order Cards -->
-                                <div *ngFor="let order of getOrdersByStatus(status.name); trackBy: trackByOrderId"
-                                    class="order-card mb-3 p-3 border rounded-3 bg-light">
-
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <h6 class="mb-1 fw-bold">#{{ order.id.substring(0, 8) }}</h6>
-                                            <small class="text-muted">
-                                                <i class="bi bi-person me-1"></i>
-                                                {{ order.customer?.name || 'Cliente' }}
-                                            </small>
-                                        </div>
-                                        <div class="text-end">
-                                            <div class="fw-bold text-success">${{ order.total.toFixed(2) || '0.00' }}
-                                            </div>
-                                            <small class="text-muted">
-                                                {{ formatDate(order.createdAt) }}
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <small class="text-muted">
-                                                <i class="bi bi-box me-1"></i>
-                                                {{ order.items.length || 0 }} productos
-                                            </small>
-                                        </div>
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary btn-sm"
-                                                [routerLink]="['/admin/orders', order.id]" title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
-                                            </button> <button class="btn btn-outline-secondary btn-sm"
-                                                (click)="openStatusChangeModal(order)"
-                                                [disabled]="getTransitionableStatuses(order.status || '').length === 0"
-                                                title="Cambiar estado">
-                                                <i class="bi bi-arrow-right"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                            <p class="card-text small text-muted mb-1">
+                                <i class="bi bi-person-fill me-1"></i>
+                                {{ order.customer.name || 'Cliente Desconocido' }}
+                            </p>
+                            <p class="card-text small text-muted mb-2">
+                                <i class="bi bi-calendar3 me-1"></i>
+                                {{ formatDate(order.date) }}
+                            </p>
+                            <div class="d-flex justify-content-end">
+                                <button class="btn btn-outline-primary btn-sm me-1" title="Ver Detalles"
+                                    [routerLink]="['/admin/orders', order.id]">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" title="Cambiar Estado (Modal)"
+                                    (click)="openStatusChangeModal(order)"
+                                    [disabled]="getTransitionableStatuses(order.status).length === 0">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -213,47 +94,46 @@
     </div>
 </div>
 
-<!-- Status Change Modal -->
-<div class="modal fade" id="statusChangeModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+
+<!-- Status Change Modal (Bootstrap 5) -->
+<div class="modal fade" id="statusChangeModal" tabindex="-1" aria-labelledby="statusChangeModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-arrow-right-circle me-2"></i>
-                    Cambiar Estado del Pedido
-                </h5>
+                <h5 class="modal-title" id="statusChangeModalLabel">Cambiar Estado del Pedido</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" *ngIf="selectedOrder">
+                <p>Pedido: <strong>#{{ selectedOrder.id.substring(0,8) }}...</strong></p>
+                <p>Cliente: {{ selectedOrder.customer.name }}</p>
                 <div class="mb-3">
-                    <h6>Pedido #{{ selectedOrder.id.substring(0, 8) }}</h6>
-                    <p class="text-muted mb-0">{{ selectedOrder.customer?.name }}</p>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Nuevo Estado:</label>
-                    <select class="form-select" [(ngModel)]="newStatusId">                        <option value="">Seleccionar estado...</option>
-                        <option *ngFor="let status of getTransitionableStatuses(selectedOrder.status || '')"
+                    <label for="newStatusSelect" class="form-label">Nuevo Estado:</label>
+                    <select class="form-select" id="newStatusSelect" [(ngModel)]="newStatusId" name="newStatusIdModal">
+                        <option value="" disabled>Seleccionar estado...</option>
+                        <option *ngFor="let status of getTransitionableStatuses(selectedOrder.status)"
                             [value]="status._id">
-                            {{ status.name }} - {{ status.description }}
+                            {{ status.name }}
                         </option>
                     </select>
+                    <div *ngIf="getTransitionableStatuses(selectedOrder.status).length === 0"
+                        class="form-text text-warning">
+                        No hay transiciones permitidas desde el estado actual.
+                    </div>
                 </div>
-
                 <div class="mb-3">
-                    <label class="form-label">Notas (opcional):</label>
-                    <textarea class="form-control" rows="3" [(ngModel)]="statusChangeNotes"
-                        placeholder="Agregar comentarios sobre el cambio de estado..."></textarea>
+                    <label for="statusNotes" class="form-label">Notas (opcional):</label>
+                    <textarea class="form-control" id="statusNotes" rows="3" [(ngModel)]="statusChangeNotes"
+                        name="statusChangeNotesModal"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    Cancelar
-                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" (click)="updateOrderStatus()"
                     [disabled]="!newStatusId || isUpdatingStatus">
-                    <span *ngIf="isUpdatingStatus" class="spinner-border spinner-border-sm me-2"></span>
-                    Cambiar Estado
+                    <span *ngIf="isUpdatingStatus" class="spinner-border spinner-border-sm me-2" role="status"
+                        aria-hidden="true"></span>
+                    {{ isUpdatingStatus ? 'Actualizando...' : 'Actualizar Estado' }}
                 </button>
             </div>
         </div>

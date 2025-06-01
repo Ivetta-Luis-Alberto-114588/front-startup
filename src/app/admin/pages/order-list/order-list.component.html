@@ -41,21 +41,16 @@
                 <tr *ngFor="let order of orders">
                     <td><code>{{ order.id | slice:0:8 }}...</code></td>
                     <td>{{ order.date | date:'dd/MM/yy HH:mm' }}</td>
-                    <td>{{ order.customer?.name ? (order.customer.name | titlecase) : order.customer?.email }}</td>
+                    <td>{{ order.customer.name ? (order.customer.name | titlecase) : order.customer.email }}</td>
                     <td>
-                        <!-- Selector de Estado -->
-                        <select class="form-select form-select-sm" [(ngModel)]="order.status"
-                            (change)="onStatusChange(order, $event)" [disabled]="isUpdatingStatus[order.id]" [ngClass]="{
-                                    'bg-warning text-dark': order.status === 'pending',
-                                    'bg-success text-white': order.status === 'completed',
-                                    'bg-danger text-white': order.status === 'cancelled',
-                                    'bg-info text-dark': order.status === 'shipped'
-                                }">
-                            <option value="pending">Pendiente</option>
-                            <option value="completed">Completado</option>
-                            <option value="cancelled">Cancelado</option>
-                            <!-- Añade más estados si los tienes -->
-                            <!-- <option value="shipped">Enviado</option> -->
+                        <!-- Selector de Estado MODIFICADO -->
+                        <select class="form-select form-select-sm" [ngModel]="getOrderStatusId(order)"
+                            (change)="onStatusChange(order, $event)" [disabled]="isUpdatingStatus[order.id]"
+                            [ngClass]="getStatusBadgeClass(order.status)">
+                            <!-- Usar getOrderStatusId para el ngModel -->
+                            <option *ngFor="let statusOpt of allOrderStatuses" [value]="statusOpt._id">
+                                {{ statusOpt.name }}
+                            </option>
                         </select>
                         <div *ngIf="isUpdatingStatus[order.id]"
                             class="spinner-border spinner-border-sm text-secondary ms-2" role="status">
@@ -68,14 +63,6 @@
                             (click)="goToOrderDetail(order.id)">
                             <i class="bi bi-eye"></i>
                         </button>
-                        <!-- Podrías añadir botón de cancelar aquí si el estado es 'pending' -->
-                        <!-- <button *ngIf="order.status === 'pending'"
-                                class="btn btn-sm btn-outline-danger ms-2"
-                                title="Cancelar Pedido"
-                                (click)="updateStatusDirectly(order, 'cancelled')"
-                                [disabled]="isUpdatingStatus[order.id]">
-                            <i class="bi bi-x-circle"></i>
-                        </button> -->
                     </td>
                 </tr>
             </tbody>
@@ -88,5 +75,4 @@
             [rotate]="true" [boundaryLinks]="true" (pageChange)="loadPage($event)">
         </ngb-pagination>
     </div>
-
 </div>

@@ -45,9 +45,9 @@
                             <dt class="col-sm-4">Estado:</dt>
                             <dd class="col-sm-8">
                                 <span class="badge fs-6" [ngClass]="{
-                    'bg-warning text-dark': order.status === 'pending',
-                    'bg-success': order.status === 'completed',
-                    'bg-danger': order.status === 'cancelled'
+                    'bg-warning text-dark': order.status.code === 'PENDING' || order.status.name.toLowerCase() === 'pending' || order.status.name.toLowerCase() === 'pendiente',
+                    'bg-success': order.status.code === 'COMPLETED' || order.status.name.toLowerCase() === 'completed' || order.status.name.toLowerCase() === 'completado',
+                    'bg-danger': order.status.code === 'CANCELLED' || order.status.name.toLowerCase() === 'cancelled' || order.status.name.toLowerCase() === 'cancelado'
                   }">
                                     {{ getFormattedStatus(order.status) }}
                                 </span>

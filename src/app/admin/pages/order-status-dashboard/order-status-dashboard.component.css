@@ -1,168 +1,43 @@
 /* src/app/admin/pages/order-status-dashboard/order-status-dashboard.component.css */
-
-/* Scroll personalizado para listas de órdenes */
-.order-list::-webkit-scrollbar {
-    width: 6px;
+.order-list-container {
+    min-height: 100px;
+    /* Para que las zonas de drop sean visibles incluso vacías */
+    max-height: 60vh;
+    /* Altura máxima para la lista de pedidos, con scroll */
+    overflow-y: auto;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    transition: background-color 0.2s ease-in-out;
 }
 
-.order-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
+.order-list-container.cdk-drop-list-dragging {
+    background-color: #e9ecef;
+    /* Color de fondo cuando se arrastra sobre ella */
 }
 
-.order-list::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
-}
-
-.order-list::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
-}
-
-/* Estilos para las tarjetas de órdenes */
 .order-card {
-    transition: all 0.2s ease-in-out;
-    border: 1px solid #e9ecef !important;
-    background-color: #ffffff !important;
-}
-
-.order-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-    transform: translateY(-1px);
-    border-color: #dee2e6 !important;
-}
-
-/* Estilos para las columnas de estado */
-.card {
+    cursor: grab;
     transition: box-shadow 0.2s ease-in-out;
 }
 
-.card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+.order-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilos para los badges de conteo */
-.badge {
-    font-size: 0.75rem;
-    font-weight: 600;
-    min-width: 1.5rem;
-    height: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.cdk-drag-preview {
+    /* Estilo de la tarjeta mientras se arrastra */
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+        0 8px 10px 1px rgba(0, 0, 0, 0.14),
+        0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    border-radius: 4px;
 }
 
-/* Estilos para los iconos de estado */
-.card-header i {
-    font-size: 1.2rem;
-}
-
-/* Animaciones sutiles */
-.btn {
-    transition: all 0.2s ease-in-out;
-}
-
-.btn:hover {
-    transform: translateY(-1px);
-}
-
-/* Estilos para el modal */
-.modal-content {
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-}
-
-.modal-header {
-    border-bottom: 1px solid #e9ecef;
-    border-radius: 12px 12px 0 0;
-}
-
-.modal-footer {
-    border-top: 1px solid #e9ecef;
-    border-radius: 0 0 12px 12px;
-}
-
-/* Responsive adjustments */
-@media (max-width: 1199.98px) {
-    .order-list {
-        max-height: 350px !important;
-    }
-}
-
-@media (max-width: 767.98px) {
-    .order-list {
-        max-height: 300px !important;
-    }
-
-    .order-card {
-        padding: 0.75rem !important;
-    }
-
-    .btn-group-sm .btn {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-    }
-}
-
-/* Loading state */
-.spinner-border {
-    width: 3rem;
-    height: 3rem;
-}
-
-/* Estados vacíos */
-.text-center .bi-inbox {
+.cdk-drag-placeholder {
+    /* Estilo del placeholder donde se va a soltar */
     opacity: 0.3;
-}
-
-/* Mejoras visuales para las tarjetas de resumen */
-.bg-opacity-10 {
-    opacity: 0.1 !important;
-}
-
-.rounded-circle {
-    width: 3rem;
-    height: 3rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Estilos para el header del dashboard */
-.container-fluid {
-    max-width: 1400px;
-}
-
-/* Mejoras para la visualización de datos */
-.fw-bold {
-    font-weight: 600 !important;
-}
-
-.text-success {
-    color: #198754 !important;
-}
-
-/* Estilos para botones de acción */
-.btn-outline-primary:hover,
-.btn-outline-secondary:hover {
-    transform: scale(1.05);
-}
-
-/* Espaciado consistente */
-.gap-2 {
-    gap: 0.5rem !important;
-}
-
-.gap-3 {
-    gap: 1rem !important;
-}
-
-/* Hover effects para las columnas de estado */
-.card-header {
-    transition: all 0.2s ease-in-out;
-}
-
-.card:hover .card-header {
-    transform: translateY(-2px);
+    border: 2px dashed #0d6efd;
+    /* Color primario de Bootstrap */
+    background-color: #e6f0ff;
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }

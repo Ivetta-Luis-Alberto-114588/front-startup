@@ -1,10 +1,12 @@
 // src/app/admin/services/admin-order.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { IOrder } from 'src/app/features/orders/models/iorder'; // Reutilizar interfaz
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { IOrderStatus } from 'src/app/shared/models/iorder-status'; // NUEVO
 
 // Interfaz para la respuesta paginada de la lista de pedidos de admin
 export interface PaginatedAdminOrdersResponse {
@@ -14,8 +16,15 @@ export interface PaginatedAdminOrdersResponse {
 
 // Interfaz para el payload de actualización de estado
 export interface UpdateOrderStatusPayload {
-  status: 'pending' | 'completed' | 'cancelled' | 'shipped'; // Añade más estados si los tienes
-  notes?: string; // Opcional
+  statusId: string; // Debería ser el ID del OrderStatus
+  notes?: string;
+}
+
+// NUEVA INTERFAZ PARA EL DASHBOARD
+export interface IGroupedOrdersForDashboard {
+  status: IOrderStatus;
+  orders: IOrder[];
+  totalOrdersInStatus: number;
 }
 
 @Injectable({
@@ -29,12 +38,9 @@ export class AdminOrderService {
 
   // GET /api/admin/orders
   getOrders(pagination: PaginationDto): Observable<PaginatedAdminOrdersResponse> {
-    // Asumiendo que el backend devuelve { total: number, orders: IOrder[] }
-    // Nota: El backend llama a la propiedad 'orders', no 'products' como en el servicio de productos
     let params = new HttpParams()
       .set('page', pagination.page.toString())
       .set('limit', pagination.limit.toString());
-    // Aquí podrías añadir parámetros para filtros si los implementas (ej: status, date)
     return this.http.get<PaginatedAdminOrdersResponse>(this.adminApiUrl, { params });
   }
 
@@ -65,5 +71,71 @@ export class AdminOrderService {
       .set('limit', pagination.limit.toString());
     const body = { startDate, endDate };
     return this.http.post<PaginatedAdminOrdersResponse>(`${this.adminApiUrl}/by-date-range`, body, { params });
+  }  // NUEVO MÉTODO para el dashboard - construye los datos desde endpoints existentes
+  getOrdersForDashboardView(): Observable<IGroupedOrdersForDashboard[]> {
+    // Obtener pedidos y estados en paralelo
+    const pagination: PaginationDto = { page: 1, limit: 1000 }; // Ajustar según necesidades
+    
+    // Llamadas paralelas a pedidos y estados
+    const orders$ = this.getOrders(pagination);
+    const statuses$ = this.http.get<any>(`${environment.apiUrl}/api/order-statuses`);
+    
+    return forkJoin([orders$, statuses$]).pipe(
+      map(([ordersResponse, statusesResponse]: [PaginatedAdminOrdersResponse, any]) => {
+        // Extraer estados activos
+        let allStatuses: IOrderStatus[] = [];
+        if (statusesResponse && statusesResponse.orderStatuses) {
+          allStatuses = statusesResponse.orderStatuses.filter((s: any) => s.isActive);
+        } else if (Array.isArray(statusesResponse)) {
+          allStatuses = statusesResponse.filter((s: any) => s.isActive);
+        }
+        
+        // Mapear campos del backend al frontend para estados
+        allStatuses = allStatuses.map((status: any) => ({
+          _id: status.id || status._id,
+          name: status.name,
+          code: status.code,
+          description: status.description,
+          color: status.color,
+          priority: status.order, // Mapear 'order' del backend a 'priority'
+          isActive: status.isActive,
+          isDefault: status.isDefault,
+          isFinal: status.canTransitionTo ? status.canTransitionTo.length === 0 : true,
+          allowedTransitions: status.canTransitionTo || [],
+          createdAt: status.createdAt ? new Date(status.createdAt) : undefined,
+          updatedAt: status.updatedAt ? new Date(status.updatedAt) : undefined
+        }));
+        
+        // Crear Map para agrupar órdenes por estado
+        const groupedOrders = new Map<string, IGroupedOrdersForDashboard>();
+        
+        // Inicializar columnas para todos los estados (incluso sin órdenes)
+        allStatuses.forEach(status => {
+          groupedOrders.set(status._id, {
+            status: status,
+            orders: [],
+            totalOrdersInStatus: 0
+          });
+        });
+        
+        // Agrupar órdenes existentes en sus estados correspondientes
+        ordersResponse.orders.forEach(order => {
+          const statusId = order.status?._id || '';
+          
+          if (groupedOrders.has(statusId)) {
+            const group = groupedOrders.get(statusId)!;
+            group.orders.push(order);
+            group.totalOrdersInStatus = group.orders.length;
+          }
+        });
+        
+        // Convertir Map a Array y ordenar por prioridad del estado
+        return Array.from(groupedOrders.values()).sort((a, b) => {
+          const priorityA = a.status?.priority || 999;
+          const priorityB = b.status?.priority || 999;
+          return priorityA - priorityB;
+        });
+      })
+    );
   }
 }

@@ -31,10 +31,10 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Resumen del Pedido</h5>
                         <span class="badge fs-6" [ngClass]="{
-                            'bg-warning text-dark': order.status === 'pending',
-                            'bg-success text-white': order.status === 'completed',
-                            'bg-danger text-white': order.status === 'cancelled',
-                            'bg-info text-dark': order.status === 'shipped'
+                            'bg-warning text-dark': order.status.code === 'PENDING' || order.status.name.toLowerCase() === 'pending' || order.status.name.toLowerCase() === 'pendiente',
+                            'bg-success text-white': order.status.code === 'COMPLETED' || order.status.name.toLowerCase() === 'completed' || order.status.name.toLowerCase() === 'completado',
+                            'bg-danger text-white': order.status.code === 'CANCELLED' || order.status.name.toLowerCase() === 'cancelled' || order.status.name.toLowerCase() === 'cancelado',
+                            'bg-info text-dark': order.status.code === 'SHIPPED' || order.status.name.toLowerCase() === 'shipped' || order.status.name.toLowerCase() === 'enviado'
                           }">
                             {{ getFormattedStatus(order.status) }}
                         </span>
@@ -49,7 +49,7 @@
                                 date:'shortTime' }}</dd>
 
                             <dt class="col-sm-4">Cliente:</dt>
-                            <dd class="col-sm-8">{{ order.customer?.name | titlecase }} ({{ order.customer?.email }})
+                            <dd class="col-sm-8">{{ order.customer.name | titlecase }} ({{ order.customer.email }})
                             </dd>
 
                             <dt class="col-sm-4">Total Pagado:</dt>
@@ -75,11 +75,11 @@
                     <!-- Opciones de Cambio de Estado -->
                     <div class="card-footer text-end">
                         <span class="me-2">Cambiar estado a:</span>
-                        <button class="btn btn-sm btn-warning text-dark me-1" *ngIf="order.status !== 'pending'"
+                        <button class="btn btn-sm btn-warning text-dark me-1" *ngIf="order.status.code !== 'PENDING' && order.status.name.toLowerCase() !== 'pending' && order.status.name.toLowerCase() !== 'pendiente'"
                             (click)="updateStatus('pending')" [disabled]="isUpdatingStatus">Pendiente</button>
-                        <button class="btn btn-sm btn-success me-1" *ngIf="order.status !== 'completed'"
+                        <button class="btn btn-sm btn-success me-1" *ngIf="order.status.code !== 'COMPLETED' && order.status.name.toLowerCase() !== 'completed' && order.status.name.toLowerCase() !== 'completado'"
                             (click)="updateStatus('completed')" [disabled]="isUpdatingStatus">Completado</button>
-                        <button class="btn btn-sm btn-danger" *ngIf="order.status !== 'cancelled'"
+                        <button class="btn btn-sm btn-danger" *ngIf="order.status.code !== 'CANCELLED' && order.status.name.toLowerCase() !== 'cancelled' && order.status.name.toLowerCase() !== 'cancelado'"
                             (click)="updateStatus('cancelled')" [disabled]="isUpdatingStatus">Cancelado</button>
                         <!-- <button class="btn btn-sm btn-info me-1" *ngIf="order.status !== 'shipped'" (click)="updateStatus('shipped')" [disabled]="isUpdatingStatus">Enviado</button> -->
                         <span *ngIf="isUpdatingStatus" class="spinner-border spinner-border-sm text-secondary ms-2"

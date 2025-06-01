@@ -1,21 +1,22 @@
-import { IProduct } from "../../products/model/iproduct";
+// src/app/features/orders/models/iorder.ts
+import { ICustomer } from "../../customers/models/icustomer"; // Asegúrate que ICustomer esté bien definida
 import { IOrderItem } from "./iorderItem";
 import { IShippingDetails } from "./ishippingdetails";
+import { IOrderStatus } from "src/app/shared/models/iorder-status"; // <--- IMPORTAR
 
 export interface IOrder {
-    id: string;
-    customer: any; // Deberías tener una interfaz ICustomer o IUser aquí
-    items: IOrderItem[]; // Deberías tener una interfaz IOrderItem aquí
+    id: string;                   // El ID de la orden en sí
+    customer: ICustomer;          // Objeto ICustomer poblado
+    items: IOrderItem[];
     subtotal: number;
-    // taxRate: number; // Probablemente no necesario en el frontend
     taxAmount: number;
     discountRate: number;
     discountAmount: number;
     total: number;
-    date: string | Date; // O solo Date si lo conviertes en el servicio
-    status: 'pending' | 'completed' | 'cancelled' | 'shipped';
+    date: string | Date;
+    status: IOrderStatus;         // <--- CAMBIADO: Debe ser el objeto IOrderStatus completo
     notes?: string;
-    shippingDetails?: IShippingDetails; // Deberías tener una interfaz IShippingDetails aquí
+    shippingDetails?: IShippingDetails;
     createdAt?: string | Date;
     updatedAt?: string | Date;
 }

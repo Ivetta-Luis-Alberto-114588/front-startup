@@ -3,6 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription, switchMap } from 'rxjs';
 import { IOrder } from '../../models/iorder';
+import { IOrderStatus } from 'src/app/shared/models/iorder-status';
 import { OrderService } from '../../services/order.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { Location } from '@angular/common';
@@ -71,18 +72,23 @@ export class OrderDetailPageComponent implements OnInit, OnDestroy {
     // this.location.back(); // Opción 1: Volver a la página anterior exacta
     this.router.navigate(['/my-orders']); // Opción 2: Siempre ir a la lista
   }
-
-  // Helper para formatear estado (igual que en la lista)
-  getFormattedStatus(status: 'pending' | 'completed' | 'cancelled' | 'shipped'): string {
-    switch (status) {
-      case 'pending':
-        return 'Pendiente';
-      case 'completed':
-        return 'Completado';
-      case 'cancelled':
-        return 'Cancelado';
-      case 'shipped':
-        return 'Enviado';
+  // Helper para formatear estado (actualizado para IOrderStatus)
+  getFormattedStatus(statusObj: IOrderStatus | string): string {
+    let statusName = '';
+    if (typeof statusObj === 'string') {
+      // Para compatibilidad con código anterior
+      switch (statusObj) {
+        case 'pending': return 'Pendiente';
+        case 'completed': return 'Completado';
+        case 'cancelled': return 'Cancelado';
+        case 'shipped': return 'Enviado';
+        default: return statusObj;
+      }
+    } else if (statusObj && statusObj.name) {
+      statusName = statusObj.name;
+    } else {
+      return 'Desconocido';
     }
+    return statusName.charAt(0).toUpperCase() + statusName.slice(1);
   }
 }

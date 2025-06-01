@@ -40,6 +40,13 @@
           <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Mis Pedidos</span>
         </a>
       </li>
+
+      <li class="nav-item">
+        <a class="nav-link" routerLink="/admin/order-status-dashboard" routerLinkActive="active">
+          <i class="bi bi-kanban me-2"></i> <!-- Icono para dashboard de estados -->
+          <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Dashboard Estados</span>
+        </a>
+      </li>
     </ul>
 
     <!-- ***** INICIO: SECCIÓN ADMIN ***** -->
@@ -147,13 +154,8 @@
             <i class="bi bi-card-list me-2"></i> <!-- Icono para pedidos -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Pedidos</span>
           </a>
-        </li>        <!-- === NUEVO ENLACE PARA DASHBOARD DE ESTADOS === -->
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/admin/order-status-dashboard" routerLinkActive="active">
-            <i class="bi bi-kanban me-2"></i> <!-- Icono para dashboard de estados -->
-            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Dashboard Estados</span>
-          </a>
-        </li>
+        </li> <!-- === NUEVO ENLACE PARA DASHBOARD DE ESTADOS === -->
+
 
         <!-- === NUEVO ENLACE PARA CRUD DE ESTADOS === -->
         <li class="nav-item">

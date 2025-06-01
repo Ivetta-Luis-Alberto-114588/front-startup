@@ -8,6 +8,9 @@ import { IOrder } from 'src/app/features/orders/models/iorder';
 import { AdminOrderService, PaginatedAdminOrdersResponse, UpdateOrderStatusPayload } from '../../services/admin-order.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { IOrderStatus } from 'src/app/shared/models/iorder-status';
+import { OrderStatusService } from 'src/app/shared/services/order-status.service';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-order-list',
@@ -16,7 +19,7 @@ import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 })
 export class OrderListComponent implements OnInit, OnDestroy {
 
-  orders: IOrder[] = []; // Inicializado como array vacío
+  orders: IOrder[] = [];
   isLoading = false;
   error: string | null = null;
   private orderSub: Subscription | null = null;
@@ -26,14 +29,17 @@ export class OrderListComponent implements OnInit, OnDestroy {
   totalItems = 0;
 
   isUpdatingStatus: { [orderId: string]: boolean } = {};
+  allOrderStatuses: IOrderStatus[] = [];
 
   constructor(
     private adminOrderService: AdminOrderService,
     private notificationService: NotificationService,
-    private router: Router
+    private router: Router,
+    private orderStatusService: OrderStatusService
   ) { }
 
   ngOnInit(): void {
+    this.loadAllOrderStatuses();
     this.loadOrders();
   }
 
@@ -41,108 +47,132 @@ export class OrderListComponent implements OnInit, OnDestroy {
     this.orderSub?.unsubscribe();
   }
 
+  loadAllOrderStatuses(): void {
+    this.orderStatusService.getOrderStatuses().subscribe(response => {
+      if (response && response.orderStatuses) {
+        this.allOrderStatuses = response.orderStatuses.filter(status => status.isActive);
+      } else if (Array.isArray(response)) {
+        this.allOrderStatuses = response.filter(status => status.isActive);
+      }
+    });
+  }
+
   loadOrders(): void {
     this.isLoading = true;
     this.error = null;
-    // Asegurarse de que orders sea un array vacío antes de la llamada
-    // this.orders = []; // Ya se inicializa en la declaración, pero puedes asegurarlo aquí si prefieres
     const pagination: PaginationDto = { page: this.currentPage, limit: this.itemsPerPage };
 
     this.orderSub = this.adminOrderService.getOrders(pagination)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response: PaginatedAdminOrdersResponse) => {
-          // --- VERIFICACIÓN Y ASIGNACIÓN SEGURA ---
           if (response && Array.isArray(response.orders)) {
             this.orders = response.orders;
-            this.totalItems = response.total ?? response.orders.length; // Usar total si existe, sino length
+            this.totalItems = response.total ?? response.orders.length;
           } else {
-            // Si la respuesta no es válida, asignar array vacío y mostrar error
             console.error("Respuesta inválida de la API de pedidos:", response);
             this.orders = [];
             this.totalItems = 0;
             this.error = 'Respuesta inesperada del servidor al cargar pedidos.';
             this.notificationService.showError(this.error, 'Error');
           }
-          // --- FIN VERIFICACIÓN ---
         },
         error: (err) => {
-          console.error("Error loading orders:", err); // Mantener log de error
+          console.error("Error loading orders:", err);
           this.error = err.error?.error || 'No se pudieron cargar los pedidos.';
           this.notificationService.showError(this.error ?? "Unknown error", 'Error');
-          this.orders = []; // Asegurar que orders sea un array vacío en caso de error
+          this.orders = [];
           this.totalItems = 0;
         }
       });
   }
 
-  // --- Navegación ---
   goToOrderDetail(orderId: string): void {
     this.router.navigate(['/admin/orders', orderId]);
   }
 
-  // --- Actualización de Estado ---
   onStatusChange(order: IOrder, event: Event): void {
     const selectElement = event.target as HTMLSelectElement;
-    const newStatus = selectElement.value as 'pending' | 'completed' | 'cancelled';
+    const newStatusId = selectElement.value; // Esto es el _id del IOrderStatus
 
-    const originalStatus = order.status;
-    // No actualices visualmente aquí hasta confirmar con el backend
-    // order.status = newStatus;
+    if (!newStatusId || !order.id) return;
 
-    this.updateStatusDirectly(order, newStatus, originalStatus);
-  }
+    const originalStatusId = order.status?._id; // Guardar el ID del estado original
 
-  updateStatusDirectly(order: IOrder, newStatus: 'pending' | 'completed' | 'cancelled', originalStatus?: string): void {
     if (this.isUpdatingStatus[order.id]) return;
 
     this.isUpdatingStatus[order.id] = true;
-    const payload: UpdateOrderStatusPayload = { status: newStatus };
+    const payload: UpdateOrderStatusPayload = { statusId: newStatusId };
 
     this.adminOrderService.updateOrderStatus(order.id, payload)
       .pipe(finalize(() => this.isUpdatingStatus[order.id] = false))
       .subscribe({
         next: (updatedOrder) => {
-          this.notificationService.showSuccess(`Estado del pedido #${order.id.slice(0, 8)} actualizado a ${this.getFormattedStatus(newStatus)}.`, 'Éxito');
+          this.notificationService.showSuccess(`Estado del pedido #${order.id.slice(0, 8)} actualizado.`, 'Éxito');
           const index = this.orders.findIndex(o => o.id === updatedOrder.id);
           if (index > -1) {
-            // Actualizar el objeto completo para reflejar cualquier otro cambio del backend
             this.orders[index] = updatedOrder;
           }
         },
-        error: (err) => {
+        error: (err: HttpErrorResponse) => {
           console.error(`Error updating status for order ${order.id}:`, err);
           const errorMsg = err.error?.error || 'No se pudo actualizar el estado del pedido.';
           this.notificationService.showError(errorMsg, 'Error');
-          // Revertir el cambio visual si falló (si modificaste order.status antes)
+
           const index = this.orders.findIndex(o => o.id === order.id);
-          if (index > -1 && originalStatus) {
-            // Revertir buscando el estado original en la lista actual (más seguro)
-            const orderInList = this.orders[index];
-            if (orderInList) {
-              orderInList.status = originalStatus as any;
+          if (index > -1) {
+            const originalStatusObject = this.allOrderStatuses.find(s => s._id === originalStatusId);
+            if (originalStatusObject) {
+              this.orders[index].status = originalStatusObject;
+            } else if (originalStatusId) { // Si no encontramos el objeto completo, al menos revertimos al ID
+              this.orders[index].status = { _id: originalStatusId, name: 'Error al revertir', code: 'ERROR', color: '#000', priority: 0, isFinal: false, isActive: false, isDefault: false, allowedTransitions: [] };
             }
           }
         }
       });
   }
 
-
-  // --- Paginación ---
   loadPage(page: number): void {
     if (page === this.currentPage || this.isLoading) return;
     this.currentPage = page;
     this.loadOrders();
   }
-
-  // --- Helper para formatear estado ---
-  getFormattedStatus(status: string): string {
-    switch (status) {
-      case 'pending': return 'Pendiente';
-      case 'completed': return 'Completado';
-      case 'cancelled': return 'Cancelado';
-      case 'shipped': return 'Enviado';
-      default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Desconocido'; // Manejar null/undefined
+  getFormattedStatus(statusObj: IOrderStatus | string): string {
+    let statusName = '';
+    if (typeof statusObj === 'string') {
+      const foundStatus = this.allOrderStatuses.find(s => s.code.toLowerCase() === statusObj.toLowerCase() || s.name.toLowerCase() === statusObj.toLowerCase() || s._id === statusObj);
+      statusName = foundStatus ? foundStatus.name : statusObj;
+    } else if (statusObj && statusObj.name) {
+      statusName = statusObj.name;
+    } else {
+      return 'Desconocido';
     }
+    return statusName.charAt(0).toUpperCase() + statusName.slice(1);
+  }
+
+  getStatusBadgeClass(statusObj: IOrderStatus | string): string {
+    let statusNameForClass = '';
+    if (typeof statusObj === 'string') {
+      const foundStatus = this.allOrderStatuses.find(s => s.code.toLowerCase() === statusObj.toLowerCase() || s.name.toLowerCase() === statusObj.toLowerCase() || s._id === statusObj);
+      statusNameForClass = foundStatus ? foundStatus.name : statusObj;
+    } else if (statusObj && statusObj.name) {
+      statusNameForClass = statusObj.name;
+    } else {
+      return 'bg-light text-dark';
+    }
+
+    switch (statusNameForClass.toLowerCase()) {
+      case 'pendiente': return 'bg-warning text-dark';
+      case 'completado': return 'bg-success text-white';
+      case 'cancelado': return 'bg-danger text-white';
+      case 'enviado': return 'bg-info text-dark';
+      // Agrega más casos según los nombres de tus estados
+      default: return 'bg-secondary text-white'; // Un color por defecto
+    }
+  }  getOrderStatusId(order: IOrder): string {
+    if (order.status && order.status._id) {
+      return order.status._id;
+    }
+    return '';
   }
 }

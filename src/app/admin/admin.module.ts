@@ -1,7 +1,8 @@
 // src/app/admin/admin.module.ts
 import { NgModule } from '@angular/core';
 import { AdminRoutingModule } from './admin-routing.module';
-import { SharedModule } from '../shared/shared.module'; // Importar SharedModule
+import { SharedModule } from '../shared/shared.module';
+import { DragDropModule } from '@angular/cdk/drag-drop'; // <--- IMPORTAR
 
 import { CategoryListComponent } from './pages/category-list/category-list.component';
 import { CategoryFormComponent } from './pages/category-form/category-form.component';
@@ -26,7 +27,6 @@ import { UserFormComponent } from './pages/user-form/user-form.component';
 import { OrderStatusDashboardComponent } from './pages/order-status-dashboard/order-status-dashboard.component';
 import { OrderStatusListComponent } from './pages/order-status-list/order-status-list.component';
 import { OrderStatusFormComponent } from './pages/order-status-form/order-status-form.component';
-// Importa aquí otros componentes de admin a medida que los crees
 
 @NgModule({
   declarations: [
@@ -46,16 +46,18 @@ import { OrderStatusFormComponent } from './pages/order-status-form/order-status
     CouponFormComponent,
     OrderListComponent,
     OrderDetailComponent,
-    CustomerListComponent, CustomerFormComponent,    UserListComponent,    UserFormComponent,
-    OrderStatusDashboardComponent,
+    CustomerListComponent,
+    CustomerFormComponent,
+    UserListComponent,
+    UserFormComponent,
+    OrderStatusDashboardComponent, // <--- ASEGURADO
     OrderStatusListComponent,
     OrderStatusFormComponent,
-    // Declara aquí otros componentes de admin
   ],
   imports: [
     AdminRoutingModule,
-    SharedModule // Importar para CommonModule, FormsModule, ReactiveFormsModule, NgbModule, etc.
+    SharedModule,
+    DragDropModule // <--- AÑADIDO
   ]
-  // No necesitas exportar componentes si solo se usan dentro de este módulo
 })
 export class AdminModule { }
