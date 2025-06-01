@@ -43,25 +43,11 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
     this.error = null;
     this.orders = [];
 
-    this.orderSub = this.orderService.getMyOrders().subscribe({
-      next: (response: PaginatedOrdersResponse | any) => {
+    this.orderSub = this.orderService.getMyOrders().subscribe({      next: (response: PaginatedOrdersResponse | any) => {
         if (response && Array.isArray(response.orders)) {
           this.orders = response.orders;
           this.totalItems = response.total ?? response.orders.length;
-          console.log('Pedidos cargados:', this.orders);
-          console.log('Total de pedidos:', this.totalItems);
-
-          // Debug temporal para ver la estructura del status
-          if (this.orders.length > 0) {
-            console.log('DEBUG - Primer pedido completo:', this.orders[0]);
-            console.log('DEBUG - Status del primer pedido:', this.orders[0].status);
-            console.log('DEBUG - Tipo del status:', typeof this.orders[0].status);
-            if (this.orders[0].status && typeof this.orders[0].status === 'object') {
-              console.log('DEBUG - Propiedades del objeto status:', Object.keys(this.orders[0].status));
-            }
-          }
         } else {
-          console.error("Respuesta inválida de la API getMyOrders:", response);
           this.orders = response || [];
           this.totalItems = this.orders.length;
         }
@@ -70,12 +56,10 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
         if (this.orders.length === 0 && !this.error) {
           this.error = "No tienes pedidos realizados aún.";
         }
-      },
-      error: (err) => {
-        console.error("Error cargando mis pedidos:", err);
+      },      error: (err) => {
         this.error = 'No se pudo cargar tu historial de pedidos. Intenta de nuevo más tarde.';
         if (err.error && err.error.error) {
-          console.error("Detalle del error:", err.error.error);
+          // Server provided specific error message
         } else if (err.status === 401 || err.status === 403) {
           this.error = 'No estás autorizado para ver esta información.';
         }
@@ -174,41 +158,11 @@ export class MyOrdersPageComponent implements OnInit, OnDestroy {
         return 'bg-secondary';
       default:
         return 'bg-light text-dark';
-    }
-  }  // Método para ver detalles
+    }  }
+  
+  // Método para ver detalles
   viewOrderDetails(orderId: string): void {
-    console.log('DEBUG - viewOrderDetails called with orderId:', orderId);
-    console.log('DEBUG - typeof orderId:', typeof orderId);
-    console.log('DEBUG - orderId length:', orderId?.length);
-    
-    // Test the API call before navigation
-    console.log('DEBUG - Testing getOrderById before navigation...');
-    this.orderService.getOrderById(orderId).subscribe({
-      next: (orderDetail) => {
-        console.log('DEBUG - getOrderById SUCCESS:', orderDetail);
-        // Navigate only if API call succeeds
-        this.router.navigate(['/my-orders', orderId]);
-      },
-      error: (err) => {
-        console.error('DEBUG - getOrderById FAILED:', err);
-        console.error('DEBUG - Error status:', err.status);
-        console.error('DEBUG - Error details:', err.error);
-        
-        // Show user-friendly error message
-        let errorMessage = 'No se pudo cargar el detalle del pedido.';
-        if (err.status === 400) {
-          errorMessage = 'ID de pedido inválido.';
-        } else if (err.status === 401) {
-          errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
-        } else if (err.status === 403) {
-          errorMessage = 'No tienes permiso para ver este pedido.';
-        } else if (err.status === 404) {
-          errorMessage = 'Pedido no encontrado.';
-        }
-        
-        this.notificationService.showError(errorMessage, 'Error al Cargar Detalle');
-      }
-    });
+    this.router.navigate(['/my-orders', orderId]);
   }
 
   // Método para volver
