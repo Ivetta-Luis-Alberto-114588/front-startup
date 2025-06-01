@@ -1,5 +1,5 @@
 // src/environments/environment.ts
 export const environment = {
     production: false,
-    apiUrl: 'https://sistema-mongo.onrender.com' // <-- Tu URL de desarrollo
+    apiUrl: 'http://localhost:4200' // Usar proxy local para evitar CORS
 };
