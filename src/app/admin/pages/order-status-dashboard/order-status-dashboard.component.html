@@ -59,18 +59,30 @@
                     (cdkDropListDropped)="drop($event)">
                     <div *ngIf="group.orders.length === 0" class="text-center text-muted p-3">
                         <small>No hay pedidos en este estado.</small>
-                    </div>
-                    <div *ngFor="let order of group.orders; trackBy: trackByOrderId" cdkDrag [cdkDragData]="order"
+                    </div>                    <div *ngFor="let order of group.orders; trackBy: trackByOrderId" cdkDrag [cdkDragData]="order"
                         class="order-card card mb-2 shadow-sm">
                         <div class="card-body p-2">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <h6 class="card-title small mb-1">#{{ order.id.substring(0, 8) }}...</h6>
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h6 class="card-title small mb-0">{{ order.customer.name || 'Cliente Desconocido' }}</h6>
                                 <span class="fw-bold small">{{ order.total | currency }}</span>
                             </div>
-                            <p class="card-text small text-muted mb-1">
-                                <i class="bi bi-person-fill me-1"></i>
-                                {{ order.customer.name || 'Cliente Desconocido' }}
-                            </p>
+                            
+                            <!-- Items del pedido -->
+                            <div class="mb-2" *ngIf="order.items && order.items.length > 0">
+                                <small class="text-muted d-block mb-1">
+                                    <i class="bi bi-box me-1"></i>
+                                    {{ order.items.length }} producto{{ order.items.length !== 1 ? 's' : '' }}:
+                                </small>
+                                <div class="items-list">
+                                    <div *ngFor="let item of order.items; let isLast = last" class="d-inline">
+                                        <small class="text-muted">
+                                            {{ item.product?.name || 'Producto' }} 
+                                            <span class="badge bg-light text-dark">{{ item.quantity }}</span>{{ !isLast ? ', ' : '' }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <p class="card-text small text-muted mb-2">
                                 <i class="bi bi-calendar3 me-1"></i>
                                 {{ formatDate(order.date) }}
@@ -105,10 +117,17 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="statusChangeModalLabel">Cambiar Estado del Pedido</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" *ngIf="selectedOrder">
-                <p>Pedido: <strong>#{{ selectedOrder.id.substring(0,8) }}...</strong></p>
-                <p>Cliente: {{ selectedOrder.customer.name }}</p>
+            </div>            <div class="modal-body" *ngIf="selectedOrder">
+                <p>Cliente: <strong>{{ selectedOrder.customer.name }}</strong></p>
+                <p>Total: <strong>{{ selectedOrder.total | currency }}</strong></p>
+                <div class="mb-3" *ngIf="selectedOrder.items && selectedOrder.items.length > 0">
+                    <small class="text-muted">Items del pedido:</small>
+                    <ul class="list-unstyled mt-1">
+                        <li *ngFor="let item of selectedOrder.items" class="small">
+                            • {{ item.product?.name || 'Producto' }} ({{ item.quantity }})
+                        </li>
+                    </ul>
+                </div>
                 <div class="mb-3">
                     <label for="newStatusSelect" class="form-label">Nuevo Estado:</label>
                     <select class="form-select" id="newStatusSelect" [(ngModel)]="newStatusId" name="newStatusIdModal">
