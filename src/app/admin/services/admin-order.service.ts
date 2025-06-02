@@ -82,6 +82,12 @@ export class AdminOrderService {
     
     return forkJoin([orders$, statuses$]).pipe(
       map(([ordersResponse, statusesResponse]: [PaginatedAdminOrdersResponse, any]) => {
+        console.log('=== DEBUG DASHBOARD DATA ===');
+        console.log('Orders Response:', ordersResponse);
+        console.log('Number of orders:', ordersResponse.orders?.length || 0);
+        console.log('Statuses Response:', statusesResponse);
+        console.log('Number of statuses:', statusesResponse.orderStatuses?.length || 0);
+
         // Extraer estados activos
         let allStatuses: IOrderStatus[] = [];
         if (statusesResponse && statusesResponse.orderStatuses) {
@@ -120,10 +126,15 @@ export class AdminOrderService {
         
         // Agrupar órdenes existentes en sus estados correspondientes
         ordersResponse.orders.forEach(order => {
-          const statusId = order.status?._id || '';
-          
+          // Obtener ID de estado (algunos objetos vienen con `id` en lugar de `_id`)
+          const statusId = order.status?._id || (order.status as any).id || '';
           if (groupedOrders.has(statusId)) {
             const group = groupedOrders.get(statusId)!;
+            // Normalizar order.status al objeto completo
+            const fullStatus = allStatuses.find(s => s._id === statusId);
+            if (fullStatus) {
+              order.status = fullStatus;
+            }
             group.orders.push(order);
             group.totalOrdersInStatus = group.orders.length;
           }

@@ -125,7 +125,7 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
             }
 
             // Validar transición con el backend (usando el ID del estado de destino)
-            const currentStatusId = orderToMove.status?._id; // Viene como objeto IOrderStatus
+            const currentStatusId = orderToMove.status?._id || (orderToMove.status as any).id; // Obj may have id instead of _id
             const newStatusId = targetGroup.status._id;
 
             if (!currentStatusId) {

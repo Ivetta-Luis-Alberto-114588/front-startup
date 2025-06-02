@@ -76,14 +76,15 @@
                                 {{ formatDate(order.date) }}
                             </p>
                             <div class="d-flex justify-content-end">
+                                <!-- Ver detalles -->
                                 <button class="btn btn-outline-primary btn-sm me-1" title="Ver Detalles"
                                     [routerLink]="['/admin/orders', order.id]">
                                     <i class="bi bi-eye"></i>
                                 </button>
-                                <button class="btn btn-outline-secondary btn-sm" title="Cambiar Estado (Modal)"
-                                    (click)="openStatusChangeModal(order)"
-                                    [disabled]="getTransitionableStatuses(order.status).length === 0">
-                                    <i class="bi bi-pencil-square"></i>
+                                <!-- Editar pedido -->
+                                <button class="btn btn-outline-secondary btn-sm" title="Editar Pedido"
+                                    [routerLink]="['/admin/orders', order.id]">
+                                    <i class="bi bi-pencil"></i>
                                 </button>
                             </div>
                         </div>
