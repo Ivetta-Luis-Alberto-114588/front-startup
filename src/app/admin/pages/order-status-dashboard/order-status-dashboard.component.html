@@ -81,10 +81,11 @@
                                     [routerLink]="['/admin/orders', order.id]">
                                     <i class="bi bi-eye"></i>
                                 </button>
-                                <!-- Editar pedido -->
-                                <button class="btn btn-outline-secondary btn-sm" title="Editar Pedido"
-                                    [routerLink]="['/admin/orders', order.id]">
-                                    <i class="bi bi-pencil"></i>
+                                <!-- Cambiar estado (Modal) -->
+                                <button class="btn btn-outline-secondary btn-sm" title="Cambiar Estado"
+                                    (click)="openStatusChangeModal(order)"
+                                    [disabled]="getTransitionableStatuses(order.status).length === 0">
+                                    <i class="bi bi-pencil-square"></i>
                                 </button>
                             </div>
                         </div>
