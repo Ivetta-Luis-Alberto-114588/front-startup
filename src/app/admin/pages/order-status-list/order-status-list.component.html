@@ -80,16 +80,16 @@
                                     {{ orderStatus.allowedTransitions.length || 0 }} transiciones
                                 </span>
                             </td>                            <td class="text-center">
-                                <div class="btn-group btn-group-sm" role="group">
+                                <div class="d-inline-flex gap-1">
                                     <button 
-                                        class="btn btn-outline-primary" 
+                                        class="btn btn-sm btn-outline-primary" 
                                         (click)="editOrderStatus(orderStatus)"
                                         [disabled]="!hasValidId(orderStatus)"
                                         title="Editar">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button 
-                                        class="btn btn-outline-danger" 
+                                        class="btn btn-sm btn-outline-danger" 
                                         (click)="openDeleteModal(orderStatus)"
                                         [disabled]="!hasValidId(orderStatus)"
                                         title="Eliminar">

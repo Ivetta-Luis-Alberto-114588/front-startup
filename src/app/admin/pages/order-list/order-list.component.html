@@ -57,12 +57,13 @@
                             <span class="visually-hidden">Actualizando...</span>
                         </div>
                     </td>
-                    <td class="text-end fw-bold">{{ order.total | currency }}</td>
-                    <td class="text-center">
-                        <button class="btn btn-sm btn-outline-primary" title="Ver Detalles"
-                            (click)="goToOrderDetail(order.id)">
-                            <i class="bi bi-eye"></i>
-                        </button>
+                    <td class="text-end fw-bold">{{ order.total | currency }}</td>                    <td class="text-center">
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary" title="Ver Detalles"
+                                (click)="goToOrderDetail(order.id)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             </tbody>

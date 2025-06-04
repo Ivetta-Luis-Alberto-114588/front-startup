@@ -154,14 +154,19 @@
             <i class="bi bi-card-list me-2"></i> <!-- Icono para pedidos -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Pedidos</span>
           </a>
-        </li> <!-- === NUEVO ENLACE PARA DASHBOARD DE ESTADOS === -->
-
-
-        <!-- === NUEVO ENLACE PARA CRUD DE ESTADOS === -->
+        </li> <!-- === NUEVO ENLACE PARA DASHBOARD DE ESTADOS === -->        <!-- === NUEVO ENLACE PARA CRUD DE ESTADOS === -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/order-statuses" routerLinkActive="active">
             <i class="bi bi-gear-wide-connected me-2"></i> <!-- Icono para gestión de estados -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Estado Pedidos</span>
+          </a>
+        </li>
+
+        <!-- === NUEVO ENLACE PARA MÉTODOS DE PAGO === -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/payment-methods" routerLinkActive="active">
+            <i class="bi bi-credit-card me-2"></i> <!-- Icono para métodos de pago -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Métodos de Pago</span>
           </a>
         </li>
 

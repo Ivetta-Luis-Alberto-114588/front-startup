@@ -1,0 +1,18 @@
+/* Asegurar que los botones de acción estén en línea horizontal */
+.table td:last-child {
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+/* Asegurar que los botones mantengan su tamaño */
+.btn-sm {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Responsive fixes */
+@media (max-width: 576px) {
+  .table td:last-child {
+    min-width: 100px;
+  }
+}

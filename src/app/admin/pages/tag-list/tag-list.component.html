@@ -47,14 +47,16 @@
                             [ngClass]="tag.isActive ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'"></i>
                     </td>
                     <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary me-2" title="Editar"
-                            (click)="goToEditTag(tag.id)">
-                            <i class="bi bi-pencil-square"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" title="Eliminar"
-                            (click)="openDeleteConfirmation(tag)">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary" title="Editar"
+                                (click)="goToEditTag(tag.id)">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                (click)="openDeleteConfirmation(tag)">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             </tbody>

@@ -55,15 +55,17 @@
                     <!-- <i class="bi" [ngClass]="user.isActive ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'"></i> -->
                     <!-- </td> -->
                     <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary me-2" title="Editar Roles"
-                            (click)="goToEditUser(user.id)">
-                            <i class="bi bi-person-gear"></i> <!-- Icono específico para roles -->
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" title="Eliminar Usuario"
-                            (click)="openDeleteConfirmation(user)" [disabled]="isCurrentUser(user.id)">
-                            <!-- Deshabilitar borrado propio -->
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary" title="Editar Roles"
+                                (click)="goToEditUser(user.id)">
+                                <i class="bi bi-person-gear"></i> <!-- Icono específico para roles -->
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" title="Eliminar Usuario"
+                                (click)="openDeleteConfirmation(user)" [disabled]="isCurrentUser(user.id)">
+                                <!-- Deshabilitar borrado propio -->
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             </tbody>

@@ -27,6 +27,8 @@ import { UserFormComponent } from './pages/user-form/user-form.component';
 import { OrderStatusDashboardComponent } from './pages/order-status-dashboard/order-status-dashboard.component';
 import { OrderStatusListComponent } from './pages/order-status-list/order-status-list.component';
 import { OrderStatusFormComponent } from './pages/order-status-form/order-status-form.component';
+import { PaymentMethodListComponent } from './pages/payment-method-list/payment-method-list.component';
+import { PaymentMethodFormComponent } from './pages/payment-method-form/payment-method-form.component';
 
 @NgModule({
   declarations: [
@@ -53,6 +55,8 @@ import { OrderStatusFormComponent } from './pages/order-status-form/order-status
     OrderStatusDashboardComponent, // <--- ASEGURADO
     OrderStatusListComponent,
     OrderStatusFormComponent,
+    PaymentMethodListComponent,
+    PaymentMethodFormComponent,
   ],
   imports: [
     AdminRoutingModule,

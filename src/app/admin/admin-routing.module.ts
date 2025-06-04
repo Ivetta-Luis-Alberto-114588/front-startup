@@ -25,6 +25,8 @@ import { UserFormComponent } from './pages/user-form/user-form.component';
 import { OrderStatusDashboardComponent } from './pages/order-status-dashboard/order-status-dashboard.component';
 import { OrderStatusListComponent } from './pages/order-status-list/order-status-list.component';
 import { OrderStatusFormComponent } from './pages/order-status-form/order-status-form.component';
+import { PaymentMethodListComponent } from './pages/payment-method-list/payment-method-list.component';
+import { PaymentMethodFormComponent } from './pages/payment-method-form/payment-method-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -189,12 +191,26 @@ const routes: Routes = [
   {
     path: 'users', // -> /admin/users
     component: UserListComponent
-  },
-  {
+  },  {
     path: 'users/edit/:id', // -> /admin/users/edit/user123
     component: UserFormComponent // Formulario para editar (principalmente roles)
   },
   // --- FIN RUTAS USUARIOS ---
+
+  // --- RUTAS PARA MÉTODOS DE PAGO ---
+  {
+    path: 'payment-methods', // -> /admin/payment-methods
+    component: PaymentMethodListComponent
+  },
+  {
+    path: 'payment-methods/new', // -> /admin/payment-methods/new
+    component: PaymentMethodFormComponent
+  },
+  {
+    path: 'payment-methods/edit/:id', // -> /admin/payment-methods/edit/123
+    component: PaymentMethodFormComponent
+  },
+  // --- FIN RUTAS MÉTODOS DE PAGO ---
 
   // Ruta por defecto si se entra a /admin sin subruta específica
   // Cambiar a un dashboard si lo creas, o mantener categorías
