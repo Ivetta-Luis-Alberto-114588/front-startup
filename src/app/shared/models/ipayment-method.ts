@@ -8,6 +8,8 @@ export interface IPaymentMethod {
     code: string;
     description: string;
     isActive: boolean;
+    defaultOrderStatusId: string;
+    requiresOnlinePayment: boolean;
     createdAt: Date | string;
     updatedAt: Date | string;
 }
@@ -20,6 +22,8 @@ export interface IPaymentMethodCreateDto {
     code: string;
     description: string;
     isActive?: boolean;
+    defaultOrderStatusId: string;
+    requiresOnlinePayment: boolean;
 }
 
 /**
@@ -30,6 +34,8 @@ export interface IPaymentMethodUpdateDto {
     code?: string;
     description?: string;
     isActive?: boolean;
+    defaultOrderStatusId?: string;
+    requiresOnlinePayment?: boolean;
 }
 
 /**
@@ -40,6 +46,8 @@ export interface PaymentMethodFormData {
     code: string;
     description: string;
     isActive: boolean;
+    defaultOrderStatusId: string;
+    requiresOnlinePayment: boolean;
 }
 
 /**

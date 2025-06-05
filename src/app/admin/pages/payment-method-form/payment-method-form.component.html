@@ -40,6 +40,7 @@
                     <div *ngIf="name?.invalid && (name?.dirty || name?.touched)" class="invalid-feedback">
                         <div *ngIf="name?.errors?.['required']">El nombre es obligatorio.</div>
                         <div *ngIf="name?.errors?.['minlength']">Debe tener al menos 2 caracteres.</div>
+                        <div *ngIf="name?.errors?.['maxlength']">No puede exceder los 50 caracteres.</div>
                     </div>
                 </div>
 
@@ -47,14 +48,17 @@
                 <div class="mb-3">
                     <label for="code" class="form-label">Código <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="code" formControlName="code"
-                        placeholder="Ej: CREDIT_CARD, CASH, TRANSFER"
-                        style="text-transform: uppercase;"
+                        placeholder="Ej: CREDIT_CARD, CASH, TRANSFER" style="text-transform: uppercase;"
+                        (input)="onCodeInput($event)"
                         [ngClass]="{'is-invalid': code?.invalid && (code?.dirty || code?.touched)}">
-                    <div class="form-text">Código único para identificar este método de pago (se convertirá a mayúsculas).</div>
+                    <div class="form-text">Código único para identificar este método de pago (solo letras mayúsculas,
+                        números y guiones bajos).</div>
                     <div *ngIf="code?.invalid && (code?.dirty || code?.touched)" class="invalid-feedback">
                         <div *ngIf="code?.errors?.['required']">El código es obligatorio.</div>
                         <div *ngIf="code?.errors?.['minlength']">Debe tener al menos 2 caracteres.</div>
                         <div *ngIf="code?.errors?.['maxlength']">No puede exceder los 10 caracteres.</div>
+                        <div *ngIf="code?.errors?.['pattern']">Solo se permiten letras mayúsculas, números y guiones
+                            bajos.</div>
                     </div>
                 </div>
 
@@ -67,7 +71,38 @@
                     <div *ngIf="description?.invalid && (description?.dirty || description?.touched)"
                         class="invalid-feedback">
                         <div *ngIf="description?.errors?.['required']">La descripción es obligatoria.</div>
+                        <div *ngIf="description?.errors?.['minlength']">Debe tener al menos 5 caracteres.</div>
+                        <div *ngIf="description?.errors?.['maxlength']">No puede exceder los 200 caracteres.</div>
                     </div>
+                </div>
+
+                <!-- Campo Estado de Orden por Defecto -->
+                <div class="mb-3">
+                    <label for="defaultOrderStatusId" class="form-label">Estado de Orden por Defecto <span
+                            class="text-danger">*</span></label>
+                    <select class="form-select" id="defaultOrderStatusId" formControlName="defaultOrderStatusId"
+                        [ngClass]="{'is-invalid': defaultOrderStatusId?.invalid && (defaultOrderStatusId?.dirty || defaultOrderStatusId?.touched)}">
+                        <option value="">Selecciona un estado...</option>
+                        <option *ngFor="let status of orderStatuses" [value]="status._id">
+                            {{ status.name }} ({{ status.code }})
+                        </option>
+                    </select>
+                    <div class="form-text">Estado que se asignará automáticamente a las órdenes que usen este método de
+                        pago.</div>
+                    <div *ngIf="defaultOrderStatusId?.invalid && (defaultOrderStatusId?.dirty || defaultOrderStatusId?.touched)"
+                        class="invalid-feedback">
+                        <div *ngIf="defaultOrderStatusId?.errors?.['required']">Debe seleccionar un estado de orden por
+                            defecto.</div>
+                    </div>
+                </div>
+
+                <!-- Campo Requiere Pago en Línea -->
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="requiresOnlinePayment"
+                        formControlName="requiresOnlinePayment">
+                    <label class="form-check-label" for="requiresOnlinePayment">Requiere Pago en Línea</label>
+                    <small class="form-text text-muted d-block">Marca si este método de pago requiere procesamiento de
+                        pago en línea (tarjetas, transferencias, etc.).</small>
                 </div>
 
                 <!-- Campo Activo -->
@@ -75,7 +110,8 @@
                     <input class="form-check-input" type="checkbox" role="switch" id="isActive"
                         formControlName="isActive">
                     <label class="form-check-label" for="isActive">Activo</label>
-                    <small class="form-text text-muted d-block">Desmarca para deshabilitar este método de pago temporalmente.</small>
+                    <small class="form-text text-muted d-block">Desmarca para deshabilitar este método de pago
+                        temporalmente.</small>
                 </div>
 
             </div><!-- Fin card-body -->
@@ -85,7 +121,8 @@
                 <button type="submit" class="btn btn-primary" [disabled]="paymentMethodForm.invalid || isSubmitting">
                     <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"
                         aria-hidden="true"></span>
-                    {{ isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar Método de Pago' : 'Crear Método de Pago') }}
+                    {{ isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar Método de Pago' : 'Crear Método de
+                    Pago') }}
                 </button>
             </div><!-- Fin card-footer -->
 

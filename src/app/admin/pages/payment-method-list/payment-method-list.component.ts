@@ -5,7 +5,9 @@ import { finalize } from 'rxjs/operators';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 
 import { IPaymentMethod } from 'src/app/shared/models/ipayment-method';
+import { IOrderStatus } from 'src/app/shared/models/iorder-status';
 import { AdminPaymentMethodService } from '../../services/admin-payment-method.service';
+import { OrderStatusService } from 'src/app/shared/services/order-status.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 
@@ -21,6 +23,7 @@ export class PaymentMethodListComponent implements OnInit, OnDestroy {
   paymentMethodToDelete: IPaymentMethod | null = null;
 
   paymentMethods: IPaymentMethod[] = [];
+  orderStatuses: IOrderStatus[] = [];
   isLoading = false;
   error: string | null = null;
   private paymentMethodSub: Subscription | null = null;
@@ -32,12 +35,14 @@ export class PaymentMethodListComponent implements OnInit, OnDestroy {
 
   constructor(
     private adminPaymentMethodService: AdminPaymentMethodService,
+    private orderStatusService: OrderStatusService,
     private notificationService: NotificationService,
     private router: Router,
     private modalService: NgbModal
   ) { }
 
   ngOnInit(): void {
+    this.loadOrderStatuses();
     this.loadPaymentMethods();
   }
 
@@ -46,6 +51,17 @@ export class PaymentMethodListComponent implements OnInit, OnDestroy {
     if (this.modalRef) {
       this.modalRef.close();
     }
+  }
+
+  loadOrderStatuses(): void {
+    this.orderStatusService.getOrderStatuses().subscribe({
+      next: (response) => {
+        this.orderStatuses = response.orderStatuses;
+      },
+      error: (err) => {
+        console.error('Error loading order statuses:', err);
+      }
+    });
   }
 
   loadPaymentMethods(): void {
@@ -80,12 +96,20 @@ export class PaymentMethodListComponent implements OnInit, OnDestroy {
     return paymentMethod._id || paymentMethod.id;
   }
 
+  /**
+   * Get order status name by ID
+   */
+  getOrderStatusName(orderStatusId: string): string {
+    const status = this.orderStatuses.find(s => s._id === orderStatusId);
+    return status ? status.name : 'N/A';
+  }
+
   goToEditPaymentMethod(paymentMethodId: string): void {
     if (!paymentMethodId) {
       this.notificationService.showError('Error: ID de método de pago no válido', 'Error');
       return;
     }
-    
+
     this.router.navigate(['/admin/payment-methods/edit', paymentMethodId]);
   }
 

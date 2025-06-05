@@ -6,8 +6,10 @@ import { finalize } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { AdminPaymentMethodService } from '../../services/admin-payment-method.service';
+import { OrderStatusService } from 'src/app/shared/services/order-status.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { IPaymentMethod } from 'src/app/shared/models/ipayment-method';
+import { IOrderStatus } from 'src/app/shared/models/iorder-status';
 
 @Component({
   selector: 'app-payment-method-form',
@@ -22,32 +24,58 @@ export class PaymentMethodFormComponent implements OnInit, OnDestroy {
   isLoading = false;
   isSubmitting = false;
   error: string | null = null;
+  orderStatuses: IOrderStatus[] = [];
   private routeSub: Subscription | null = null;
 
   constructor(
     private fb: FormBuilder,
     private adminPaymentMethodService: AdminPaymentMethodService,
+    private orderStatusService: OrderStatusService,
     private notificationService: NotificationService,
     private route: ActivatedRoute,
     private router: Router
   ) {
     this.paymentMethodForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
-      code: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(10)]],
-      description: ['', Validators.required],
-      isActive: [true]
+      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      code: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(10), Validators.pattern(/^[A-Z0-9_]+$/)]],
+      description: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(200)]],
+      isActive: [true],
+      defaultOrderStatusId: ['', [Validators.required]],
+      requiresOnlinePayment: [false]
     });
-  }
-
-  ngOnInit(): void {
+  }  ngOnInit(): void {
     this.isLoading = true;
-    this.routeSub = this.route.paramMap.subscribe(params => {
-      this.paymentMethodId = params.get('id');
-      this.isEditMode = !!this.paymentMethodId;
+    
+    // Cargar order statuses primero
+    this.orderStatusService.getOrderStatuses().subscribe({
+      next: (response) => {
+        this.orderStatuses = response.orderStatuses.filter(status => status.isActive);
+        
+        // Luego verificar si es modo edición
+        this.routeSub = this.route.paramMap.subscribe(params => {
+          this.paymentMethodId = params.get('id');
+          this.isEditMode = !!this.paymentMethodId;
 
-      if (this.isEditMode && this.paymentMethodId) {
-        this.loadPaymentMethodData(this.paymentMethodId);
-      } else {
+          if (this.isEditMode && this.paymentMethodId) {
+            this.loadPaymentMethodData(this.paymentMethodId);
+          } else {
+            // Si no es modo edición y hay order statuses, seleccionar el default
+            const defaultStatus = this.orderStatuses.find(s => s.isDefault);
+            
+            if (defaultStatus) {
+              this.paymentMethodForm.patchValue({ defaultOrderStatusId: defaultStatus._id });
+            } else if (this.orderStatuses.length > 0) {
+              // Si no hay default, seleccionar el primero disponible
+              const firstStatus = this.orderStatuses[0];
+              this.paymentMethodForm.patchValue({ defaultOrderStatusId: firstStatus._id });
+            }
+            this.isLoading = false;
+          }
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error = 'No se pudieron cargar los estados de orden';
+        this.notificationService.showError(this.error, 'Error');
         this.isLoading = false;
       }
     });
@@ -104,12 +132,32 @@ export class PaymentMethodFormComponent implements OnInit, OnDestroy {
         error: (err: HttpErrorResponse) => {
           if (err.error && typeof err.error.error === 'string') {
             this.error = err.error.error;
+          } else if (err.error && typeof err.error.message === 'string') {
+            this.error = err.error.message;
+          } else if (err.error && typeof err.error === 'string') {
+            this.error = err.error;
           } else {
-            this.error = `No se pudo ${this.isEditMode ? 'actualizar' : 'crear'} el método de pago. Intente de nuevo.`;
+            this.error = `No se pudo ${this.isEditMode ? 'actualizar' : 'crear'} el método de pago. Status: ${err.status}`;
           }
           this.notificationService.showError(this.error ?? 'Unknown error occurred', 'Error');
         }
       });
+  }
+
+  getFormValidationErrors(): any {
+    const result: any = {};
+    Object.keys(this.paymentMethodForm.controls).forEach(key => {
+      const controlErrors = this.paymentMethodForm.get(key)?.errors;
+      if (controlErrors) {
+        result[key] = controlErrors;
+      }
+    });
+    return result;
+  }
+
+  onCodeInput(event: any): void {
+    const value = event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '');
+    this.paymentMethodForm.patchValue({ code: value });
   }
 
   goBack(): void {
@@ -121,4 +169,6 @@ export class PaymentMethodFormComponent implements OnInit, OnDestroy {
   get code() { return this.paymentMethodForm.get('code'); }
   get description() { return this.paymentMethodForm.get('description'); }
   get isActive() { return this.paymentMethodForm.get('isActive'); }
+  get defaultOrderStatusId() { return this.paymentMethodForm.get('defaultOrderStatusId'); }
+  get requiresOnlinePayment() { return this.paymentMethodForm.get('requiresOnlinePayment'); }
 }
