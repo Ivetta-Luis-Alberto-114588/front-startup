@@ -70,23 +70,30 @@
                                 <button type="button" class="btn btn-outline-primary" (click)="openFileSelector()">
                                     <i class="bi bi-folder-open me-2"></i>Seleccionar desde archivos
                                 </button>
-                                
-                                <!-- Botón de cámara (solo en móviles o si está disponible) -->
-                                <button *ngIf="isMobileDevice || isCameraAvailable" 
+                                  <!-- Botón simplificado para cámara/galería en móviles -->
+                                <button *ngIf="isMobileDevice" 
                                         type="button" 
                                         class="btn btn-outline-success" 
-                                        (click)="openCamera()">
-                                    <i class="bi bi-camera me-2"></i>Tomar foto con cámara
+                                        (click)="openCameraOrGallery()">
+                                    <i class="bi bi-camera me-2"></i>Tomar Foto
                                 </button>
                             </div>
                             
-                            <!-- Input file oculto -->
+                            <!-- Input file oculto para archivos -->
                             <input class="form-control d-none" 
                                    type="file" 
                                    id="imageFile" 
                                    #fileInput
                                    (change)="onFileSelected($event)"
                                    accept="image/png, image/jpeg, image/gif, image/webp">
+                                   
+                            <!-- Input file oculto para cámara (móviles) -->
+                            <input class="form-control d-none" 
+                                   type="file" 
+                                   id="cameraInput" 
+                                   #cameraInput
+                                   (change)="onFileSelected($event)"
+                                   accept="image/*">
                         </div>
                         <div *ngIf="imagePreview || existingImageUrl">
                             <button type="button" class="btn btn-sm btn-outline-danger w-100" (click)="removeImage()">
@@ -236,10 +243,3 @@
             </button>        </div>
     </form>
 </div>
-
-<!-- Camera Modal -->
-<app-camera-modal 
-    [isOpen]="showCameraModal"
-    (photoTaken)="onPhotoTaken($event)"
-    (modalClosed)="onCameraModalClosed()">
-</app-camera-modal>

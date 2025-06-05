@@ -26,6 +26,7 @@ import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 export class ProductFormComponent implements OnInit, OnDestroy {
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('cameraInput') cameraInput!: ElementRef<HTMLInputElement>;
 
   productForm: FormGroup;
   isEditMode = false;
@@ -49,9 +50,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   removeCurrentImage = false; // Flag para indicar si se debe eliminar la imagen actual
 
   // Camera functionality
-  showCameraModal = false;
   isMobileDevice = false;
-  isCameraAvailable = false;
 
   private routeSub: Subscription | null = null;
   private dataSub: Subscription | null = null;
@@ -287,11 +286,6 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   async initializeCameraCapabilities(): Promise<void> {
     this.isMobileDevice = this.cameraService.isMobileDevice();
-    try {
-      this.isCameraAvailable = await this.cameraService.isCameraAvailable();
-    } catch (error) {
-      this.isCameraAvailable = false;
-    }
   }
 
   openFileSelector(): void {
@@ -300,24 +294,11 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     }
   }
 
-  openCamera(): void {
-    this.showCameraModal = true;
-  }
-
-  onPhotoTaken(file: File): void {
-    this.selectedFile = file;
-    this.removeCurrentImage = false;
-
-    // Generar vista previa
-    const reader = new FileReader();
-    reader.onload = e => this.imagePreview = reader.result;
-    reader.readAsDataURL(file);
-
-    this.showCameraModal = false;
-    this.notificationService.showSuccess('Foto capturada exitosamente', 'Éxito');
-  }
-
-  onCameraModalClosed(): void {
-    this.showCameraModal = false;
+  openCameraOrGallery(): void {
+    if (this.cameraInput) {
+      // Configurar el input para cámara en móviles
+      this.cameraInput.nativeElement.setAttribute('capture', 'environment');
+      this.cameraInput.nativeElement.click();
+    }
   }
 }
