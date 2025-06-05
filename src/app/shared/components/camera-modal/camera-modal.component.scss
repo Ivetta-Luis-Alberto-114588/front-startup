@@ -1,0 +1,76 @@
+.camera-container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.video-wrapper {
+  background: #000;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+video {
+  display: block;
+  max-height: 60vh;
+  object-fit: cover;
+}
+
+.camera-controls {
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  border-radius: 0 0 0.375rem 0.375rem;
+}
+
+.camera-controls .btn {
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.camera-controls .btn-primary {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 3px solid white;
+}
+
+.camera-controls .btn-light {
+  background: rgba(255,255,255,0.9);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  video {
+    max-height: 50vh;
+  }
+  
+  .camera-controls .btn-primary {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* Animation for modal */
+.modal.fade .modal-dialog {
+  transform: scale(0.8);
+  transition: transform 0.3s ease-out;
+}
+
+.modal.show .modal-dialog {
+  transform: scale(1);
+}
+
+/* Custom loading spinner */
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Info text styling */
+.text-muted.small {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}

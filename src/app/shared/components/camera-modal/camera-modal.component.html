@@ -1,0 +1,102 @@
+<!-- Camera Modal -->
+<div class="modal fade" [class.show]="isOpen" [style.display]="isOpen ? 'block' : 'none'" 
+     tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="cameraModalLabel">
+          <i class="bi bi-camera me-2"></i>Tomar Foto
+        </h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Error Message -->
+        <div *ngIf="error" class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="isLoading" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="mt-2">Iniciando cámara...</p>
+        </div>
+
+        <!-- WebRTC Camera Interface -->
+        <div *ngIf="showWebRTCInterface && !isLoading">
+          <!-- Camera Not Started -->
+          <div *ngIf="!isCameraActive" class="text-center py-4">
+            <i class="bi bi-camera-video fs-1 text-muted mb-3"></i>
+            <p class="mb-3">Presiona el botón para activar la cámara</p>
+            <button class="btn btn-primary" (click)="openCamera()">
+              <i class="bi bi-camera me-2"></i>Activar Cámara
+            </button>
+          </div>
+
+          <!-- Camera Active -->
+          <div *ngIf="isCameraActive" class="camera-container">
+            <div class="video-wrapper position-relative">
+              <video #video autoplay muted playsinline class="w-100 rounded"></video>
+              
+              <!-- Camera Controls Overlay -->
+              <div class="camera-controls position-absolute bottom-0 start-0 end-0 p-3 d-flex justify-content-center">
+                <div class="btn-group" role="group">
+                  <!-- Switch Camera (Solo en móviles) -->
+                  <button *ngIf="canSwitchCamera" 
+                          type="button" 
+                          class="btn btn-light btn-sm"
+                          (click)="switchCamera()"
+                          title="Cambiar cámara">
+                    <i class="bi bi-arrow-repeat"></i>
+                  </button>
+                  
+                  <!-- Capture Button -->
+                  <button type="button" 
+                          class="btn btn-primary btn-lg mx-2"
+                          (click)="capturePhoto()"
+                          title="Tomar foto">
+                    <i class="bi bi-camera-fill"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fallback for browsers without WebRTC -->
+        <div *ngIf="!showWebRTCInterface" class="text-center py-4">
+          <i class="bi bi-camera fs-1 text-muted mb-3"></i>
+          <p class="mb-3">Tu navegador no soporta cámara web. Usa el selector de archivos para tomar una foto.</p>
+          <button class="btn btn-primary" (click)="useFileInput()">
+            <i class="bi bi-folder-open me-2"></i>Seleccionar desde Galería/Cámara
+          </button>
+        </div>
+
+        <!-- Mobile Alternative -->
+        <div *ngIf="isMobile && showWebRTCInterface" class="mt-3">
+          <div class="d-grid">
+            <button class="btn btn-outline-secondary" (click)="useFileInput()">
+              <i class="bi bi-folder-open me-2"></i>O seleccionar desde galería
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">
+          Cancelar
+        </button>
+        <div class="text-muted small">
+          <i class="bi bi-info-circle me-1"></i>
+          <span *ngIf="isMobile">En móviles puedes usar la cámara directamente o seleccionar desde la galería.</span>
+          <span *ngIf="!isMobile">Asegúrate de permitir el acceso a la cámara cuando te lo solicite el navegador.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div *ngIf="isOpen" class="modal-backdrop fade show"></div>

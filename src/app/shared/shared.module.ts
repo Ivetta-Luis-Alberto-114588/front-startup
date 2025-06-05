@@ -10,15 +10,16 @@ import { NotpagefoundComponent } from './components/notpagefound/notpagefound.co
 import { TermsConditionsComponent } from './pages/terms-conditions/terms-conditions.component';
 import { PrivacyPolicyComponent } from './pages/privacy-policy/privacy-policy.component';
 import { MainLayoutComponent } from './layouts/main-layout.component';
+import { CameraModalComponent } from './components/camera-modal/camera-modal.component';
 
-@NgModule({
-  declarations: [
+@NgModule({  declarations: [
     HeaderComponent,
     SidebarComponent,
     NotpagefoundComponent,
     TermsConditionsComponent,
     PrivacyPolicyComponent,
-    MainLayoutComponent
+    MainLayoutComponent,
+    CameraModalComponent
   ],
   imports: [
     CommonModule,
@@ -26,8 +27,7 @@ import { MainLayoutComponent } from './layouts/main-layout.component';
     ReactiveFormsModule,
     RouterModule,
     NgbModule
-  ],
-  exports: [
+  ],  exports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -37,6 +37,7 @@ import { MainLayoutComponent } from './layouts/main-layout.component';
     NotpagefoundComponent,
     TermsConditionsComponent,
     PrivacyPolicyComponent,
+    CameraModalComponent
   ]
 })
 export class SharedModule { }

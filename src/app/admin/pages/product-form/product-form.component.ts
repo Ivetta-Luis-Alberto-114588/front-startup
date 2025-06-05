@@ -1,5 +1,5 @@
 // src/app/admin/pages/product-form/product-form.component.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
@@ -11,6 +11,7 @@ import { AdminCategoryService } from '../../services/admin-category.service';
 import { AdminUnitService } from '../../services/admin-unit.service';
 import { AdminTagService } from '../../services/admin-tag.service'; // Importar servicio de tags
 import { NotificationService } from 'src/app/shared/services/notification.service';
+import { CameraService } from 'src/app/shared/services/camera.service'; // Importar servicio de cámara
 import { IProduct } from 'src/app/features/products/model/iproduct';
 import { ICategory } from 'src/app/features/products/model/icategory';
 import { IUnit } from 'src/app/features/products/model/iunit';
@@ -23,6 +24,8 @@ import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
   styleUrls: ['./product-form.component.scss']
 })
 export class ProductFormComponent implements OnInit, OnDestroy {
+
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   productForm: FormGroup;
   isEditMode = false;
@@ -45,6 +48,11 @@ export class ProductFormComponent implements OnInit, OnDestroy {
   existingImageUrl: string | null = null; // Para mostrar la imagen actual en modo edición
   removeCurrentImage = false; // Flag para indicar si se debe eliminar la imagen actual
 
+  // Camera functionality
+  showCameraModal = false;
+  isMobileDevice = false;
+  isCameraAvailable = false;
+
   private routeSub: Subscription | null = null;
   private dataSub: Subscription | null = null;
 
@@ -55,6 +63,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
     private adminUnitService: AdminUnitService,
     private adminTagService: AdminTagService, // Inyectar servicio de tags
     private notificationService: NotificationService,
+    private cameraService: CameraService, // Inyectar servicio de cámara
     private route: ActivatedRoute,
     private router: Router
   ) {
@@ -74,6 +83,7 @@ export class ProductFormComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.isLoading = true; // Iniciar carga general
+    this.initializeCameraCapabilities(); // Verificar capacidades de cámara
     this.loadDependencies(); // Cargar categorías, unidades y tags
 
     this.routeSub = this.route.paramMap.subscribe(params => {
@@ -273,5 +283,41 @@ export class ProductFormComponent implements OnInit, OnDestroy {
       return Math.round(priceVal * (1 + taxRateVal / 100) * 100) / 100;
     }
     return 0;
+  }
+
+  async initializeCameraCapabilities(): Promise<void> {
+    this.isMobileDevice = this.cameraService.isMobileDevice();
+    try {
+      this.isCameraAvailable = await this.cameraService.isCameraAvailable();
+    } catch (error) {
+      this.isCameraAvailable = false;
+    }
+  }
+
+  openFileSelector(): void {
+    if (this.fileInput) {
+      this.fileInput.nativeElement.click();
+    }
+  }
+
+  openCamera(): void {
+    this.showCameraModal = true;
+  }
+
+  onPhotoTaken(file: File): void {
+    this.selectedFile = file;
+    this.removeCurrentImage = false;
+
+    // Generar vista previa
+    const reader = new FileReader();
+    reader.onload = e => this.imagePreview = reader.result;
+    reader.readAsDataURL(file);
+
+    this.showCameraModal = false;
+    this.notificationService.showSuccess('Foto capturada exitosamente', 'Éxito');
+  }
+
+  onCameraModalClosed(): void {
+    this.showCameraModal = false;
   }
 }

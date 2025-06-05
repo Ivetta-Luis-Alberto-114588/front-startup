@@ -61,12 +61,32 @@
                             <img [src]="imagePreview || existingImageUrl || 'assets/placeholder.png'" alt="Vista previa"
                                 class="img-thumbnail mb-2"
                                 style="max-width: 100%; max-height: 250px; object-fit: contain;">
-                        </div>
-                        <div class="mb-3">
+                        </div>                        <div class="mb-3">
                             <label for="imageFile" class="form-label">{{ isEditMode ? 'Reemplazar Imagen (Opcional)' :
                                 'Subir Imagen' }}</label>
-                            <input class="form-control" type="file" id="imageFile" (change)="onFileSelected($event)"
-                                accept="image/png, image/jpeg, image/gif, image/webp">
+                            
+                            <!-- Botones de selección de imagen -->
+                            <div class="d-grid gap-2 mb-2">
+                                <button type="button" class="btn btn-outline-primary" (click)="openFileSelector()">
+                                    <i class="bi bi-folder-open me-2"></i>Seleccionar desde archivos
+                                </button>
+                                
+                                <!-- Botón de cámara (solo en móviles o si está disponible) -->
+                                <button *ngIf="isMobileDevice || isCameraAvailable" 
+                                        type="button" 
+                                        class="btn btn-outline-success" 
+                                        (click)="openCamera()">
+                                    <i class="bi bi-camera me-2"></i>Tomar foto con cámara
+                                </button>
+                            </div>
+                            
+                            <!-- Input file oculto -->
+                            <input class="form-control d-none" 
+                                   type="file" 
+                                   id="imageFile" 
+                                   #fileInput
+                                   (change)="onFileSelected($event)"
+                                   accept="image/png, image/jpeg, image/gif, image/webp">
                         </div>
                         <div *ngIf="imagePreview || existingImageUrl">
                             <button type="button" class="btn btn-sm btn-outline-danger w-100" (click)="removeImage()">
@@ -213,7 +233,13 @@
                 <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"
                     aria-hidden="true"></span>
                 {{ isSubmitting ? 'Guardando...' : (isEditMode ? 'Actualizar Producto' : 'Crear Producto') }}
-            </button>
-        </div>
+            </button>        </div>
     </form>
 </div>
+
+<!-- Camera Modal -->
+<app-camera-modal 
+    [isOpen]="showCameraModal"
+    (photoTaken)="onPhotoTaken($event)"
+    (modalClosed)="onCameraModalClosed()">
+</app-camera-modal>
