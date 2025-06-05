@@ -42,7 +42,7 @@
                             <th>Nombre</th>
                             <th>Descripción</th>
                             <th>Prioridad</th>
-                            <th>Estado Final</th>
+                            <th>Por Defecto</th>
                             <th>Transiciones Permitidas</th>
                             <th class="text-center">Acciones</th>
                         </tr>
@@ -71,15 +71,15 @@
                             <td>
                                 <span 
                                     class="badge" 
-                                    [ngClass]="orderStatus.isFinal ? 'bg-info' : 'bg-secondary'">
-                                    {{ orderStatus.isFinal ? 'Final' : 'Intermedio' }}
+                                    [ngClass]="orderStatus.isDefault ? 'bg-primary' : 'bg-secondary'">
+                                    {{ orderStatus.isDefault ? 'Sí' : 'No' }}
                                 </span>
                             </td>
                             <td>
                                 <span class="badge bg-light text-dark">
                                     {{ orderStatus.allowedTransitions.length || 0 }} transiciones
                                 </span>
-                            </td>                            <td class="text-center">
+                            </td><td class="text-center">
                                 <div class="d-inline-flex gap-1">
                                     <button 
                                         class="btn btn-sm btn-outline-primary" 

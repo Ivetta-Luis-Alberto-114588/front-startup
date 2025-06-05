@@ -36,8 +36,8 @@ export interface ITransitionValidationResponse {
     providedIn: 'root'
 })
 export class AdminOrderStatusService {
-    // CORREGIDO: Apuntar a la ruta de admin si las operaciones CRUD son de admin
-    private adminApiUrl = `${environment.apiUrl}/api/admin/order-statuses`;
+    // CORREGIDO: Usar la misma ruta que funciona para otros servicios
+    private adminApiUrl = `${environment.apiUrl}/api/order-statuses`;
     private publicApiUrl = `${environment.apiUrl}/api/order-statuses`; // Para GET públicos
 
     constructor(private http: HttpClient) { }
