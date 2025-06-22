@@ -380,12 +380,12 @@ describe('AuthService', () => {
     it('should handle invalid user data in localStorage', () => {
       // Spy on console.error to suppress expected error logs
       spyOn(console, 'error');
-      
+
       localStorage.setItem('user', 'invalid-json');
       service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       expect(service.getUser()).toBeNull();
       expect(localStorage.getItem('user')).toBeNull(); // Should be cleared
-      
+
       // Verify console.error was called with expected message
       expect(console.error).toHaveBeenCalledWith('Error parsing user from localStorage', jasmine.any(SyntaxError));
     });

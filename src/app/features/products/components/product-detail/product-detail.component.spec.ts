@@ -21,7 +21,7 @@ describe('ProductDetailComponent', () => {
     let authService: jasmine.SpyObj<AuthService>;
     let notificationService: jasmine.SpyObj<NotificationService>;
     let router: jasmine.SpyObj<Router>;
-    let location: jasmine.SpyObj<Location>;    let activatedRoute: any;
+    let location: jasmine.SpyObj<Location>; let activatedRoute: any;
 
     // Mocks de datos
     const mockCategory: ICategory = {
