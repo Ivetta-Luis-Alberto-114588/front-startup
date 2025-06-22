@@ -6,7 +6,11 @@
     "start": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:coverage": "ng test --code-coverage --watch=false --browsers=ChromeHeadless",
+    "test:coverage:open": "ng test --code-coverage --watch=false --browsers=ChromeHeadless && start coverage/test2/index.html",
+    "test:watch": "ng test --watch",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless"
   },
   "private": true,
   "dependencies": {
