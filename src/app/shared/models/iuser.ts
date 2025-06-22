@@ -9,7 +9,7 @@ export interface IUser {
     id: string;
     name: string;
     email: string;
-    roles: string[]; // Cambiado de 'role' a 'roles' para coincidir con MongoDB
+    roles: string[]; // Roles del usuario, consistente con MongoDB
     img?: string;
     createdAt?: string;
     updatedAt?: string;

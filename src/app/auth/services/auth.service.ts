@@ -10,7 +10,7 @@ export interface User {
   id?: string;
   name?: string;
   email: string;
-  roles?: string[]; // Cambiado de 'role' a 'roles' para coincidir con MongoDB
+  roles?: string[]; // Roles del usuario, consistente con MongoDB
   token?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -74,12 +74,6 @@ export class AuthService {
       try {
         const parsedUser = JSON.parse(storedUser);
         if (typeof parsedUser === 'object' && parsedUser !== null) {
-          // Mapear role a roles si es necesario para compatibilidad
-          if (parsedUser.role && !parsedUser.roles) {
-            parsedUser.roles = parsedUser.role;
-            delete parsedUser.role;
-          }
-
           this.user = parsedUser;
           this.userSubject.next(this.user);
         } else {
@@ -108,13 +102,6 @@ export class AuthService {
             const userData = response.user;
             this.storeToken(token);
             const { token: _, ...userWithoutToken } = userData;
-
-            // Mapear role a roles para mantener consistencia
-            if (userWithoutToken.role && !userWithoutToken.roles) {
-              userWithoutToken.roles = userWithoutToken.role;
-              delete userWithoutToken.role;
-            }
-
             this.storeUser(userWithoutToken);
             this.isAuthenticatedSubject.next(true);
           } else {
