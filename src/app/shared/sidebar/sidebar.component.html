@@ -51,7 +51,7 @@
 
     <!-- ***** INICIO: SECCIÓN ADMIN ***** -->
     <!-- Usamos async pipe para verificar si es admin -->
-    <ng-container *ngIf="(authService.user$ | async)?.role?.includes('ADMIN_ROLE')">
+    <ng-container *ngIf="(authService.user$ | async)?.roles?.includes('ADMIN_ROLE')">
       <hr> <!-- Separador visual -->
       <div class="sidebar-header mb-2 mt-3">
         <h6 *ngIf="!(sidebarService.isSidebarCollapsed$ | async)" class="text-muted text-uppercase small">Administración

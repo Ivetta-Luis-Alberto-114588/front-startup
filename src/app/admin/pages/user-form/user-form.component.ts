@@ -79,7 +79,7 @@ export class UserFormComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (user) => {
-          this.userRoles = user.role || []; // Guardar roles actuales
+          this.userRoles = user.roles || []; // Guardar roles actuales
           this.originalUserData = { // Guardar datos originales
             name: user.name,
             roles: [...this.userRoles],

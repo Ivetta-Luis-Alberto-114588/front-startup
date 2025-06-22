@@ -18,7 +18,7 @@ export class SidebarComponent {
   // Helper para verificar si el usuario es admin (opcional, se puede hacer directo en HTML)
   // get isAdmin(): Observable<boolean> {
   //   return this.authService.user$.pipe(
-  //     map(user => !!user && user.role?.includes('ADMIN_ROLE'))
+  //     map(user => !!user && user.roles?.includes('ADMIN_ROLE'))
   //   );
   // }
 }

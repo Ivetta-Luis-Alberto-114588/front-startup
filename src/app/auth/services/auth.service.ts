@@ -10,8 +10,11 @@ export interface User {
   id?: string;
   name?: string;
   email: string;
-  role?: string[];
+  roles?: string[]; // Cambiado de 'role' a 'roles' para coincidir con MongoDB
   token?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 // Interfaz opcional para el payload de registro

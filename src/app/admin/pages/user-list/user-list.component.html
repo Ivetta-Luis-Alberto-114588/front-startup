@@ -45,7 +45,7 @@
                     <td>{{ user.email }}</td>
                     <td>
                         <!-- Mostrar roles como badges -->
-                        <span *ngFor="let role of user.role" class="badge me-1"
+                        <span *ngFor="let role of user.roles" class="badge me-1"
                             [ngClass]="{'bg-primary': role === 'ADMIN_ROLE', 'bg-secondary': role === 'USER_ROLE'}">
                             {{ role === 'ADMIN_ROLE' ? 'Admin' : 'Usuario' }}
                         </span>

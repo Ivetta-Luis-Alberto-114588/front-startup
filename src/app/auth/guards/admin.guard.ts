@@ -25,7 +25,7 @@ export class AdminGuard implements CanActivate {
       take(1), // Tomamos solo el primer valor emitido para evitar suscripciones persistentes
       map(user => {
         // Verificar si el usuario existe y si tiene el rol ADMIN_ROLE
-        const isAdmin = !!user && user.role?.includes('ADMIN_ROLE');
+        const isAdmin = !!user && user.roles?.includes('ADMIN_ROLE');
 
         if (isAdmin) {
           return true; // Permitir acceso si es admin

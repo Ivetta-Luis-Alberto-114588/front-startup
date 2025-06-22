@@ -40,3 +40,26 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# VSCode Counter and analysis files
+.VSCodeCounter*
+*.VSCodeCounter*
+
+# Temporary documentation and analysis files
+TESTING.md
+details.md
+diff-details.md
+diff.csv
+diff.md
+diff.txt
+results.csv
+results.md
+results.txt
+
+# Any temporary analysis or testing files
+*-details.md
+*-results.*
+*-diff.*
+
+# Note: Test files (*.spec.ts) are included in the repository
+# Only temporary analysis and documentation files are ignored
