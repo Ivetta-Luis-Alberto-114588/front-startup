@@ -1,5 +1,5 @@
 // src/app/auth/interceptors/auth.interceptor.ts
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import {
   HttpRequest,
   HttpHandler,
@@ -14,19 +14,21 @@ import { AuthService } from '../services/auth.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-
   constructor(
     private authService: AuthService,
     private router: Router
-  ) { } intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+  ) { }
+
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Obtener el token de autenticación de forma segura
     let token: string | null = null;
+    
     try {
       token = this.authService.getToken();
     } catch (error) {
       // Si hay error obteniendo el token, continúa sin él
-      // Solo loguear si no estamos en tests
-      if (typeof jasmine === 'undefined') {
+      // Solo loguear en modo desarrollo
+      if (isDevMode()) {
         console.warn('Error getting auth token:', error);
       }
     }
@@ -38,17 +40,15 @@ export class AuthInterceptor implements HttpInterceptor {
           Authorization: `Bearer ${token}`
         }
       });
-    }
-
-    // Continuar con la solicitud modificada
+    }    // Continuar con la solicitud modificada
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
           try {
             this.authService.logout();
           } catch (logoutError) {
-            // Solo loguear si no estamos en tests
-            if (typeof jasmine === 'undefined') {
+            // Solo loguear en modo desarrollo
+            if (isDevMode()) {
               console.warn('Error during logout:', logoutError);
             }
           }
