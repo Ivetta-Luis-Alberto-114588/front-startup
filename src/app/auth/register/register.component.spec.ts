@@ -34,7 +34,7 @@ describe('RegisterComponent', () => {
     authServiceSpy = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
     notificationServiceSpy = TestBed.inject(NotificationService) as jasmine.SpyObj<NotificationService>;
     routerSpy = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    
+
     fixture.detectChanges();
   });
 
@@ -58,7 +58,7 @@ describe('RegisterComponent', () => {
 
     it('should require valid email format', () => {
       const emailControl = component.registerForm.get('email');
-      
+
       // Empty email
       expect(emailControl?.valid).toBeFalsy();
       expect(emailControl?.errors?.['required']).toBeTruthy();
@@ -75,7 +75,7 @@ describe('RegisterComponent', () => {
 
     it('should require password with minimum length', () => {
       const passwordControl = component.registerForm.get('password');
-      
+
       // Empty password
       expect(passwordControl?.valid).toBeFalsy();
       expect(passwordControl?.errors?.['required']).toBeTruthy();
@@ -101,13 +101,13 @@ describe('RegisterComponent', () => {
         password: 'password123',
         confirmPassword: 'different123'
       });
-      
+
       expect(component.registerForm.errors?.['passwordMismatch']).toBeTruthy();
 
       component.registerForm.patchValue({
         confirmPassword: 'password123'
       });
-      
+
       expect(component.registerForm.errors?.['passwordMismatch']).toBeFalsy();
     });
 
@@ -186,7 +186,7 @@ describe('RegisterComponent', () => {
         email: 'john@example.com',
         password: 'password123'
       });
-      
+
       expect(notificationServiceSpy.showSuccess).toHaveBeenCalledWith('¡Registro exitoso! Ahora puedes iniciar sesión.', 'Completado');
       expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
     });
@@ -292,20 +292,20 @@ describe('RegisterComponent', () => {
   describe('UI Interactions', () => {
     it('should toggle password visibility', () => {
       expect(component.showPassword).toBeFalsy();
-      
+
       component.togglePasswordVisibility();
       expect(component.showPassword).toBeTruthy();
-      
+
       component.togglePasswordVisibility();
       expect(component.showPassword).toBeFalsy();
     });
 
     it('should toggle confirm password visibility', () => {
       expect(component.showConfirmPassword).toBeFalsy();
-      
+
       component.toggleConfirmPasswordVisibility();
       expect(component.showConfirmPassword).toBeTruthy();
-      
+
       component.toggleConfirmPasswordVisibility();
       expect(component.showConfirmPassword).toBeFalsy();
     });
@@ -329,7 +329,7 @@ describe('RegisterComponent', () => {
     it('should validate form controls through getters', () => {
       const nameControl = component.name;
       expect(nameControl?.valid).toBeFalsy();
-      
+
       nameControl?.setValue('John Doe');
       expect(nameControl?.valid).toBeTruthy();
     });

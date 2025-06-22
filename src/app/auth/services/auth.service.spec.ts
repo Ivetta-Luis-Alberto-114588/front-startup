@@ -93,11 +93,11 @@ describe('AuthService', () => {
         password: 'password123'
       };
 
-      const mockError = { 
-        error: { 
-          message: 'Email already exists' 
-        }, 
-        status: 400 
+      const mockError = {
+        error: {
+          message: 'Email already exists'
+        },
+        status: 400
       };
 
       service.register(registerData).subscribe({
@@ -170,11 +170,11 @@ describe('AuthService', () => {
         password: 'wrongpassword'
       };
 
-      const mockError = { 
-        error: { 
-          message: 'Credenciales inválidas' 
-        }, 
-        status: 401 
+      const mockError = {
+        error: {
+          message: 'Credenciales inválidas'
+        },
+        status: 401
       };
 
       service.login(credentials.email, credentials.password).subscribe({
@@ -234,6 +234,69 @@ describe('AuthService', () => {
       const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/login`);
       req.flush(mockResponse);
     });
+
+    // Nuevos tests para el mapeo de role a roles
+    it('should map "role" field to "roles" during login', () => {
+      const credentials = {
+        email: 'admin@example.com',
+        password: 'adminpassword'
+      };
+
+      // Mock response del backend con "role" en lugar de "roles"
+      const mockBackendResponse = {
+        success: true,
+        message: 'Login exitoso',
+        user: {
+          id: '2',
+          name: 'Admin User',
+          email: 'admin@example.com',
+          role: ['ADMIN_ROLE'], // Backend usa "role"
+          token: 'admin-token',
+          createdAt: '2025-05-30T21:12:12.591Z',
+          updatedAt: '2025-05-30T21:12:12.591Z',
+          __v: 0
+        }
+      };
+
+      service.login(credentials.email, credentials.password).subscribe(response => {
+        const storedUser = service.getUser();
+        expect(storedUser?.roles).toEqual(['ADMIN_ROLE']); // Mapeado a "roles"
+        expect((storedUser as any).role).toBeUndefined(); // Campo "role" eliminado
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/login`);
+      req.flush(mockBackendResponse);
+    });
+
+    it('should handle user with both role and roles fields during login', () => {
+      const credentials = {
+        email: 'user@example.com',
+        password: 'password'
+      };
+
+      // Mock response con ambos campos (edge case)
+      const mockBackendResponse = {
+        success: true,
+        message: 'Login exitoso',
+        user: {
+          id: '1',
+          name: 'User',
+          email: 'user@example.com',
+          role: ['USER_ROLE'],
+          roles: ['EXISTING_ROLE'], // Ya tiene roles
+          token: 'user-token'
+        }
+      };
+
+      service.login(credentials.email, credentials.password).subscribe(response => {
+        const storedUser = service.getUser();
+        // Debe mantener el campo "roles" existente
+        expect(storedUser?.roles).toEqual(['EXISTING_ROLE']);
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/login`);
+      req.flush(mockBackendResponse);
+    });
   });
 
   describe('authentication state', () => {
@@ -256,9 +319,9 @@ describe('AuthService', () => {
       // Set initial user and token
       localStorage.setItem('token', 'mock-token');
       localStorage.setItem('user', JSON.stringify(mockUser));
-      
+
       service.logout();
-      
+
       expect(service.getUser()).toBeNull();
       expect(service.getToken()).toBeNull();
       expect(localStorage.getItem('token')).toBeNull();
@@ -298,6 +361,52 @@ describe('AuthService', () => {
       localStorage.setItem('user', 'invalid-json');
       expect(service.getUser()).toBeNull();
       expect(localStorage.getItem('user')).toBeNull(); // Should be cleared
+    });
+
+    // Tests para el mapeo de role a roles al cargar desde localStorage
+    it('should map "role" to "roles" when loading from localStorage', () => {
+      const userWithRoleField = {
+        id: '1',
+        name: 'User',
+        email: 'user@example.com',
+        role: ['USER_ROLE'] // Usuario guardado con campo "role"
+      };
+
+      localStorage.setItem('user', JSON.stringify(userWithRoleField));
+
+      const loadedUser = service.getUser();
+      expect(loadedUser?.roles).toEqual(['USER_ROLE']); // Mapeado a "roles"
+      expect((loadedUser as any).role).toBeUndefined(); // Campo "role" eliminado
+    });
+
+    it('should preserve existing "roles" field when loading from localStorage', () => {
+      const userWithRolesField = {
+        id: '1',
+        name: 'User',
+        email: 'user@example.com',
+        roles: ['USER_ROLE'] // Usuario ya con campo "roles"
+      };
+
+      localStorage.setItem('user', JSON.stringify(userWithRolesField));
+
+      const loadedUser = service.getUser();
+      expect(loadedUser?.roles).toEqual(['USER_ROLE']);
+    });
+
+    it('should handle user with both role and roles when loading from localStorage', () => {
+      const userWithBothFields = {
+        id: '1',
+        name: 'User',
+        email: 'user@example.com',
+        role: ['OLD_ROLE'],
+        roles: ['NEW_ROLE'] // roles tiene precedencia
+      };
+
+      localStorage.setItem('user', JSON.stringify(userWithBothFields));
+
+      const loadedUser = service.getUser();
+      // Debe mantener el campo "roles" existente
+      expect(loadedUser?.roles).toEqual(['NEW_ROLE']);
     });
   });
 
@@ -352,7 +461,7 @@ describe('AuthService', () => {
       // Clear both localStorage and service cache manually
       localStorage.clear();
       (service as any).user = null; // Reset internal cache
-      
+
       // Test ADMIN_ROLE
       localStorage.setItem('user', JSON.stringify(mockAdminUser));
       expect(service.getUser()?.roles).toEqual(['ADMIN_ROLE']);
@@ -367,7 +476,7 @@ describe('AuthService', () => {
 
       localStorage.setItem('user', JSON.stringify(userWithMultipleRoles));
       const user = service.getUser();
-      
+
       expect(user?.roles).toContain('USER_ROLE');
       expect(user?.roles).toContain('ADMIN_ROLE');
       expect(user?.roles?.length).toBe(2);
@@ -381,7 +490,7 @@ describe('AuthService', () => {
 
       localStorage.setItem('user', JSON.stringify(userWithoutRoles));
       const user = service.getUser();
-      
+
       expect(user?.roles).toBeUndefined();
     });
   });

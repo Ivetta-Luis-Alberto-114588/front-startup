@@ -45,7 +45,7 @@ describe('LoginComponent', () => {
     notificationServiceSpy = TestBed.inject(NotificationService) as jasmine.SpyObj<NotificationService>;
     routerSpy = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     activatedRouteSpy = TestBed.inject(ActivatedRoute) as jasmine.SpyObj<ActivatedRoute>;
-    
+
     fixture.detectChanges();
   });
 
@@ -81,7 +81,7 @@ describe('LoginComponent', () => {
 
     it('should require valid email format', () => {
       const emailControl = component.loginForm.get('email');
-      
+
       emailControl?.setValue('invalid-email');
       expect(emailControl?.valid).toBeFalsy();
       expect(emailControl?.errors?.['email']).toBeTruthy();
@@ -306,10 +306,10 @@ describe('LoginComponent', () => {
   describe('UI Interactions', () => {
     it('should toggle password visibility', () => {
       expect(component.showPassword).toBeFalsy();
-      
+
       component.togglePasswordVisibility();
       expect(component.showPassword).toBeTruthy();
-      
+
       component.togglePasswordVisibility();
       expect(component.showPassword).toBeFalsy();
     });
@@ -323,9 +323,9 @@ describe('LoginComponent', () => {
     it('should unsubscribe on destroy', () => {
       const subscription = component['queryParamsSubscription'];
       spyOn(subscription!, 'unsubscribe');
-      
+
       component.ngOnDestroy();
-      
+
       expect(subscription!.unsubscribe).toHaveBeenCalled();
     });
   });

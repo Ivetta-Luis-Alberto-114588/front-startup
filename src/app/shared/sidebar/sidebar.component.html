@@ -47,9 +47,7 @@
           <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Dashboard Estados</span>
         </a>
       </li>
-    </ul>
-
-    <!-- ***** INICIO: SECCIÓN ADMIN ***** -->
+    </ul> <!-- ***** INICIO: SECCIÓN ADMIN ***** -->
     <!-- Usamos async pipe para verificar si es admin -->
     <ng-container *ngIf="(authService.user$ | async)?.roles?.includes('ADMIN_ROLE')">
       <hr> <!-- Separador visual -->
@@ -154,7 +152,7 @@
             <i class="bi bi-card-list me-2"></i> <!-- Icono para pedidos -->
             <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Pedidos</span>
           </a>
-        </li> <!-- === NUEVO ENLACE PARA DASHBOARD DE ESTADOS === -->        <!-- === NUEVO ENLACE PARA CRUD DE ESTADOS === -->
+        </li> <!-- === NUEVO ENLACE PARA DASHBOARD DE ESTADOS === --> <!-- === NUEVO ENLACE PARA CRUD DE ESTADOS === -->
         <li class="nav-item">
           <a class="nav-link" routerLink="/admin/order-statuses" routerLinkActive="active">
             <i class="bi bi-gear-wide-connected me-2"></i> <!-- Icono para gestión de estados -->

@@ -74,6 +74,12 @@ export class AuthService {
       try {
         const parsedUser = JSON.parse(storedUser);
         if (typeof parsedUser === 'object' && parsedUser !== null) {
+          // Mapear role a roles si es necesario para compatibilidad
+          if (parsedUser.role && !parsedUser.roles) {
+            parsedUser.roles = parsedUser.role;
+            delete parsedUser.role;
+          }
+
           this.user = parsedUser;
           this.userSubject.next(this.user);
         } else {
@@ -102,15 +108,21 @@ export class AuthService {
             const userData = response.user;
             this.storeToken(token);
             const { token: _, ...userWithoutToken } = userData;
+
+            // Mapear role a roles para mantener consistencia
+            if (userWithoutToken.role && !userWithoutToken.roles) {
+              userWithoutToken.roles = userWithoutToken.role;
+              delete userWithoutToken.role;
+            }
+
             this.storeUser(userWithoutToken);
             this.isAuthenticatedSubject.next(true);
           } else {
             console.error("Invalid login response structure:", response);
-            throw new Error('Respuesta de login inválida del servidor.'); // Lanza error si la estructura no es la esperada
+            throw new Error('Respuesta de login inválida del servidor.');
           }
         }),
         catchError(err => {
-          // El componente manejará el error de UI
           return throwError(() => err);
         })
       );
