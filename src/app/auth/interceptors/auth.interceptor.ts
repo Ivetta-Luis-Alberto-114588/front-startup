@@ -18,7 +18,7 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(
     private authService: AuthService,
     private router: Router
-  ) { }  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+  ) { } intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     // Obtener el token de autenticación de forma segura
     let token: string | null = null;
     try {
