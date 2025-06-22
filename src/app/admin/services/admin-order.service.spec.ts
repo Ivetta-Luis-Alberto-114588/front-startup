@@ -945,9 +945,116 @@ describe('AdminOrderService', () => {
             const req = httpMock.expectOne(request => {
                 return request.params.get('page') === '-1' &&
                     request.params.get('limit') === '-5';
+            });            req.flush({ total: 0, orders: [] });
+        });
+    });
+
+    describe('Additional Edge Cases for Branch Coverage', () => {
+        it('should handle orders with status missing _id and id properties', () => {
+            // Arrange
+            const orderWithInvalidStatus: IOrder = {
+                ...mockOrder,
+                status: { name: 'Unknown Status' } as any // Status without _id or id
+            };
+
+            const modifiedPaginatedResponse: PaginatedAdminOrdersResponse = {
+                total: 1,
+                orders: [orderWithInvalidStatus]
+            };
+
+            // Act
+            service.getOrdersForDashboardView().subscribe(groupedData => {
+                // Should handle gracefully even with invalid status
+                expect(groupedData).toBeTruthy();
+                expect(groupedData.length).toBe(3); // Should still create groups for valid statuses
             });
 
-            req.flush({ total: 0, orders: [] });
+            // Assert
+            const ordersReq = httpMock.expectOne(request => {
+                return request.url === baseUrl &&
+                    request.method === 'GET' &&
+                    request.params.get('page') === '1' &&
+                    request.params.get('limit') === '1000';
+            });
+            const statusesReq = httpMock.expectOne(orderStatusesUrl);
+
+            ordersReq.flush(modifiedPaginatedResponse);
+            statusesReq.flush(mockOrderStatusesResponse);
+        });        it('should handle null or undefined statusesResponse', () => {
+            // Arrange - Test null response
+            service.getOrdersForDashboardView().subscribe(groupedData => {
+                expect(groupedData).toBeTruthy();
+                expect(groupedData.length).toBe(0); // Should return empty array
+            });
+
+            // Assert
+            const ordersReq = httpMock.expectOne(request => {
+                return request.url === baseUrl &&
+                    request.method === 'GET' &&
+                    request.params.get('page') === '1' &&
+                    request.params.get('limit') === '1000';
+            });
+            const statusesReq = httpMock.expectOne(orderStatusesUrl);
+
+            ordersReq.flush(mockPaginatedResponse);
+            statusesReq.flush(null); // Null response
+        });
+
+        it('should handle statuses without priority property', () => {
+            // Arrange
+            const statusesWithoutPriority: IOrderStatusesResponse = {
+                total: 2,
+                orderStatuses: [
+                    {
+                        _id: 'status1',
+                        name: 'No Priority 1',
+                        code: 'NO_PRIORITY_1',
+                        description: 'Status without priority',
+                        color: '#FFC107',
+                        // priority: undefined, // Missing priority
+                        isActive: true,
+                        isDefault: false,
+                        isFinal: false,
+                        allowedTransitions: [],
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    } as any,
+                    {
+                        _id: 'status2',
+                        name: 'No Priority 2',
+                        code: 'NO_PRIORITY_2',
+                        description: 'Another status without priority',
+                        color: '#007BFF',
+                        // priority: undefined, // Missing priority
+                        isActive: true,
+                        isDefault: false,
+                        isFinal: false,
+                        allowedTransitions: [],
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    } as any
+                ]
+            };
+
+            // Act
+            service.getOrdersForDashboardView().subscribe(groupedData => {
+                expect(groupedData.length).toBe(2);
+                // Both should be sorted with default priority (999)
+                expect(groupedData[0].status.name).toBe('No Priority 1');
+                expect(groupedData[1].status.name).toBe('No Priority 2');
+            });
+
+            // Assert
+            const ordersReq = httpMock.expectOne(request => {
+                return request.url === baseUrl &&
+                    request.method === 'GET' &&
+                    request.params.get('page') === '1' &&
+                    request.params.get('limit') === '1000';
+            });
+            const statusesReq = httpMock.expectOne(orderStatusesUrl);
+
+            ordersReq.flush({ total: 0, orders: [] });
+            statusesReq.flush(statusesWithoutPriority);
         });
     });
 });

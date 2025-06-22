@@ -81,12 +81,11 @@ export class AdminOrderService {
     const statuses$ = this.http.get<any>(`${environment.apiUrl}/api/order-statuses`);
     
     return forkJoin([orders$, statuses$]).pipe(
-      map(([ordersResponse, statusesResponse]: [PaginatedAdminOrdersResponse, any]) => {
-        console.log('=== DEBUG DASHBOARD DATA ===');
+      map(([ordersResponse, statusesResponse]: [PaginatedAdminOrdersResponse, any]) => {        console.log('=== DEBUG DASHBOARD DATA ===');
         console.log('Orders Response:', ordersResponse);
         console.log('Number of orders:', ordersResponse.orders?.length || 0);
         console.log('Statuses Response:', statusesResponse);
-        console.log('Number of statuses:', statusesResponse.orderStatuses?.length || 0);
+        console.log('Number of statuses:', statusesResponse?.orderStatuses?.length || (Array.isArray(statusesResponse) ? statusesResponse.length : 0));
 
         // Extraer estados activos
         let allStatuses: IOrderStatus[] = [];
