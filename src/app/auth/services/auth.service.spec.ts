@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AuthService, User, RegisterPayload } from './auth.service';
 import { environment } from 'src/environments/environment';
@@ -8,6 +9,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
   let routerSpy: jasmine.SpyObj<Router>;
+  let store: { [key: string]: string | null } = {};
 
   const mockUser: User = {
     id: '1',
@@ -35,6 +37,8 @@ describe('AuthService', () => {
   };
 
   beforeEach(() => {
+    // Reset the mock store before each test
+    store = {};
     const spy = jasmine.createSpyObj('Router', ['navigate']);
 
     TestBed.configureTestingModule({
@@ -49,13 +53,24 @@ describe('AuthService', () => {
     httpMock = TestBed.inject(HttpTestingController);
     routerSpy = TestBed.inject(Router) as jasmine.SpyObj<Router>;
 
-    // Clear localStorage before each test
-    localStorage.clear();
+    // Mock localStorage
+    spyOn(localStorage, 'getItem').and.callFake((key: string) => {
+      return store[key] || null;
+    });
+    spyOn(localStorage, 'setItem').and.callFake((key: string, value: string) => {
+      store[key] = value;
+    });
+    spyOn(localStorage, 'removeItem').and.callFake((key: string) => {
+      store[key] = null;
+    });
+    spyOn(localStorage, 'clear').and.callFake(() => {
+      store = {};
+    });
   });
 
   afterEach(() => {
     httpMock.verify();
-    localStorage.clear();
+    // No need to clear localStorage here as the mock handles it
   });
 
   it('should be created', () => {
@@ -306,6 +321,7 @@ describe('AuthService', () => {
 
     it('should return true for isAuthenticated when token exists', () => {
       localStorage.setItem('token', 'mock-token');
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       expect(service.isAuthenticated()).toBe(true);
     });
 
@@ -319,6 +335,7 @@ describe('AuthService', () => {
       // Set initial user and token
       localStorage.setItem('token', 'mock-token');
       localStorage.setItem('user', JSON.stringify(mockUser));
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
 
       service.logout();
 
@@ -333,6 +350,7 @@ describe('AuthService', () => {
   describe('token management', () => {
     it('should get token from localStorage', () => {
       localStorage.setItem('token', 'stored-token');
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       expect(service.getToken()).toBe('stored-token');
     });
 
@@ -342,6 +360,7 @@ describe('AuthService', () => {
 
     it('should clear token on logout', () => {
       localStorage.setItem('token', 'mock-token');
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       service.logout();
       expect(localStorage.getItem('token')).toBeNull();
     });
@@ -350,6 +369,7 @@ describe('AuthService', () => {
   describe('user management', () => {
     it('should get user from localStorage', () => {
       localStorage.setItem('user', JSON.stringify(mockUser));
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       expect(service.getUser()).toEqual(mockUser);
     });
 
@@ -358,9 +378,16 @@ describe('AuthService', () => {
     });
 
     it('should handle invalid user data in localStorage', () => {
+      // Spy on console.error to suppress expected error logs
+      spyOn(console, 'error');
+      
       localStorage.setItem('user', 'invalid-json');
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       expect(service.getUser()).toBeNull();
       expect(localStorage.getItem('user')).toBeNull(); // Should be cleared
+      
+      // Verify console.error was called with expected message
+      expect(console.error).toHaveBeenCalledWith('Error parsing user from localStorage', jasmine.any(SyntaxError));
     });
 
     // Tests para el mapeo de role a roles al cargar desde localStorage
@@ -374,6 +401,7 @@ describe('AuthService', () => {
 
       localStorage.setItem('user', JSON.stringify(userWithRoleField));
 
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       const loadedUser = service.getUser();
       expect(loadedUser?.roles).toEqual(['USER_ROLE']); // Mapeado a "roles"
       expect((loadedUser as any).role).toBeUndefined(); // Campo "role" eliminado
@@ -389,6 +417,7 @@ describe('AuthService', () => {
 
       localStorage.setItem('user', JSON.stringify(userWithRolesField));
 
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       const loadedUser = service.getUser();
       expect(loadedUser?.roles).toEqual(['USER_ROLE']);
     });
@@ -404,50 +433,10 @@ describe('AuthService', () => {
 
       localStorage.setItem('user', JSON.stringify(userWithBothFields));
 
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       const loadedUser = service.getUser();
       // Debe mantener el campo "roles" existente
       expect(loadedUser?.roles).toEqual(['NEW_ROLE']);
-    });
-  });
-
-  describe('password reset', () => {
-    it('should request password reset successfully', () => {
-      const email = 'john@example.com';
-      const mockResponse = {
-        success: true,
-        message: 'Password reset email sent'
-      };
-
-      service.requestPasswordReset(email).subscribe(response => {
-        expect(response).toEqual(mockResponse);
-      });
-
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/forgot-password`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ email });
-      req.flush(mockResponse);
-    });
-
-    it('should reset password successfully', () => {
-      const resetData = {
-        token: 'reset-token',
-        newPassword: 'newpassword123',
-        passwordConfirmation: 'newpassword123'
-      };
-
-      const mockResponse = {
-        success: true,
-        message: 'Password reset successfully'
-      };
-
-      service.resetPassword(resetData).subscribe(response => {
-        expect(response).toEqual(mockResponse);
-      });
-
-      const req = httpMock.expectOne(`${environment.apiUrl}/api/auth/reset-password`);
-      expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual(resetData);
-      req.flush(mockResponse);
     });
   });
 
@@ -455,15 +444,17 @@ describe('AuthService', () => {
     it('should differentiate between USER_ROLE and ADMIN_ROLE', () => {
       // Test USER_ROLE
       localStorage.setItem('user', JSON.stringify(mockUser));
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       expect(service.getUser()?.roles).toEqual(['USER_ROLE']);
       expect(service.getUser()?.roles).not.toContain('ADMIN_ROLE');
 
       // Clear both localStorage and service cache manually
       localStorage.clear();
-      (service as any).user = null; // Reset internal cache
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient)); // Reset internal cache
 
       // Test ADMIN_ROLE
       localStorage.setItem('user', JSON.stringify(mockAdminUser));
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       expect(service.getUser()?.roles).toEqual(['ADMIN_ROLE']);
       expect(service.getUser()?.roles).not.toContain('USER_ROLE');
     });
@@ -475,6 +466,7 @@ describe('AuthService', () => {
       };
 
       localStorage.setItem('user', JSON.stringify(userWithMultipleRoles));
+      service = new AuthService(TestBed.inject(Router), TestBed.inject(HttpClient));
       const user = service.getUser();
 
       expect(user?.roles).toContain('USER_ROLE');

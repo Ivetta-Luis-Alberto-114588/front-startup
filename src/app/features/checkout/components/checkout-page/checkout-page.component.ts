@@ -290,12 +290,17 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
           this.notificationService.showSuccess('Redirigiendo a Mercado Pago...');
           // Limpiar carrito localmente ANTES de redirigir (opcional, pero recomendado)
           this.cartService.clearCart().subscribe(); // Llama a la API para limpiar
-          window.location.href = preference.preference.init_point;
+          this.navigateToPayment(preference.preference.init_point);
         } else {
           this.notificationService.showError('No se pudo iniciar el proceso de pago.', 'Error');
         }
       }
       // El error ya se maneja en catchError
     });
+  }
+
+  // Método separado para navegación - fácil de mockear en tests
+  private navigateToPayment(url: string): void {
+    window.location.href = url;
   }
 }
