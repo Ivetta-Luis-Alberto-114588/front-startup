@@ -48,8 +48,7 @@
                     </td>
                     <td class="text-end">
                         <div class="d-inline-flex gap-1">
-                            <button class="btn btn-sm btn-outline-primary" title="Editar"
-                                (click)="goToEditTag(tag.id)">
+                            <button class="btn btn-sm btn-outline-primary" title="Editar" (click)="goToEditTag(tag.id)">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-danger" title="Eliminar"
@@ -65,9 +64,9 @@
 
     <!-- Paginación -->
     <div *ngIf="!isLoading && totalItems > itemsPerPage" class="d-flex justify-content-center mt-4">
-      <ngb-pagination [collectionSize]="totalItems" [pageSize]="itemsPerPage" [page]="currentPage" [maxSize]="5"
-        [rotate]="true" [boundaryLinks]="true" (pageChange)="loadPage($event)">
-      </ngb-pagination>
+        <ngb-pagination [collectionSize]="totalItems" [pageSize]="itemsPerPage" [page]="currentPage" [maxSize]="5"
+            [rotate]="true" [boundaryLinks]="true" (pageChange)="loadPage($event)">
+        </ngb-pagination>
     </div>
 
 </div>

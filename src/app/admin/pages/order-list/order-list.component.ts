@@ -162,7 +162,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
       // Agrega más casos según los nombres de tus estados
       default: return 'bg-secondary text-white'; // Un color por defecto
     }
-  }  getOrderStatusId(order: IOrder): string {
+  } getOrderStatusId(order: IOrder): string {
     if (order.status && order.status._id) {
       return order.status._id;
     }
