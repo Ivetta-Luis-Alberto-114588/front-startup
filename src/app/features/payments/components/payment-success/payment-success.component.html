@@ -11,6 +11,40 @@
     </p>
     <!-- ***** FIN MOSTRAR ID ***** -->
 
-    <a routerLink="/my-orders" class="btn btn-primary mt-3 me-2">Ver Mis Pedidos</a>
-    <a routerLink="/dashboard" class="btn btn-outline-secondary mt-3">Seguir Comprando</a>
+    <!-- ***** ESTADO DE VERIFICACIÓN ***** -->
+    <div class="mt-4 p-3 bg-light rounded" *ngIf="isVerifying || verificationComplete">
+        <!-- Estado de verificación -->
+        <div *ngIf="isVerifying" class="d-flex align-items-center justify-content-center">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <span>Verificando estado del pago...</span>
+        </div>
+
+        <!-- Verificación completada -->
+        <div *ngIf="verificationComplete && !isVerifying">
+            <div *ngIf="paymentStatus === 'approved'" class="text-success">
+                <i class="bi bi-check-circle me-1"></i>
+                Pago verificado exitosamente
+                <div *ngIf="notificationSent" class="small text-muted mt-1">
+                    <i class="bi bi-send-check me-1"></i>
+                    Notificación enviada
+                </div>
+            </div>
+            <div *ngIf="paymentStatus !== 'approved' && paymentStatus !== 'unknown'" class="text-warning">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Estado del pago: {{ paymentStatus }}
+            </div>
+            <div *ngIf="errorMessage" class="text-danger">
+                <i class="bi bi-exclamation-circle me-1"></i>
+                {{ errorMessage }}
+            </div>
+        </div>
+    </div>
+    <!-- ***** FIN ESTADO VERIFICACIÓN ***** -->
+
+    <div class="mt-4">
+        <a routerLink="/my-orders" class="btn btn-primary me-2">Ver Mis Pedidos</a>
+        <a routerLink="/dashboard" class="btn btn-outline-secondary">Seguir Comprando</a>
+    </div>
 </div>
