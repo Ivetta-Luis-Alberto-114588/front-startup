@@ -4,6 +4,7 @@ import { ActivatedRoute } from '@angular/router'; // Importar ActivatedRoute
 import { Subscription } from 'rxjs'; // Importar Subscription
 import { PaymentVerificationService } from '../../services/payment-verification.service';
 import { OrderNotificationService } from '../../../orders/services/order-notification.service';
+import { CartService } from '../../../cart/services/cart.service';
 
 @Component({
   selector: 'app-payment-success',
@@ -26,7 +27,8 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
   constructor(
     private route: ActivatedRoute,
     private paymentVerificationService: PaymentVerificationService,
-    private orderNotificationService: OrderNotificationService
+    private orderNotificationService: OrderNotificationService,
+    private cartService: CartService
   ) { }
 
   ngOnInit(): void {
@@ -66,9 +68,11 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       this.paymentStatus = paymentStatus?.status || 'unknown';
       this.verificationComplete = true;
 
-      // Si el pago está aprobado, enviar notificación
+      // Si el pago está aprobado, enviar notificación y limpiar carrito
       if (paymentStatus?.status === 'approved') {
         await this.sendOrderNotification(paymentStatus);
+        // Limpiar el carrito solo cuando el pago es exitoso
+        this.clearCartAfterSuccessfulPayment();
       } else {
         console.warn('Pago no aprobado, no se enviará notificación:', paymentStatus);
       }
@@ -147,6 +151,21 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
 
     // Enviar notificación para pago en efectivo
     this.sendOrderNotification(cashPaymentData);
+  }
+
+  /**
+   * Limpia el carrito después de un pago exitoso
+   */
+  private clearCartAfterSuccessfulPayment(): void {
+    this.cartService.clearCart().subscribe({
+      next: () => {
+        console.log('Carrito limpiado exitosamente después del pago');
+      },
+      error: (error) => {
+        console.error('Error al limpiar el carrito:', error);
+        // No mostramos error al usuario ya que el pago fue exitoso
+      }
+    });
   }
 
   ngOnDestroy(): void {
