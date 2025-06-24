@@ -42,6 +42,7 @@ export class AdminProductService {
     let params = new HttpParams()
       .set('page', pagination.page.toString())
       .set('limit', pagination.limit.toString());
+      
     return this.http.get<PaginatedAdminProductsResponse>(this.adminApiUrl, { params });
   }
 

@@ -65,11 +65,12 @@
         </table>
     </div>
 
-    <!-- Paginación (si aplica) -->
-    <!-- <div *ngIf="!isLoading && totalItems > itemsPerPage" class="d-flex justify-content-center mt-4">
-      <ngb-pagination ...>
+    <!-- Paginación -->
+    <div *ngIf="!isLoading && totalItems > itemsPerPage" class="d-flex justify-content-center mt-4">
+      <ngb-pagination [collectionSize]="totalItems" [pageSize]="itemsPerPage" [page]="currentPage" [maxSize]="5"
+        [rotate]="true" [boundaryLinks]="true" (pageChange)="loadPage($event)">
       </ngb-pagination>
-    </div> -->
+    </div>
 
 </div>
 

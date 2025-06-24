@@ -6,9 +6,7 @@ import { finalize } from 'rxjs/operators';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 
 import { ICustomer } from 'src/app/features/customers/models/icustomer';
-// QUITA o COMENTA la importación de PaginatedAdminCustomersResponse si no la usas realmente
-// import { AdminCustomerService, PaginatedAdminCustomersResponse } from '../../services/admin-customer.service';
-import { AdminCustomerService } from '../../services/admin-customer.service'; // Importa solo el servicio
+import { AdminCustomerService, PaginatedAdminCustomersResponse } from '../../services/admin-customer.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 
@@ -55,38 +53,17 @@ export class CustomerListComponent implements OnInit, OnDestroy {
     this.error = null;
     const pagination: PaginationDto = { page: this.currentPage, limit: this.itemsPerPage };
 
-    // Ajusta el tipo esperado en el subscribe a ICustomer[]
     this.customerSub = this.adminCustomerService.getCustomers(pagination)
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
-        // ----- CORRECCIÓN AQUÍ -----
-        next: (response: ICustomer[] | any) => { // Espera un array o usa 'any' temporalmente
-          // Verifica si la respuesta ES un array directamente
-          if (Array.isArray(response)) {
-            this.customers = response;
-            // IMPORTANTE: Si la API no devuelve el total, tendrás que estimarlo
-            // o hacer otra llamada si necesitas paginación precisa.
-            // Por ahora, basamos el total en la longitud de la respuesta actual.
-            this.totalItems = response.length; // O busca un header X-Total-Count si tu API lo envía
-            // Si la API SÍ devuelve el objeto { total, customers }, descomenta lo de abajo
-            // y comenta las 3 líneas anteriores.
-            // } else if (response && Array.isArray(response.customers)) {
-            //   this.customers = response.customers;
-            //   this.totalItems = response.total ?? response.customers.length;
-          } else {
-            // Si la respuesta no es un array ni tiene la estructura esperada
-            console.error("Respuesta inesperada de la API de clientes:", response);
-            this.customers = [];
-            this.totalItems = 0;
-            this.error = 'Formato de datos inesperado del servidor.';
-            this.notificationService.showError(this.error, 'Error');
-          }
+        next: (response: PaginatedAdminCustomersResponse) => {
+          this.customers = response.customers;
+          this.totalItems = response.total;
         },
-        // ----- FIN CORRECCIÓN -----
         error: (err) => {
           this.error = 'No se pudieron cargar los clientes.';
           this.notificationService.showError(this.error, 'Error');
-          this.customers = []; // Asegurar array vacío en caso de error
+          this.customers = [];
           this.totalItems = 0;
         }
       });

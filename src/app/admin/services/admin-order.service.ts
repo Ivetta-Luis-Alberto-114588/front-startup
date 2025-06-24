@@ -75,17 +75,18 @@ export class AdminOrderService {
   getOrdersForDashboardView(): Observable<IGroupedOrdersForDashboard[]> {
     // Obtener pedidos y estados en paralelo
     const pagination: PaginationDto = { page: 1, limit: 1000 }; // Ajustar según necesidades
-    
+
     // Llamadas paralelas a pedidos y estados
     const orders$ = this.getOrders(pagination);
     const statuses$ = this.http.get<any>(`${environment.apiUrl}/api/order-statuses`);
-    
+
     return forkJoin([orders$, statuses$]).pipe(
-      map(([ordersResponse, statusesResponse]: [PaginatedAdminOrdersResponse, any]) => {        console.log('=== DEBUG DASHBOARD DATA ===');
-        console.log('Orders Response:', ordersResponse);
+      map(([ordersResponse, statusesResponse]: [PaginatedAdminOrdersResponse, any]) => {
+        // console.log('=== DEBUG DASHBOARD DATA ===');
+        // console.log('Orders Response:', ordersResponse);
         console.log('Number of orders:', ordersResponse.orders?.length || 0);
-        console.log('Statuses Response:', statusesResponse);
-        console.log('Number of statuses:', statusesResponse?.orderStatuses?.length || (Array.isArray(statusesResponse) ? statusesResponse.length : 0));
+        // console.log('Statuses Response:', statusesResponse);
+        // console.log('Number of statuses:', statusesResponse?.orderStatuses?.length || (Array.isArray(statusesResponse) ? statusesResponse.length : 0));
 
         // Extraer estados activos
         let allStatuses: IOrderStatus[] = [];
@@ -94,7 +95,7 @@ export class AdminOrderService {
         } else if (Array.isArray(statusesResponse)) {
           allStatuses = statusesResponse.filter((s: any) => s.isActive);
         }
-        
+
         // Mapear campos del backend al frontend para estados
         allStatuses = allStatuses.map((status: any) => ({
           _id: status.id || status._id,
@@ -110,10 +111,10 @@ export class AdminOrderService {
           createdAt: status.createdAt ? new Date(status.createdAt) : undefined,
           updatedAt: status.updatedAt ? new Date(status.updatedAt) : undefined
         }));
-        
+
         // Crear Map para agrupar órdenes por estado
         const groupedOrders = new Map<string, IGroupedOrdersForDashboard>();
-        
+
         // Inicializar columnas para todos los estados (incluso sin órdenes)
         allStatuses.forEach(status => {
           groupedOrders.set(status._id, {
@@ -122,7 +123,7 @@ export class AdminOrderService {
             totalOrdersInStatus: 0
           });
         });
-        
+
         // Agrupar órdenes existentes en sus estados correspondientes
         ordersResponse.orders.forEach(order => {
           // Obtener ID de estado (algunos objetos vienen con `id` en lugar de `_id`)
@@ -138,7 +139,7 @@ export class AdminOrderService {
             group.totalOrdersInStatus = group.orders.length;
           }
         });
-        
+
         // Convertir Map a Array y ordenar por prioridad del estado
         return Array.from(groupedOrders.values()).sort((a, b) => {
           const priorityA = a.status?.priority || 999;

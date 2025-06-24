@@ -31,7 +31,7 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
     selectedOrder: IOrder | null = null;
     newStatusId: string = ''; // Guardará el _id del IOrderStatus
     statusChangeNotes: string = '';
-    private statusChangeModal: any;    constructor(
+    private statusChangeModal: any; constructor(
         private adminOrderService: AdminOrderService,
         private adminOrderStatusService: AdminOrderStatusService,
         public orderStatusService: OrderStatusService, // Público para usar getStatusIcon en template
@@ -74,7 +74,7 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
                         this.allOrderStatuses = [];
                     }
                     this.loadDashboardData(); // Cargar datos del dashboard una vez que los estados estén listos
-                },                error: (err: HttpErrorResponse) => {
+                }, error: (err: HttpErrorResponse) => {
                     this.errorMessage = err.error?.error || 'Error al cargar los tipos de estado de pedido.';
                     this.notificationService.showError(this.errorMessage || 'Error desconocido', 'Error de Configuración');
                     this.isLoading = false;
@@ -101,7 +101,7 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
                     if (data.length === 0 && !this.errorMessage) { // No sobrescribir error de carga de estados
                         this.errorMessage = "No hay datos para el dashboard o no hay estados activos.";
                     }
-                },                error: (err: HttpErrorResponse) => {
+                }, error: (err: HttpErrorResponse) => {
                     this.errorMessage = err.error?.error || 'Error al cargar los datos del dashboard de pedidos.';
                     this.notificationService.showError(this.errorMessage || 'Error desconocido', 'Error de Carga');
                 }
@@ -131,7 +131,7 @@ export class OrderStatusDashboardComponent implements OnInit, OnDestroy {
             if (!currentStatusId) {
                 this.notificationService.showError("El pedido no tiene un estado actual definido.", "Error de Datos");
                 return;
-            }            this.adminOrderStatusService.validateTransition({ fromStatusId: currentStatusId, toStatusId: newStatusId })
+            } this.adminOrderStatusService.validateTransition({ fromStatusId: currentStatusId, toStatusId: newStatusId })
                 .pipe(takeUntil(this.destroy$))
                 .subscribe((validationResponse: any) => {
                     if (validationResponse.isValid) {

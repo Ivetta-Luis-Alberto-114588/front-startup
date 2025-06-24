@@ -56,7 +56,6 @@ export class OrderListComponent implements OnInit, OnDestroy {
       }
     });
   }
-
   loadOrders(): void {
     this.isLoading = true;
     this.error = null;
@@ -66,16 +65,8 @@ export class OrderListComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
         next: (response: PaginatedAdminOrdersResponse) => {
-          if (response && Array.isArray(response.orders)) {
-            this.orders = response.orders;
-            this.totalItems = response.total ?? response.orders.length;
-          } else {
-            console.error("Respuesta inválida de la API de pedidos:", response);
-            this.orders = [];
-            this.totalItems = 0;
-            this.error = 'Respuesta inesperada del servidor al cargar pedidos.';
-            this.notificationService.showError(this.error, 'Error');
-          }
+          this.orders = response.orders;
+          this.totalItems = response.total;
         },
         error: (err) => {
           console.error("Error loading orders:", err);
@@ -132,11 +123,13 @@ export class OrderListComponent implements OnInit, OnDestroy {
       });
   }
 
+  // --- Paginación ---
   loadPage(page: number): void {
     if (page === this.currentPage || this.isLoading) return;
     this.currentPage = page;
     this.loadOrders();
   }
+
   getFormattedStatus(statusObj: IOrderStatus | string): string {
     let statusName = '';
     if (typeof statusObj === 'string') {

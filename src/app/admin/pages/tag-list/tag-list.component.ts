@@ -112,6 +112,10 @@ export class TagListComponent implements OnInit, OnDestroy {
       });
   }
 
-  // --- Paginación (si aplica) ---
-  // loadPage(page: number): void { ... }
+  // --- Paginación ---
+  loadPage(page: number): void {
+    if (page === this.currentPage || this.isLoading) return;
+    this.currentPage = page;
+    this.loadTags();
+  }
 }
