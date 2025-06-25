@@ -58,8 +58,6 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       // Verificar el estado de la orden en lugar del pago directamente
       const orderStatus = await this.paymentVerificationService.verifyOrderStatus(this.orderId!).toPromise();
 
-      console.log(JSON.stringify(orderStatus))
-
       this.paymentStatus = orderStatus?.status || 'unknown';
       this.verificationComplete = true;
 
