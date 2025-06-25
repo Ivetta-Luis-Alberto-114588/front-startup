@@ -20,7 +20,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
   public verificationComplete: boolean = false; // Verificación completada
   public notificationSent: boolean = false; // Notificación enviada
   public errorMessage: string | null = null; // Mensaje de error si algo falla
-  
+
   private routeSub: Subscription | null = null; // Para manejar la suscripción
 
   // Inyectar servicios en el constructor
@@ -38,7 +38,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       this.orderId = params.get('saleId');
       // Obtener el payment_id de MercadoPago si existe
       this.paymentId = params.get('payment_id');
-      
+
       // Si tenemos los datos necesarios, verificar el pago
       if (this.orderId) {
         this.verifyPaymentAndNotify();
@@ -115,7 +115,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
 
       this.notificationSent = true;
       console.log('Notificación de Telegram enviada exitosamente');
-      
+
     } catch (error) {
       console.error('Error al enviar notificación de Telegram:', error);
       // No mostramos error al usuario ya que el pago ya fue exitoso
