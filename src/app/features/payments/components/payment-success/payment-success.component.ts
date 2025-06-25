@@ -14,6 +14,7 @@ import { CartService } from '../../../cart/services/cart.service';
 export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implementar interfaces
 
   public orderId: string | null = null; // Propiedad para guardar el ID
+  public MP_Id: string | null = null; // Propiedad para guardar el ID
   public paymentId: string | null = null; // Propiedad para guardar el ID del pago de MercadoPago
   public paymentStatus: string | null = null; // Estado del pago
   public isVerifying: boolean = false; // Estado de verificación
@@ -56,6 +57,8 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
 
       // Verificar el estado de la orden en lugar del pago directamente
       const orderStatus = await this.paymentVerificationService.verifyOrderStatus(this.orderId!).toPromise();
+
+      console.log(JSON.stringify(orderStatus))
 
       this.paymentStatus = orderStatus?.status || 'unknown';
       this.verificationComplete = true;

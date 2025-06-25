@@ -279,7 +279,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
 
 
         //enviar notificación a Telegram
-        this.telegramNotificationService.sendMessage("checkout-page.component.ts --> " + JSON.stringify(createdOrder))
+        // this.telegramNotificationService.sendMessage("checkout-page.component.ts --> " + JSON.stringify({ text: createdOrder, parse_mode: 'HTML' }))
 
 
         return this.paymentService.createPaymentPreference(createdOrder.id);
@@ -295,9 +295,9 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       next: (preference) => {
 
 
-
+        // una vez que se creo la orden
         //enviar notificación a Telegram
-        this.telegramNotificationService.sendMessage('[checkout-page.component.ts] Preferencia de pago creada:' + JSON.stringify(preference))
+        this.telegramNotificationService.sendMessage('[checkout-page.component.ts] Preferencia de pago creada:' + JSON.stringify({ text: preference, parse_mode: 'HTML' }))
 
 
 
