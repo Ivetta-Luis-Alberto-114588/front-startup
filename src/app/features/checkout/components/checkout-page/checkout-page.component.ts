@@ -274,6 +274,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         if (!createdOrder || !createdOrder.id) {
           throw new Error('No se recibió ID de la orden creada.');
         }
+        console.log('[checkout-page.component.ts] Orden creada:', createdOrder);
         return this.paymentService.createPaymentPreference(createdOrder.id);
       }),
       catchError(err => {
@@ -285,6 +286,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       finalize(() => this.isProcessingOrder = false) // Asegurar que el flag se resetea
     ).subscribe({
       next: (preference) => {
+        console.log('[checkout-page.component.ts] Preferencia de pago creada:', preference);
         if (preference?.preference?.init_point) {
           // 3. Redirigir a Mercado Pago
           this.notificationService.showSuccess('Redirigiendo a Mercado Pago...');

@@ -16,11 +16,20 @@ export interface PaymentVerificationResponse {
     };
 }
 
+export interface OrderStatusResponse {
+    orderId: string;
+    status: string;
+    total: number;
+    customerEmail?: string;
+    paymentMethod?: string;
+}
+
 @Injectable({
     providedIn: 'root'
 })
 export class PaymentVerificationService {
     private apiUrl = `${environment.apiUrl}/api/payments`;
+    private ordersApiUrl = `${environment.apiUrl}/api/orders`;
 
     constructor(private http: HttpClient) { }
 
@@ -36,5 +45,12 @@ export class PaymentVerificationService {
      */
     verifyPaymentByOrder(orderId: string): Observable<PaymentVerificationResponse> {
         return this.http.get<PaymentVerificationResponse>(`${this.apiUrl}/by-order/${orderId}`);
+    }
+
+    /**
+     * Verifica el estado de una orden por su ID
+     */
+    verifyOrderStatus(orderId: string): Observable<OrderStatusResponse> {
+        return this.http.get<OrderStatusResponse>(`${this.ordersApiUrl}/${orderId}`);
     }
 }

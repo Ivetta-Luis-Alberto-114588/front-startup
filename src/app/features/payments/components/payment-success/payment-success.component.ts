@@ -2,7 +2,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core'; // Importar OnInit y OnDestroy
 import { ActivatedRoute } from '@angular/router'; // Importar ActivatedRoute
 import { Subscription } from 'rxjs'; // Importar Subscription
-import { PaymentVerificationService } from '../../services/payment-verification.service';
+import { PaymentVerificationService, OrderStatusResponse } from '../../services/payment-verification.service';
 import { OrderNotificationService } from '../../../orders/services/order-notification.service';
 import { CartService } from '../../../cart/services/cart.service';
 
@@ -54,32 +54,35 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       this.isVerifying = true;
       this.errorMessage = null;
 
-      let paymentStatus: any;
+      // Verificar el estado de la orden en lugar del pago directamente
+      const orderStatus = await this.paymentVerificationService.verifyOrderStatus(this.orderId!).toPromise();
 
-      // Verificar el estado del pago en el backend
-      if (this.paymentId) {
-        // Verificar por payment_id de MercadoPago
-        paymentStatus = await this.paymentVerificationService.verifyPaymentStatus(this.paymentId).toPromise();
-      } else {
-        // Verificar por orderId
-        paymentStatus = await this.paymentVerificationService.verifyPaymentByOrder(this.orderId!).toPromise();
-      }
-
-      this.paymentStatus = paymentStatus?.status || 'unknown';
+      this.paymentStatus = orderStatus?.status || 'unknown';
       this.verificationComplete = true;
 
-      // Si el pago está aprobado, enviar notificación y limpiar carrito
-      if (paymentStatus?.status === 'approved') {
-        await this.sendOrderNotification(paymentStatus);
+      // Si la orden está pagada (status: 'Pendiente pagado' o 'Pagado'), enviar notificación
+      if (orderStatus?.status === 'Pendiente pagado' || orderStatus?.status === 'Pagado') {
+        // Simular datos de pago para la notificación
+        const paymentData = {
+          status: 'approved',
+          transactionAmount: orderStatus.total,
+          paymentMethodId: this.paymentId ? 'mercadopago' : 'cash',
+          paymentMethod: this.paymentId ? 'online' : 'cash',
+          payer: {
+            email: orderStatus.customerEmail || 'cliente@ejemplo.com'
+          }
+        };
+
+        await this.sendOrderNotification(paymentData);
         // Limpiar el carrito solo cuando el pago es exitoso
         this.clearCartAfterSuccessfulPayment();
       } else {
-        console.warn('Pago no aprobado, no se enviará notificación:', paymentStatus);
+        console.warn('Orden no pagada, no se enviará notificación:', orderStatus);
       }
 
     } catch (error) {
-      console.error('Error al verificar el pago:', error);
-      this.errorMessage = 'Error al verificar el estado del pago';
+      console.error('Error al verificar la orden:', error);
+      this.errorMessage = 'Error al verificar el estado de la orden';
       this.verificationComplete = true;
     } finally {
       this.isVerifying = false;
