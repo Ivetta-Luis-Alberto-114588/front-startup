@@ -17,6 +17,7 @@ import { PaymentService } from 'src/app/features/payments/services/payment.servi
 import { ICreateOrderPayload } from 'src/app/features/orders/models/ICreateOrderPayload';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { CheckoutStateService, ShippingAddressOption } from '../../services/checkout-state.service'; // Importa el servicio de estado
+import { TelegramNotificationService } from 'src/app/shared/services/telegram-notification.service';
 
 @Component({
   selector: 'app-checkout-page',
@@ -56,7 +57,8 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private checkoutStateService: CheckoutStateService, // Inyecta el servicio de estado
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private telegramNotificationService: TelegramNotificationService // Inyecta el servicio de notificaciones
   ) {
     this.cart$ = this.cartService.cart$;
     this.isAuthenticated$ = this.authService.isAuthenticated$;
@@ -274,8 +276,11 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         if (!createdOrder || !createdOrder.id) {
           throw new Error('No se recibió ID de la orden creada.');
         }
-        console.log('[checkout-page.component.ts] Orden creada:', createdOrder);
-        localStorage.setItem('checkout-page.component.ts createdOrder', JSON.stringify(createdOrder)); // Guardar ID de orden en localStorage
+
+
+        //enviar notificación a Telegram
+        this.telegramNotificationService.sendMessage("checkout-page.component.ts --> " + JSON.stringify(createdOrder))
+
 
         return this.paymentService.createPaymentPreference(createdOrder.id);
       }),
@@ -289,8 +294,12 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (preference) => {
 
-        console.log('[checkout-page.component.ts] Preferencia de pago creada:', preference);
-        localStorage.setItem('checkout-page.component.ts paymentPreference', JSON.stringify(preference)); // Guardar preferencia en localStorage
+
+
+        //enviar notificación a Telegram
+        this.telegramNotificationService.sendMessage('[checkout-page.component.ts] Preferencia de pago creada:' + JSON.stringify(preference))
+
+
 
         if (preference?.preference?.init_point) {
           // 3. Redirigir a Mercado Pago
