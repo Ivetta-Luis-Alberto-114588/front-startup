@@ -80,6 +80,23 @@
                 {{ errorMessage }}
             </div>
         </div>
+
+        <!-- Estado de autenticación -->
+        <div class="mt-3 pt-3 border-top" *ngIf="verificationComplete">
+            <div *ngIf="isUserAuthenticated" class="text-success small">
+                <i class="bi bi-shield-check me-1"></i>
+                Usuario autenticado - Información completa disponible
+            </div>
+            <div *ngIf="!isUserAuthenticated" class="text-warning small">
+                <i class="bi bi-shield-exclamation me-1"></i>
+                No autenticado - Algunos detalles del pago pueden no estar disponibles
+                <br>
+                <small class="text-muted">
+                    Para ver todos los detalles del pago,
+                    <a routerLink="/auth/login" class="text-decoration-none">inicia sesión</a>
+                </small>
+            </div>
+        </div>
     </div>
     <!-- ***** FIN ESTADO VERIFICACIÓN ***** -->
 

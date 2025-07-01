@@ -17,7 +17,7 @@ export interface PaymentVerificationResponse {
 }
 
 export interface OrderStatusResponse {
-    orderId: string;
+    saleId: string; // Cambiado de orderId a saleId para ser más preciso
     status: string;
     total: number;
     customerEmail?: string;
@@ -29,7 +29,7 @@ export interface OrderStatusResponse {
 })
 export class PaymentVerificationService {
     private apiUrl = `${environment.apiUrl}/api/payments`;
-    private ordersApiUrl = `${environment.apiUrl}/api/orders`;
+    private ordersApiUrl = `${environment.apiUrl}/api/sales`;
 
     constructor(private http: HttpClient) { }
 
@@ -48,7 +48,7 @@ export class PaymentVerificationService {
     }
 
     /**
-     * Verifica el estado de una orden por su ID
+     * Verifica el estado de una venta por su ID
      */
     verifyOrderStatus(orderId: string): Observable<OrderStatusResponse> {
         return this.http.get<OrderStatusResponse>(`${this.ordersApiUrl}/${orderId}`);

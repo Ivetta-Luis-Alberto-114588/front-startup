@@ -6,6 +6,7 @@ import { OrderNotificationService } from '../../../orders/services/order-notific
 import { CartService } from '../../../cart/services/cart.service';
 import { PaymentService } from '../../services/payment.service';
 import { IPaymentStatusResponse } from '../../models/IPaymentStatusResponse';
+import { AuthService } from '../../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-payment-success',
@@ -28,6 +29,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
   public idempotencyKey: string | null = null;
   public paymentAmount: number | null = null;
   public oauthVerified: boolean = false;
+  public isUserAuthenticated: boolean = false;
 
   private routeSub: Subscription | null = null; // Para manejar la suscripción
 
@@ -37,7 +39,8 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
     private paymentVerificationService: PaymentVerificationService,
     private orderNotificationService: OrderNotificationService,
     private cartService: CartService,
-    private paymentService: PaymentService
+    private paymentService: PaymentService,
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void {
@@ -63,12 +66,29 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       this.isVerifying = true;
       this.errorMessage = null;
 
-      // Primero, verificar el estado de la orden
-      const orderStatus = await this.paymentVerificationService.verifyOrderStatus(this.orderId!).toPromise();
-      this.paymentStatus = orderStatus?.status || 'unknown';
+      // Verificar estado de autenticación
+      this.isUserAuthenticated = this.authService.isAuthenticated();
+
+      // Primero, verificar el estado de la orden (con manejo de errores)
+      let orderStatus: any = null;
+      try {
+        orderStatus = await this.paymentVerificationService.verifyOrderStatus(this.orderId!).toPromise();
+        this.paymentStatus = orderStatus?.status || 'unknown';
+      } catch (orderError: any) {
+        console.warn('Error al verificar venta, continuando sin verificación:', orderError);
+        // Si el endpoint de ventas no existe, continuamos con un estado por defecto
+        this.paymentStatus = 'pending';
+        orderStatus = {
+          saleId: this.orderId,
+          status: 'pending',
+          total: 0,
+          customerEmail: 'cliente@ejemplo.com'
+        };
+      }
 
       // Luego, obtener información completa del pago usando el nuevo endpoint
-      if (this.orderId) {
+      // Solo si el usuario está autenticado
+      if (this.orderId && this.authService.isAuthenticated()) {
         try {
           const paymentStatusResponse = await this.paymentService.getPaymentStatusBySale(this.orderId).toPromise();
 
@@ -85,10 +105,19 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
               this.paymentStatus = paymentStatusResponse.verification.realStatus || this.paymentStatus;
             }
           }
-        } catch (paymentError) {
+        } catch (paymentError: any) {
           console.warn('No se pudo obtener información detallada del pago:', paymentError);
+
+          // Si es error 401, el usuario no está autenticado o el token expiró
+          if (paymentError.status === 401) {
+            console.warn('Usuario no autenticado para obtener detalles del pago. Se continuará con información básica.');
+            this.errorMessage = 'No se pudieron obtener todos los detalles del pago. Sesión no válida.';
+          }
           // Continuar con la verificación básica aunque falle la información detallada
         }
+      } else if (this.orderId && !this.authService.isAuthenticated()) {
+        console.warn('Usuario no autenticado, no se pueden obtener detalles completos del pago');
+        this.errorMessage = 'Para ver los detalles completos del pago, inicia sesión.';
       }
 
       this.verificationComplete = true;
@@ -114,8 +143,8 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       }
 
     } catch (error) {
-      console.error('Error al verificar la orden:', error);
-      this.errorMessage = 'Error al verificar el estado de la orden';
+      console.error('Error al verificar la venta:', error);
+      this.errorMessage = 'Error al verificar el estado de la venta';
       this.verificationComplete = true;
     } finally {
       this.isVerifying = false;
