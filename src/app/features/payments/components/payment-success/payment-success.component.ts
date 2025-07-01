@@ -73,7 +73,9 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       let orderStatus: any = null;
       try {
         orderStatus = await this.paymentVerificationService.verifyOrderStatus(this.orderId!).toPromise();
-        this.paymentStatus = orderStatus?.status || 'unknown';
+        // Asegurar que el status sea un string
+        this.paymentStatus = orderStatus?.status ? String(orderStatus.status) : 'unknown';
+        console.log('Estado de la venta obtenido:', this.paymentStatus, orderStatus);
       } catch (orderError: any) {
         console.warn('Error al verificar venta, continuando sin verificación:', orderError);
         // Si el endpoint de ventas no existe, continuamos con un estado por defecto
@@ -102,8 +104,13 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
             // Información de verificación OAuth
             if (paymentStatusResponse.verification) {
               this.oauthVerified = paymentStatusResponse.verification.oauthVerified;
-              this.paymentStatus = paymentStatusResponse.verification.realStatus || this.paymentStatus;
+              // Asegurar que realStatus sea un string
+              const realStatus = paymentStatusResponse.verification.realStatus;
+              this.paymentStatus = realStatus ? String(realStatus) : this.paymentStatus;
             }
+            console.log('Información completa del pago obtenida:', paymentStatusResponse);
+          } else {
+            console.warn('Respuesta de pago incompleta:', paymentStatusResponse);
           }
         } catch (paymentError: any) {
           console.warn('No se pudo obtener información detallada del pago:', paymentError);
@@ -121,6 +128,12 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       }
 
       this.verificationComplete = true;
+      console.log('Verificación completada. Estado final:', {
+        paymentStatus: this.paymentStatus,
+        isUserAuthenticated: this.isUserAuthenticated,
+        externalReference: this.externalReference,
+        paymentId: this.paymentId
+      });
 
       // Si la orden está pagada (status: 'Pendiente pagado' o 'Pagado'), enviar notificación
       if (orderStatus?.status === 'Pendiente pagado' || orderStatus?.status === 'Pagado') {
@@ -237,9 +250,15 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
    * Obtiene la clase CSS para el badge del estado del pago
    */
   getStatusBadgeClass(status: string | null): string {
-    if (!status) return 'bg-secondary';
+    // Verificar que status sea un string válido
+    if (!status || typeof status !== 'string') {
+      return 'bg-secondary';
+    }
 
-    switch (status.toLowerCase()) {
+    // Convertir a string y luego a lowercase de forma segura
+    const statusStr = String(status).toLowerCase();
+
+    switch (statusStr) {
       case 'approved':
       case 'pagado':
         return 'bg-success';

@@ -38,7 +38,13 @@ export class PaymentStatusDisplayComponent implements OnInit {
             },
             error: (error) => {
                 console.error('Error al cargar estado del pago:', error);
-                this.error = 'No se pudo cargar la información del pago';
+
+                if (error.status === 401) {
+                    this.error = 'Se requiere autenticación para ver los detalles completos del pago';
+                } else {
+                    this.error = 'No se pudo cargar la información del pago';
+                }
+
                 this.isLoading = false;
             }
         });
@@ -55,7 +61,15 @@ export class PaymentStatusDisplayComponent implements OnInit {
      * Obtiene la clase CSS para el badge del estado
      */
     getStatusBadgeClass(status: string): string {
-        switch (status?.toLowerCase()) {
+        // Verificar que status sea un string válido
+        if (!status || typeof status !== 'string') {
+            return 'bg-secondary';
+        }
+
+        // Convertir a string y luego a lowercase de forma segura
+        const statusStr = String(status).toLowerCase();
+
+        switch (statusStr) {
             case 'approved':
             case 'pagado':
                 return 'bg-success';
