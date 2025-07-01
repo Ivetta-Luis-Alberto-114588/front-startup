@@ -1,0 +1,135 @@
+<div class="payment-status-display">
+    <!-- Título -->
+    <h5 *ngIf="showTitle" class="mb-3">
+        <i class="bi bi-credit-card-2-front me-2"></i>
+        Estado del Pago
+    </h5>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="text-center py-3">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+        <span>Cargando información del pago...</span>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !isLoading" class="alert alert-warning d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ error }}
+        <button class="btn btn-sm btn-outline-warning ms-auto" (click)="refresh()">
+            <i class="bi bi-arrow-clockwise"></i> Reintentar
+        </button>
+    </div>
+
+    <!-- Información del Pago -->
+    <div *ngIf="paymentStatus && !isLoading && !error" class="payment-info">
+        <!-- Versión Compacta -->
+        <div *ngIf="compact" class="d-flex align-items-center gap-2">
+            <span class="badge" [ngClass]="getStatusBadgeClass(paymentStatus.payment.status)">
+                <i [class]="getStatusIcon(paymentStatus.payment.status)"></i>
+                {{ paymentStatus.payment.status }}
+            </span>
+            <span class="text-muted small">{{ paymentStatus.payment.amount | currency }}</span>
+            <i *ngIf="paymentStatus.verification?.oauthVerified" class="bi bi-shield-check text-success"
+                title="Verificado con OAuth"></i>
+        </div>
+
+        <!-- Versión Completa -->
+        <div *ngIf="!compact" class="card">
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Información Principal -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Estado del Pago</label>
+                            <div>
+                                <span class="badge fs-6" [ngClass]="getStatusBadgeClass(paymentStatus.payment.status)">
+                                    <i [class]="getStatusIcon(paymentStatus.payment.status)" class="me-1"></i>
+                                    {{ paymentStatus.payment.status }}
+                                </span>
+                                <i *ngIf="paymentStatus.verification?.oauthVerified"
+                                    class="bi bi-shield-check text-success ms-2" title="Verificado con OAuth"></i>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">ID de Pedido</label>
+                            <div class="font-monospace">{{ paymentStatus.payment.saleId }}</div>
+                        </div>
+
+                        <div class="mb-3" *ngIf="paymentStatus.payment.mercadoPagoPaymentId">
+                            <label class="form-label fw-bold">Payment ID (MercadoPago)</label>
+                            <div class="font-monospace">{{ paymentStatus.payment.mercadoPagoPaymentId }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Monto</label>
+                            <div class="fs-5 text-success">{{ paymentStatus.payment.amount | currency }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Información Técnica -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">External Reference</label>
+                            <div class="font-monospace small">{{ paymentStatus.payment.externalReference }}</div>
+                        </div>
+
+                        <div class="mb-3" *ngIf="paymentStatus.payment.idempotencyKey">
+                            <label class="form-label fw-bold">X-Idempotency-Key</label>
+                            <div class="font-monospace small text-muted">{{ paymentStatus.payment.idempotencyKey }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Método de Pago</label>
+                            <div>{{ paymentStatus.payment.paymentMethod | titlecase }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Proveedor</label>
+                            <div>{{ paymentStatus.payment.provider | titlecase }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Verificación OAuth -->
+                <div *ngIf="paymentStatus.verification" class="mt-3 pt-3 border-top">
+                    <h6 class="mb-2">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Verificación OAuth
+                    </h6>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <small class="text-muted">Estado Verificado:</small>
+                            <span class="ms-1 badge"
+                                [ngClass]="getStatusBadgeClass(paymentStatus.verification.realStatus)">
+                                {{ paymentStatus.verification.realStatus }}
+                            </span>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted">Última verificación:</small>
+                            <span class="ms-1 font-monospace small">{{ paymentStatus.verification.verifiedAt |
+                                date:'short' }}</span>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <small class="text-muted">Sincronizado:</small>
+                        <span class="ms-1"
+                            [class]="paymentStatus.verification.statusMatch ? 'text-success' : 'text-warning'">
+                            <i
+                                [class]="paymentStatus.verification.statusMatch ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'"></i>
+                            {{ paymentStatus.verification.statusMatch ? 'Sí' : 'Requiere sincronización' }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Botón de Refresh -->
+                <div class="mt-3 text-end">
+                    <button class="btn btn-sm btn-outline-secondary" (click)="refresh()">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

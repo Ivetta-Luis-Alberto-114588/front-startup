@@ -13,6 +13,7 @@ export interface IPayment {
     externalReference: string; // Referencia externa (ej: 'sale-xxxx')
     preferenceId: string; // ID de la preferencia de MP asociada
     paymentMethod: string; // Ej: 'credit_card', 'other' (Podrías usar un Enum)
+    idempotencyKey?: string; // Clave de idempotencia para evitar duplicados
     createdAt: string | Date; // Puede venir como string ISO o Date
     updatedAt: string | Date;
     // Puedes añadir más campos si son necesarios para tu UI

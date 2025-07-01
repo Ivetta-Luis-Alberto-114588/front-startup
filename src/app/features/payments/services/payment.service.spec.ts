@@ -4,6 +4,7 @@ import { PaymentService } from './payment.service';
 import { ICreatePaymentResponse } from '../../orders/models/ICreatePaymentResponse';
 import { IPayment } from '../../orders/models/IPayment';
 import { IPaymentPreferenceInfo } from '../../orders/models/IPaymentPreferenceInfo';
+import { IPaymentStatusResponse } from '../models/IPaymentStatusResponse';
 import { environment } from 'src/environments/environment';
 
 describe('PaymentService', () => {
@@ -22,6 +23,7 @@ describe('PaymentService', () => {
         externalReference: 'sale-456',
         preferenceId: 'mp_pref_abc123',
         paymentMethod: 'credit_card',
+        idempotencyKey: 'payment-456-1672574400000',
         createdAt: '2023-12-01T10:00:00.000Z',
         updatedAt: '2023-12-01T10:00:00.000Z'
     };
@@ -670,6 +672,65 @@ describe('PaymentService', () => {
             expect(mockPreference.sandbox_init_point).toMatch(/^https:\/\/sandbox\.mercadopago\.com/);
             expect(mockPreference.id).toBeTruthy();
             expect(mockPreference.id.length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('getPaymentStatusBySale', () => {
+        it('should get payment status by sale ID successfully', () => {
+            // Arrange
+            const saleId = 'sale_456';
+            const mockStatusResponse: IPaymentStatusResponse = {
+                success: true,
+                payment: {
+                    ...mockPayment,
+                    mercadoPagoPaymentId: 'mp_pay_123',
+                    mercadoPagoStatus: 'approved',
+                    transactionAmount: 1250.50,
+                    dateApproved: '2023-12-01T10:30:00.000Z',
+                    lastVerified: '2023-12-01T10:35:00.000Z'
+                },
+                verification: {
+                    oauthVerified: true,
+                    realStatus: 'approved',
+                    verifiedAt: '2023-12-01T10:35:00.000Z',
+                    statusMatch: true
+                }
+            };
+
+            // Act
+            service.getPaymentStatusBySale(saleId).subscribe(response => {
+                expect(response.success).toBe(true);
+                expect(response.payment.saleId).toBe(saleId);
+                expect(response.payment.idempotencyKey).toBe('payment-456-1672574400000');
+                expect(response.verification?.oauthVerified).toBe(true);
+                expect(response.verification?.statusMatch).toBe(true);
+            });
+
+            // Assert
+            const req = httpMock.expectOne(`${baseUrl}/status/sale/${saleId}`);
+            expect(req.request.method).toBe('GET');
+            req.flush(mockStatusResponse);
+        });
+
+        it('should handle payment status not found', () => {
+            // Arrange
+            const saleId = 'nonexistent_sale';
+            let errorResponse: any;
+
+            // Act
+            service.getPaymentStatusBySale(saleId).subscribe({
+                next: () => fail('Should have failed'),
+                error: (error) => errorResponse = error
+            });
+
+            // Assert
+            const req = httpMock.expectOne(`${baseUrl}/status/sale/${saleId}`);
+            req.flush({
+                message: 'Payment not found for this sale',
+                saleId: saleId
+            }, { status: 404, statusText: 'Not Found' });
+
+            expect(errorResponse.status).toBe(404);
         });
     });
 });

@@ -1,10 +1,11 @@
-// src/app/features/payments/components/payment-success/payment-success.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core'; // Importar OnInit y OnDestroy
 import { ActivatedRoute } from '@angular/router'; // Importar ActivatedRoute
 import { Subscription } from 'rxjs'; // Importar Subscription
 import { PaymentVerificationService, OrderStatusResponse } from '../../services/payment-verification.service';
 import { OrderNotificationService } from '../../../orders/services/order-notification.service';
 import { CartService } from '../../../cart/services/cart.service';
+import { PaymentService } from '../../services/payment.service';
+import { IPaymentStatusResponse } from '../../models/IPaymentStatusResponse';
 
 @Component({
   selector: 'app-payment-success',
@@ -22,6 +23,12 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
   public notificationSent: boolean = false; // Notificación enviada
   public errorMessage: string | null = null; // Mensaje de error si algo falla
 
+  // Nuevos campos para mostrar información completa del pago
+  public externalReference: string | null = null;
+  public idempotencyKey: string | null = null;
+  public paymentAmount: number | null = null;
+  public oauthVerified: boolean = false;
+
   private routeSub: Subscription | null = null; // Para manejar la suscripción
 
   // Inyectar servicios en el constructor
@@ -29,7 +36,8 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
     private route: ActivatedRoute,
     private paymentVerificationService: PaymentVerificationService,
     private orderNotificationService: OrderNotificationService,
-    private cartService: CartService
+    private cartService: CartService,
+    private paymentService: PaymentService
   ) { }
 
   ngOnInit(): void {
@@ -55,10 +63,34 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       this.isVerifying = true;
       this.errorMessage = null;
 
-      // Verificar el estado de la orden en lugar del pago directamente
+      // Primero, verificar el estado de la orden
       const orderStatus = await this.paymentVerificationService.verifyOrderStatus(this.orderId!).toPromise();
-
       this.paymentStatus = orderStatus?.status || 'unknown';
+
+      // Luego, obtener información completa del pago usando el nuevo endpoint
+      if (this.orderId) {
+        try {
+          const paymentStatusResponse = await this.paymentService.getPaymentStatusBySale(this.orderId).toPromise();
+
+          if (paymentStatusResponse?.success && paymentStatusResponse.payment) {
+            // Actualizar todos los campos con la información del pago
+            this.externalReference = paymentStatusResponse.payment.externalReference;
+            this.idempotencyKey = paymentStatusResponse.payment.idempotencyKey || null;
+            this.paymentAmount = paymentStatusResponse.payment.amount;
+            this.paymentId = paymentStatusResponse.payment.mercadoPagoPaymentId || this.paymentId;
+
+            // Información de verificación OAuth
+            if (paymentStatusResponse.verification) {
+              this.oauthVerified = paymentStatusResponse.verification.oauthVerified;
+              this.paymentStatus = paymentStatusResponse.verification.realStatus || this.paymentStatus;
+            }
+          }
+        } catch (paymentError) {
+          console.warn('No se pudo obtener información detallada del pago:', paymentError);
+          // Continuar con la verificación básica aunque falle la información detallada
+        }
+      }
+
       this.verificationComplete = true;
 
       // Si la orden está pagada (status: 'Pendiente pagado' o 'Pagado'), enviar notificación
@@ -66,7 +98,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
         // Simular datos de pago para la notificación
         const paymentData = {
           status: 'approved',
-          transactionAmount: orderStatus.total,
+          transactionAmount: this.paymentAmount || orderStatus.total,
           paymentMethodId: this.paymentId ? 'mercadopago' : 'cash',
           paymentMethod: this.paymentId ? 'online' : 'cash',
           payer: {
@@ -170,6 +202,33 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
         // No mostramos error al usuario ya que el pago fue exitoso
       }
     });
+  }
+
+  /**
+   * Obtiene la clase CSS para el badge del estado del pago
+   */
+  getStatusBadgeClass(status: string | null): string {
+    if (!status) return 'bg-secondary';
+
+    switch (status.toLowerCase()) {
+      case 'approved':
+      case 'pagado':
+        return 'bg-success';
+      case 'pending':
+      case 'pendiente':
+      case 'pendiente pagado':
+        return 'bg-warning text-dark';
+      case 'rejected':
+      case 'cancelled':
+      case 'rechazado':
+      case 'cancelado':
+        return 'bg-danger';
+      case 'in_process':
+      case 'processing':
+        return 'bg-info';
+      default:
+        return 'bg-secondary';
+    }
   }
 
   ngOnDestroy(): void {

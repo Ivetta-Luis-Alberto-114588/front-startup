@@ -1,0 +1,56 @@
+.payment-status-display {
+    .payment-info {
+        .card {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e3e6f0;
+        }
+
+        .form-label {
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .font-monospace {
+            background-color: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid #e9ecef;
+            word-break: break-all;
+        }
+
+        .badge {
+            &.fs-6 {
+                font-size: 0.9rem !important;
+            }
+        }
+    }
+
+    // Responsive adjustments
+    @media (max-width: 576px) {
+        .payment-info {
+            .font-monospace {
+                font-size: 0.75rem;
+            }
+
+            .badge {
+                font-size: 0.75rem !important;
+            }
+        }
+    }
+}
+
+// Animation for refresh button
+.btn {
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+        transform: translateY(-1px);
+    }
+}
+
+// Status-specific styling
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
