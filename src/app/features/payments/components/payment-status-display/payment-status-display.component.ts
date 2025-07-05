@@ -33,7 +33,8 @@ export class PaymentStatusDisplayComponent implements OnInit {
 
         this.paymentService.getPaymentStatusBySale(this.saleId).subscribe({
             next: (response) => {
-                this.paymentStatus = response;
+                // Normalizar la respuesta del backend para manejar diferencias en estructura
+                this.paymentStatus = this.normalizePaymentStatus(response);
                 this.isLoading = false;
             },
             error: (error) => {
@@ -48,6 +49,80 @@ export class PaymentStatusDisplayComponent implements OnInit {
                 this.isLoading = false;
             }
         });
+    }
+
+    /**
+     * Normaliza la respuesta del backend para manejar diferentes estructuras
+     */
+    private normalizePaymentStatus(rawResponse: any): IPaymentStatusResponse {
+        const payment = rawResponse.payment || rawResponse;
+
+        // Extraer status correctamente
+        let status = payment.status;
+        if (typeof status === 'object' && status !== null) {
+            // Si el status es un objeto, usar code o name
+            status = status.code || status.name || 'UNKNOWN';
+        }
+        status = String(status || 'UNKNOWN');
+
+        // Extraer Payment ID de MercadoPago desde notes
+        let mercadoPagoPaymentId = payment.mercadoPagoPaymentId;
+        if (!mercadoPagoPaymentId && payment.notes) {
+            // Buscar ID de MercadoPago en notes
+            const noteMatch = payment.notes.match(/Payment ID MercadoPago:\s*(\d+)/i);
+            if (noteMatch) {
+                mercadoPagoPaymentId = noteMatch[1];
+            }
+        }
+
+        // External Reference debería ser el ID de la orden/venta
+        const externalReference = payment.externalReference || payment.id || payment.saleId || 'N/A';
+
+        // Inferir provider y método de pago
+        let provider = payment.provider || 'MercadoPago';
+        let paymentMethod = payment.paymentMethod || 'Tarjeta de Crédito';
+
+        // Si tenemos Payment ID de MP, asumir MercadoPago
+        if (mercadoPagoPaymentId) {
+            provider = 'MercadoPago';
+        }
+
+        const normalizedPayment = {
+            id: payment.id || 'N/A',
+            saleId: payment.saleId || this.saleId,
+            customerId: payment.customerId || payment.customer_id || 'N/A',
+            amount: Number(payment.amount || payment.total || 0),
+            provider: provider,
+            status: status,
+            externalReference: externalReference,
+            preferenceId: payment.preferenceId || payment.preference_id || 'N/A',
+            paymentMethod: paymentMethod,
+            idempotencyKey: payment.idempotencyKey || payment.idempotency_key,
+            lastVerified: payment.lastVerified || payment.last_verified,
+            createdAt: payment.createdAt || payment.created_at || payment.createAt,
+            updatedAt: payment.updatedAt || payment.updated_at || payment.updateAt,
+            mercadoPagoPaymentId: mercadoPagoPaymentId,
+            mercadoPagoStatus: payment.mercadoPagoStatus || status,
+            transactionAmount: Number(payment.transactionAmount || payment.amount || payment.total || 0),
+            dateApproved: payment.dateApproved || payment.date_approved
+        };
+
+        // Normalizar verificación OAuth si existe
+        let verification = undefined;
+        if (rawResponse.verification) {
+            verification = {
+                oauthVerified: Boolean(rawResponse.verification.oauthVerified),
+                realStatus: String(rawResponse.verification.realStatus || status),
+                verifiedAt: rawResponse.verification.verifiedAt || new Date().toISOString(),
+                statusMatch: Boolean(rawResponse.verification.statusMatch)
+            };
+        }
+
+        return {
+            success: Boolean(rawResponse.success !== false), // Default true unless explicitly false
+            payment: normalizedPayment,
+            verification: verification
+        };
     }
 
     /**
@@ -67,25 +142,44 @@ export class PaymentStatusDisplayComponent implements OnInit {
         }
 
         // Convertir a string y luego a lowercase de forma segura
-        const statusStr = String(status).toLowerCase();
+        const statusStr = String(status).toLowerCase().trim();
 
         switch (statusStr) {
             case 'approved':
             case 'pagado':
+            case 'paid':
+            case 'completado':
+            case 'completed':
                 return 'bg-success';
             case 'pending':
             case 'pendiente':
             case 'pendiente pagado':
+            case 'pending_payment':
+            case 'awaiting_payment':
                 return 'bg-warning text-dark';
             case 'rejected':
             case 'cancelled':
             case 'rechazado':
             case 'cancelado':
+            case 'failed':
+            case 'error':
                 return 'bg-danger';
             case 'in_process':
             case 'processing':
+            case 'en_proceso':
+            case 'procesando':
                 return 'bg-info';
             default:
+                // Para estados desconocidos, verificar si parece exitoso
+                if (statusStr.includes('pagado') || statusStr.includes('paid') || statusStr.includes('success')) {
+                    return 'bg-success';
+                }
+                if (statusStr.includes('pendiente') || statusStr.includes('pending')) {
+                    return 'bg-warning text-dark';
+                }
+                if (statusStr.includes('cancel') || statusStr.includes('reject') || statusStr.includes('error') || statusStr.includes('fail')) {
+                    return 'bg-danger';
+                }
                 return 'bg-secondary';
         }
     }
@@ -94,23 +188,48 @@ export class PaymentStatusDisplayComponent implements OnInit {
      * Obtiene el ícono para el estado
      */
     getStatusIcon(status: string): string {
-        switch (status?.toLowerCase()) {
+        if (!status || typeof status !== 'string') {
+            return 'bi-question-circle-fill';
+        }
+
+        const statusStr = String(status).toLowerCase().trim();
+
+        switch (statusStr) {
             case 'approved':
             case 'pagado':
+            case 'paid':
+            case 'completado':
+            case 'completed':
                 return 'bi-check-circle-fill';
             case 'pending':
             case 'pendiente':
             case 'pendiente pagado':
+            case 'pending_payment':
+            case 'awaiting_payment':
                 return 'bi-clock-fill';
             case 'rejected':
             case 'cancelled':
             case 'rechazado':
             case 'cancelado':
+            case 'failed':
+            case 'error':
                 return 'bi-x-circle-fill';
             case 'in_process':
             case 'processing':
+            case 'en_proceso':
+            case 'procesando':
                 return 'bi-gear-fill';
             default:
+                // Para estados desconocidos, verificar patrones
+                if (statusStr.includes('pagado') || statusStr.includes('paid') || statusStr.includes('success')) {
+                    return 'bi-check-circle-fill';
+                }
+                if (statusStr.includes('pendiente') || statusStr.includes('pending')) {
+                    return 'bi-clock-fill';
+                }
+                if (statusStr.includes('cancel') || statusStr.includes('reject') || statusStr.includes('error') || statusStr.includes('fail')) {
+                    return 'bi-x-circle-fill';
+                }
                 return 'bi-question-circle-fill';
         }
     }

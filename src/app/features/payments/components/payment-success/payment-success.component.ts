@@ -81,8 +81,13 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
         orderStatus: orderStatus?.status
       });
 
-      // Si la orden está pagada (status: 'Pendiente pagado' o 'Pagado'), enviar notificación
-      if (orderStatus?.status === 'Pendiente pagado' || orderStatus?.status === 'Pagado') {
+      // Si la orden está pagada, enviar notificación
+      const statusCode = orderStatus?.status?.code || orderStatus?.status?.name || orderStatus?.status;
+      const isPaymentSuccessful = this.isPaymentStatusSuccessful(statusCode);
+
+      if (isPaymentSuccessful) {
+        console.log('Orden pagada detectada, enviando notificación. Status:', statusCode);
+
         // Simular datos de pago para la notificación
         const paymentData = {
           status: 'approved',
@@ -90,7 +95,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
           paymentMethodId: this.paymentId ? 'mercadopago' : 'cash',
           paymentMethod: this.paymentId ? 'online' : 'cash',
           payer: {
-            email: orderStatus.customerEmail || 'cliente@ejemplo.com'
+            email: orderStatus.customer?.email || 'cliente@ejemplo.com'
           }
         };
 
@@ -98,7 +103,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
         // Limpiar el carrito solo cuando el pago es exitoso
         this.clearCartAfterSuccessfulPayment();
       } else {
-        console.warn('Orden no pagada, no se enviará notificación:', orderStatus);
+        console.warn('Orden no pagada, no se enviará notificación. Status:', statusCode, orderStatus);
       }
 
     } catch (error) {
@@ -174,6 +179,48 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
 
     // Enviar notificación para pago en efectivo
     this.sendOrderNotification(cashPaymentData);
+  }
+
+  /**
+   * Determina si el estado del pago debe considerarse como exitoso
+   * Maneja múltiples formatos de status: string, objeto con code/name, etc.
+   */
+  private isPaymentStatusSuccessful(status: any): boolean {
+    if (!status) {
+      return false;
+    }
+
+    // Lista de estados que se consideran exitosos/pagados
+    const successStates = [
+      'approved',
+      'pagado',
+      'paid',
+      'success',
+      'successful',
+      'completed',
+      'PAGADO',
+      'PENDIENTE PAGADO',
+      'APROVADO',
+      'APROBADO'
+    ];
+
+    // Si es un string, comparar directamente
+    if (typeof status === 'string') {
+      return successStates.some(state =>
+        status.toLowerCase().includes(state.toLowerCase()) ||
+        state.toLowerCase().includes(status.toLowerCase())
+      );
+    }
+
+    // Si es un objeto, verificar las propiedades comunes
+    if (typeof status === 'object') {
+      const statusCode = status.code || status.name || status.status;
+      if (statusCode) {
+        return this.isPaymentStatusSuccessful(statusCode);
+      }
+    }
+
+    return false;
   }
 
   /**
