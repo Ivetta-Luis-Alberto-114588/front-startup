@@ -39,21 +39,27 @@ export class OrderListComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this.loadAllOrderStatuses();
-    this.loadOrders();
+    // Cargar primero los estados para asegurar que estén disponibles
+    this.loadAllOrderStatuses().then(() => {
+      // Luego cargar las órdenes
+      this.loadOrders();
+    });
   }
 
   ngOnDestroy(): void {
     this.orderSub?.unsubscribe();
   }
 
-  loadAllOrderStatuses(): void {
-    this.orderStatusService.getOrderStatuses().subscribe(response => {
-      if (response && response.orderStatuses) {
-        this.allOrderStatuses = response.orderStatuses.filter(status => status.isActive);
-      } else if (Array.isArray(response)) {
-        this.allOrderStatuses = response.filter(status => status.isActive);
-      }
+  loadAllOrderStatuses(): Promise<void> {
+    return new Promise((resolve) => {
+      this.orderStatusService.getOrderStatuses().subscribe(response => {
+        if (response && response.orderStatuses) {
+          this.allOrderStatuses = response.orderStatuses.filter(status => status.isActive);
+        } else if (Array.isArray(response)) {
+          this.allOrderStatuses = response.filter(status => status.isActive);
+        }
+        resolve();
+      });
     });
   }
   loadOrders(): void {
@@ -86,6 +92,47 @@ export class OrderListComponent implements OnInit, OnDestroy {
     const selectElement = event.target as HTMLSelectElement;
     const newStatusId = selectElement.value; // Esto es el _id del IOrderStatus
 
+    if (!newStatusId || !order.id) return;
+
+    const originalStatusId = order.status?._id; // Guardar el ID del estado original
+
+    if (this.isUpdatingStatus[order.id]) return;
+
+    this.isUpdatingStatus[order.id] = true;
+    const payload: UpdateOrderStatusPayload = { statusId: newStatusId };
+
+    this.adminOrderService.updateOrderStatus(order.id, payload)
+      .pipe(finalize(() => this.isUpdatingStatus[order.id] = false))
+      .subscribe({
+        next: (updatedOrder) => {
+          this.notificationService.showSuccess(`Estado del pedido #${order.id.slice(0, 8)} actualizado.`, 'Éxito');
+          const index = this.orders.findIndex(o => o.id === updatedOrder.id);
+          if (index > -1) {
+            this.orders[index] = updatedOrder;
+          }
+        },
+        error: (err: HttpErrorResponse) => {
+          console.error(`Error updating status for order ${order.id}:`, err);
+          const errorMsg = err.error?.error || 'No se pudo actualizar el estado del pedido.';
+          this.notificationService.showError(errorMsg, 'Error');
+
+          const index = this.orders.findIndex(o => o.id === order.id);
+          if (index > -1) {
+            const originalStatusObject = this.allOrderStatuses.find(s => s._id === originalStatusId);
+            if (originalStatusObject) {
+              this.orders[index].status = originalStatusObject;
+            } else if (originalStatusId) { // Si no encontramos el objeto completo, al menos revertimos al ID
+              this.orders[index].status = { _id: originalStatusId, name: 'Error al revertir', code: 'ERROR', color: '#000', priority: 0, isFinal: false, isActive: false, isDefault: false, allowedTransitions: [] };
+            }
+          }
+        }
+      });
+  }
+
+  /**
+   * Maneja el cambio de estado usando directamente el ID del status (para ngModelChange)
+   */
+  onStatusChangeById(order: IOrder, newStatusId: string): void {
     if (!newStatusId || !order.id) return;
 
     const originalStatusId = order.status?._id; // Guardar el ID del estado original
@@ -167,5 +214,27 @@ export class OrderListComponent implements OnInit, OnDestroy {
       return order.status._id;
     }
     return '';
+  }
+
+  /**
+   * Verifica si el estado de la orden está en la lista de estados disponibles
+   */
+  isStatusInList(order: IOrder): boolean {
+    const statusId = this.getOrderStatusId(order);
+    return this.allOrderStatuses.some(status => status._id === statusId);
+  }
+
+  /**
+   * TrackBy function para mejorar performance en ngFor
+   */
+  trackByStatusId(index: number, status: IOrderStatus): string {
+    return status._id;
+  }
+
+  /**
+   * TrackBy function para las órdenes
+   */
+  trackByOrderId(index: number, order: IOrder): string {
+    return order.id;
   }
 }

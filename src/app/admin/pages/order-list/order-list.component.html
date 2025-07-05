@@ -38,17 +38,22 @@
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let order of orders">
-                    <td><code>{{ order.id | slice:0:8 }}...</code></td>
+                <tr *ngFor="let order of orders; trackBy: trackByOrderId">
+                    <td><code>{{ order.id  }}</code></td>
                     <td>{{ order.date | date:'dd/MM/yy HH:mm' }}</td>
                     <td>{{ order.customer.name ? (order.customer.name | titlecase) : order.customer.email }}</td>
                     <td>
-                        <!-- Selector de Estado MODIFICADO -->
+                        <!-- Selector de Estado MEJORADO -->
                         <select class="form-select form-select-sm" [ngModel]="getOrderStatusId(order)"
-                            (change)="onStatusChange(order, $event)" [disabled]="isUpdatingStatus[order.id]"
+                            (ngModelChange)="onStatusChangeById(order, $event)" [disabled]="isUpdatingStatus[order.id]"
                             [ngClass]="getStatusBadgeClass(order.status)">
-                            <!-- Usar getOrderStatusId para el ngModel -->
-                            <option *ngFor="let statusOpt of allOrderStatuses" [value]="statusOpt._id">
+                            <!-- Opción para mostrar el estado actual si no se encuentra en la lista -->
+                            <option *ngIf="!isStatusInList(order)" [value]="getOrderStatusId(order)" disabled>
+                                {{ getFormattedStatus(order.status) }} (Estado actual)
+                            </option>
+                            <!-- Opciones de estados disponibles -->
+                            <option *ngFor="let statusOpt of allOrderStatuses; trackBy: trackByStatusId"
+                                [value]="statusOpt._id">
                                 {{ statusOpt.name }}
                             </option>
                         </select>
