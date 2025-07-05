@@ -36,7 +36,7 @@
         <table class="table table-hover align-middle">
             <thead>
                 <tr>
-                    <th scope="col" style="width: 170%;">Pedido #</th>
+                    <th scope="col">Pedido #</th>
                     <th scope="col">Fecha</th>
                     <th scope="col">Estado</th>
                     <th scope="col" class="text-end">Total</th>
@@ -46,7 +46,7 @@
             <tbody>
                 <tr *ngFor="let order of orders">
                     <!-- Usar slice para mostrar solo una parte del ID largo -->
-                    <td><code>{{ order.id | slice:0:8 }}...</code></td>
+                    <td><code>{{ order.id }}...</code></td>
                     <td>{{ order.date | date:'dd/MM/yyyy HH:mm' }}</td>
                     <td>
                         <span class="badge" [ngClass]="getStatusBadgeClass(order.status)">
