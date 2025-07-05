@@ -27,6 +27,7 @@ import { OrderStatusListComponent } from './pages/order-status-list/order-status
 import { OrderStatusFormComponent } from './pages/order-status-form/order-status-form.component';
 import { PaymentMethodListComponent } from './pages/payment-method-list/payment-method-list.component';
 import { PaymentMethodFormComponent } from './pages/payment-method-form/payment-method-form.component';
+import { TelegramTestComponent } from './pages/telegram-test/telegram-test.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -211,6 +212,13 @@ const routes: Routes = [
     component: PaymentMethodFormComponent
   },
   // --- FIN RUTAS MÉTODOS DE PAGO ---
+
+  // --- RUTAS PARA DIAGNÓSTICO DE TELEGRAM ---
+  {
+    path: 'telegram-test', // -> /admin/telegram-test
+    component: TelegramTestComponent
+  },
+  // --- FIN RUTAS TELEGRAM ---
 
   // Ruta por defecto si se entra a /admin sin subruta específica
   // Cambiar a un dashboard si lo creas, o mantener categorías

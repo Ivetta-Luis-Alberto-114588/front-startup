@@ -347,6 +347,129 @@ tail -f logs/error-*.log | grep "TelegramAdapter"
 
 ## 🔧 Troubleshooting
 
+### 🚫 Problema: No Llegan las Notificaciones de Telegram
+
+Si los emails llegan pero las notificaciones de Telegram no, sigue estos pasos de diagnóstico:
+
+#### ✅ **Paso 1: Verificar Configuración**
+
+1. **Variables de Entorno del Backend:**
+   ```bash
+   # Verificar que estas variables estén configuradas
+   echo $TELEGRAM_BOT_TOKEN
+   echo $TELEGRAM_ADMIN_CHAT_ID
+   echo $TELEGRAM_NOTIFICATIONS_ENABLED
+   ```
+
+2. **Token del Bot:**
+   - Debe tener formato: `123456789:ABCdefGHIjklMNOpqrSTUvwxYZ`
+   - Verificar con BotFather que el bot esté activo
+   - Probar con API directa: `https://api.telegram.org/bot<TOKEN>/getMe`
+
+3. **Chat ID:**
+   - Debe empezar con `-` para grupos: `-1234567890`
+   - Para chats privados: número positivo
+   - Verificar que el bot esté en el grupo/chat
+
+#### ✅ **Paso 2: Usar la Herramienta de Diagnóstico**
+
+1. **Acceder al Panel de Admin:**
+   ```
+   https://tu-dominio.com/admin/telegram-test
+   ```
+
+2. **Ejecutar Pruebas Automáticas:**
+   - Clic en "Ejecutar Todas las Pruebas"
+   - Revisar cada resultado
+   - Verificar respuestas del backend
+
+3. **Probar Envío Manual:**
+   - Escribir mensaje de prueba
+   - Clic en "Enviar Mensaje"
+   - Verificar logs en tiempo real
+
+#### ✅ **Paso 3: Verificar Backend**
+
+1. **Logs del Servidor:**
+   ```bash
+   # Ver logs de Telegram
+   grep -i telegram /var/log/app.log
+   
+   # O usar la herramienta del admin
+   GET /api/admin/logs/telegram
+   ```
+
+2. **Probar Conectividad del Bot:**
+   ```bash
+   curl "https://api.telegram.org/bot<TOKEN>/getMe"
+   ```
+
+3. **Verificar Webhook de MercadoPago:**
+   ```bash
+   # Ver logs del controlador de pagos
+   grep -i "webhook\|payment" /var/log/app.log
+   ```
+
+#### ✅ **Paso 4: Problemas Comunes**
+
+| Problema | Síntoma | Solución |
+|----------|---------|----------|
+| **Bot Token Inválido** | Error 401 Unauthorized | Regenerar token con @BotFather |
+| **Chat ID Incorrecto** | Error 400 Bad Request | Verificar que el bot esté en el grupo |
+| **Bot Bloqueado** | Error 403 Forbidden | Reagregar el bot al grupo |
+| **Backend No Configurado** | Error 500 | Verificar variables de entorno |
+| **Red Bloqueada** | Timeout | Verificar firewall/proxy |
+
+#### ✅ **Paso 5: Soluciones Específicas**
+
+1. **Si el bot fue removido del grupo:**
+   ```
+   1. Volver a agregar el bot al grupo
+   2. Darle permisos de administrador (opcional)
+   3. Probar envío manual desde el panel
+   ```
+
+2. **Si el token cambió:**
+   ```
+   1. Actualizar TELEGRAM_BOT_TOKEN en el servidor
+   2. Reiniciar el servicio backend
+   3. Verificar con getMe que funcione
+   ```
+
+3. **Si el chat ID cambió:**
+   ```
+   1. Obtener nuevo chat ID
+   2. Actualizar TELEGRAM_ADMIN_CHAT_ID
+   3. Reiniciar el servicio
+   ```
+
+#### ✅ **Paso 6: Verificación Final**
+
+1. **Crear una orden de prueba**
+2. **Hacer un pago exitoso**
+3. **Verificar que llegue solo UNA notificación por Telegram**
+4. **Confirmar que el email también llegue**
+
+### 🔍 **Comando de Diagnóstico Rápido**
+
+```bash
+# Script para verificar configuración completa
+curl -X POST "https://tu-backend.com/api/admin/telegram/test-bot" \
+  -H "Authorization: Bearer <admin-token>" \
+  -H "Content-Type: application/json"
+```
+
+### 📋 **Checklist de Verificación**
+
+- [ ] Variables de entorno configuradas
+- [ ] Bot token válido y activo
+- [ ] Chat ID correcto
+- [ ] Bot agregado al grupo/chat
+- [ ] Backend puede conectar a Telegram API
+- [ ] Webhook de MercadoPago funcionando
+- [ ] Notificaciones se envían solo cuando payment = "approved"
+- [ ] No hay notificaciones duplicadas
+
 ### ❌ Problemas Comunes
 
 #### 🔴 "Unauthorized" Error

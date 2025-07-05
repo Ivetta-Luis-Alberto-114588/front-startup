@@ -168,6 +168,14 @@
           </a>
         </li>
 
+        <!-- === NUEVO ENLACE PARA TELEGRAM === -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/telegram-test" routerLinkActive="active">
+            <i class="bi bi-telegram me-2"></i> <!-- Icono para Telegram -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Telegram</span>
+          </a>
+        </li>
+
         <!-- === FIN NUEVO ENLACE === -->
 
 

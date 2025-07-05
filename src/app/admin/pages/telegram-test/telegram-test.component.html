@@ -1,0 +1,255 @@
+<div class="telegram-test-container">
+    <div class="header">
+        <h1>🔧 Diagnóstico de Telegram</h1>
+        <p class="subtitle">Herramienta para diagnosticar problemas con las notificaciones de Telegram</p>
+    </div>
+
+    <!-- Configuración actual -->
+    <div class="section">
+        <h2>⚙️ Configuración Actual</h2>
+        <div class="config-grid" *ngIf="configLoaded; else loadingConfig">
+            <div class="config-item">
+                <label>🤖 Token del Bot:</label>
+                <span class="config-value">{{ botTokenMasked }}</span>
+            </div>
+            <div class="config-item">
+                <label>💬 Chat ID:</label>
+                <span class="config-value">{{ telegramConfig.chat_id || 'No configurado' }}</span>
+            </div>
+            <div class="config-item">
+                <label>🔔 Notificaciones:</label>
+                <span class="config-value" [class.enabled]="telegramConfig.notifications_enabled"
+                    [class.disabled]="!telegramConfig.notifications_enabled">
+                    {{ telegramConfig.notifications_enabled ? 'Habilitadas' : 'Deshabilitadas' }}
+                </span>
+            </div>
+        </div>
+        <ng-template #loadingConfig>
+            <p class="loading-text">Cargando configuración...</p>
+        </ng-template>
+    </div>
+
+    <!-- Pruebas manuales -->
+    <div class="section">
+        <h2>🧪 Pruebas Manuales</h2>
+
+        <div class="test-actions">
+            <button class="btn btn-primary" (click)="runAllTests()" [disabled]="loading">
+                <i class="fas fa-play"></i>
+                {{ loading ? 'Ejecutando...' : 'Ejecutar Todas las Pruebas' }}
+            </button>
+
+            <button class="btn btn-secondary" (click)="testTelegramBot()" [disabled]="loading">
+                <i class="fas fa-robot"></i>
+                Test Bot
+            </button>
+
+            <button class="btn btn-secondary" (click)="testPaymentNotification()" [disabled]="loading">
+                <i class="fas fa-credit-card"></i>
+                Simular Pago
+            </button>
+
+            <button class="btn btn-secondary" (click)="checkBackendLogs()" [disabled]="loading">
+                <i class="fas fa-cogs"></i>
+                Verificar Sistema
+            </button>
+
+            <button class="btn btn-danger" (click)="clearResults()">
+                <i class="fas fa-trash"></i>
+                Limpiar
+            </button>
+        </div>
+
+        <!-- Mensaje personalizado -->
+        <div class="custom-message">
+            <h3>📝 Mensaje Personalizado</h3>
+            <textarea [(ngModel)]="testMessage" placeholder="Escribe tu mensaje de prueba aquí..." rows="4"
+                class="form-control"></textarea>
+            <button class="btn btn-info mt-2" (click)="testSendMessage()" [disabled]="loading">
+                <i class="fas fa-paper-plane"></i>
+                Enviar Mensaje
+            </button>
+        </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="section" *ngIf="testResults.length > 0">
+        <h2>📊 Resultados de las Pruebas</h2>
+
+        <!-- Resumen de diagnóstico -->
+        <div class="diagnosis-summary" *ngIf="hasCriticalSuccess()">
+            <div class="alert alert-success">
+                <h4>✅ ¡BUENAS NOTICIAS!</h4>
+                <p><strong>El sistema de Telegram SÍ ESTÁ FUNCIONANDO.</strong></p>
+                <p>El endpoint de envío devolvió "Success", lo que significa que las notificaciones se están enviando.</p>
+                <div class="next-steps">
+                    <h5>🔍 Posibles causas de que no veas las notificaciones:</h5>
+                    <ul>
+                        <li>Las notificaciones llegan a un <strong>chat diferente</strong> al que estás revisando</li>
+                        <li>El bot está enviando a un <strong>grupo equivocado</strong></li>
+                        <li>Estás revisando el <strong>chat personal</strong> en lugar del grupo de admins</li>
+                        <li>Las notificaciones llegan pero a <strong>otro horario</strong> (verifica todo el historial)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <div *ngFor="let result of testResults; let i = index" class="result-item"
+                [class.success]="result.status === 'success'" [class.error]="result.status === 'error'"
+                [class.pending]="result.status === 'pending'">
+
+                <div class="result-header">
+                    <div class="result-endpoint">
+                        <i class="fas fa-link"></i>
+                        {{ result.endpoint }}
+                    </div>
+                    <div class="result-status">
+                        <i *ngIf="result.status === 'success'" class="fas fa-check-circle text-success"></i>
+                        <i *ngIf="result.status === 'error'" class="fas fa-times-circle text-danger"></i>
+                        <i *ngIf="result.status === 'pending'" class="fas fa-spinner fa-spin text-warning"></i>
+                        {{ result.status | titlecase }}
+                    </div>
+                    <div class="result-time">
+                        {{ result.timestamp | date:'HH:mm:ss' }}
+                    </div>
+                </div>
+
+                <div class="result-message">
+                    {{ result.message }}
+                </div>
+
+                <div class="result-response" *ngIf="result.response">
+                    <details>
+                        <summary>Ver respuesta completa</summary>
+                        <pre>{{ result.response | json }}</pre>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instrucciones específicas si el envío funciona -->
+    <div class="section" *ngIf="hasCriticalSuccess()">
+        <h2>🔍 ¿Dónde Buscar las Notificaciones?</h2>
+        
+        <div class="search-instructions">
+            <div class="instruction-card">
+                <h3>1. 👥 Revisa TODOS los Grupos de Telegram</h3>
+                <p>Las notificaciones pueden estar llegando a un grupo diferente al que esperas:</p>
+                <ul>
+                    <li>Grupo de "Administradores"</li>
+                    <li>Grupo de "Pedidos" o "Ventas"</li>
+                    <li>Grupo de "Notificaciones"</li>
+                    <li>Chat personal con el bot</li>
+                </ul>
+            </div>
+
+            <div class="instruction-card">
+                <h3>2. 🕐 Revisa el Historial Completo</h3>
+                <p>Las notificaciones pueden haber llegado antes y no las viste:</p>
+                <ul>
+                    <li>Desplázate hacia arriba en cada chat</li>
+                    <li>Busca mensajes de hoy: <code>{{ getCurrentTime().split(' ')[0] }}</code></li>
+                    <li>Busca palabras clave: "PAGO", "PEDIDO", "💰"</li>
+                </ul>
+            </div>
+
+            <div class="instruction-card">
+                <h3>3. 🤖 Verifica que el Bot esté en el Grupo Correcto</h3>
+                <p>Pasos para confirmar:</p>
+                <ol>
+                    <li>Ve a cada grupo/chat</li>
+                    <li>Busca el bot en la lista de miembros</li>
+                    <li>Verifica que tenga permisos para enviar mensajes</li>
+                    <li>Si no está, agrégalo de nuevo</li>
+                </ol>
+            </div>
+
+            <div class="instruction-card highlight">
+                <h3>4. 🧪 Haz una Prueba en Tiempo Real</h3>
+                <p>Para verificar que las notificaciones llegan:</p>
+                <ol>
+                    <li><strong>Abre TODOS tus grupos/chats de Telegram</strong></li>
+                    <li><strong>Haz clic en el botón de abajo</strong></li>
+                    <li><strong>Observa en tiempo real dónde aparece el mensaje</strong></li>
+                    <li>Si no aparece en ningún lado, el problema es de configuración del backend</li>
+                </ol>
+                
+                <div class="test-button-container">
+                    <button class="btn btn-warning btn-large" (click)="testVisibleNotification()" [disabled]="loading">
+                        <i class="fas fa-search"></i>
+                        🚨 ENVIAR MENSAJE VISIBLE PARA LOCALIZAR CHAT
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guía de solución de problemas -->
+    <div class="section">
+        <h2>🔧 Guía de Solución de Problemas</h2>
+
+        <div class="troubleshoot-grid">
+            <div class="troubleshoot-item">
+                <h3>❌ Bot Token Inválido</h3>
+                <ul>
+                    <li>Verificar que el token esté correcto en las variables de entorno</li>
+                    <li>Crear un nuevo bot con BotFather si es necesario</li>
+                    <li>Verificar que no tenga espacios extra o caracteres especiales</li>
+                </ul>
+            </div>
+
+            <div class="troubleshoot-item">
+                <h3>💬 Chat ID Incorrecto</h3>
+                <ul>
+                    <li>Agregar el bot al grupo de administradores</li>
+                    <li>Enviar un mensaje y usar getUpdates para obtener el chat ID</li>
+                    <li>Verificar que el chat ID tenga el formato correcto (-100xxxxxxxxxx)</li>
+                </ul>
+            </div>
+
+            <div class="troubleshoot-item">
+                <h3>🚫 Bot Bloqueado</h3>
+                <ul>
+                    <li>El bot fue expulsado del grupo</li>
+                    <li>El usuario bloqueó el bot</li>
+                    <li>Verificar permisos del bot en el grupo</li>
+                </ul>
+            </div>
+
+            <div class="troubleshoot-item">
+                <h3>⚙️ Backend No Configurado</h3>
+                <ul>
+                    <li>Variables de entorno no configuradas</li>
+                    <li>Servicio de Telegram no inicializado</li>
+                    <li>Error en la implementación del adaptador</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información técnica -->
+    <div class="section">
+        <h2>📋 Información Técnica</h2>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <label>🌐 API URL:</label>
+                <span>https://sistema-mongo.onrender.com/api</span>
+            </div>
+            <div class="info-item">
+                <label>🔗 Endpoint Telegram:</label>
+                <span>/admin/telegram/send-notification</span>
+            </div>
+            <div class="info-item">
+                <label>🔐 Autenticación:</label>
+                <span>Bearer Token (Rol Admin requerido)</span>
+            </div>
+            <div class="info-item">
+                <label>⏰ Última actualización:</label>
+                <span>{{ getCurrentTime() }}</span>
+            </div>
+        </div>
+    </div>
+</div>
