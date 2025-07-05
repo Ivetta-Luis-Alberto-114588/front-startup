@@ -48,6 +48,24 @@ GET /api/admin/telegram/chat-info
 
 ## 🤖 Bot de Telegram
 
+## 🎯 Flujo de Notificaciones de Pedidos
+
+### ⚡ Momento Exacto de Envío
+
+Las notificaciones de Telegram para pedidos siguen este flujo preciso:
+
+1. **🛒 Cliente crea orden** → ❌ **NO se envía Telegram** (solo se crea la orden)
+2. **💳 Cliente va a pagar** → ❌ **NO se envía Telegram** (redirection a MercadoPago)
+3. **🔄 MercadoPago procesa pago** → ❌ **NO se envía Telegram** (esperando confirmación)
+4. **✅ Webhook: pago = "approved"** → **🚀 SÍ SE ENVÍA TELEGRAM** (pago confirmado)
+
+### 🔒 ¿Por qué este flujo?
+
+- **Evita spam**: No notifica por órdenes que nunca se pagan
+- **Garantiza veracidad**: Solo notifica pagos realmente confirmados
+- **Mejora confiabilidad**: Usa el webhook oficial de MercadoPago
+- **Previene duplicados**: Control automático de idempotencia
+
 ### 🎯 Funcionalidades del Bot
 
 - **📦 Notificaciones de Pedidos** - Nuevos pedidos en tiempo real
@@ -73,29 +91,33 @@ GET /api/admin/telegram/chat-info
 
 ### 🛒 Notificaciones de Pedidos
 
-#### 📦 Nuevo Pedido
+#### � Pedido Pagado (Pago Aprobado)
+
+**⚡ MOMENTO DE ENVÍO:** Cuando MercadoPago confirma el pago como "approved" vía webhook
 
 ```
-🆕 NUEVO PEDIDO #1234
+💰 PAGO CONFIRMADO - NUEVO PEDIDO #1234
 
+✅ Pago aprobado por MercadoPago
 👤 Cliente: Juan Pérez
 📧 Email: juan@email.com
-💰 Total: $2,500.00
+� Total: $2,500.00
 📦 Items: 3 productos
 
 🏠 Dirección:
 Av. Corrientes 1234
 Villa Crespo, CABA
 
-⏰ 15/01/2025 - 10:30 AM
+🔗 ID Pago MP: 123456789
+⏰ 15/01/2025 - 10:32 AM
 
-[Ver Detalle] [Confirmar]
+[Ver Pedido] [Procesar]
 ```
 
-#### ✅ Pedido Confirmado
+#### ✅ Pedido Confirmado (Estados posteriores)
 
 ```
-✅ PEDIDO CONFIRMADO #1234
+✅ PEDIDO ACTUALIZADO #1234
 
 Estado: En preparación
 Tiempo estimado: 30-45 min

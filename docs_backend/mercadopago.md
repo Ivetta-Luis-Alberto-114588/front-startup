@@ -1,8 +1,15 @@
 # 💳 Integración con MercadoPago
 
-## 📋 Índice
+## 📋 Índice4. Respuesta de Mercado Pago: La API de Mercado Pago responde con un objeto JSON que contiene toda la información del pago. Aquí vienen los dos datos que tu backend necesita:
 
-- [🔧 Configuración](#-configuración)
+   * status: El estado real del pago (ej: 'approved').
+   * external_reference: El ID de la orden de tu sistema que tú enviaste al crear la preferencia de pago.
+5. Actualización en tu Base de Datos: Ahora, con la respuesta de Mercado Pago en mano, tu backend realiza la lógica final:
+
+   * Primero, verifica el estado: Comprueba si el status es 'approved'.
+   * Luego, busca la orden local: Usa el external_reference (que vino en la respuesta de Mercado Pago) para encontrar la orden correspondiente en tu propia base de datos.
+   * Actualiza el estado: Si el estado era 'approved', cambia el estado de la orden en tu base de datos a "PENDIENTE PAGADO".
+   * **� ENVÍA NOTIFICACIÓN DE TELEGRAM:** Solo cuando el pago es aprobado, se envía automáticamente una notificación de Telegram con los detalles del pedido pagado.onfiguración](#-configuración)
 - [💰 Procesamiento de Pagos](#-procesamiento-de-pagos)
 - [🔗 Sistema de Webhooks](#-sistema-de-webhooks)
 - [🔍 Trazabilidad y Auditoría](#-trazabilidad-y-auditoría)
@@ -87,11 +94,11 @@ Si el pago no es exitoso, esto es lo que sucede en el flujo de respaldo (webhook
 
   En Resumen: ¿Qué Pasa en Cada Caso?
 
-| Estado en Mercado Pago | Acción del Backend (vía Webhook) | Experiencia del Usuario (Redirección)                                                   |
-| :--------------------- | :--------------------------------- | :--------------------------------------------------------------------------------------- |
-| `approved`           | Actualiza la orden a "Pagado".     | Es redirigido a la página de éxito.                                                    |
-| `rejected`           | Actualiza la orden a "Rechazado".  | Es redirigido a la página de fallo.                                                     |
-| `pending`            | Actualiza la orden a "Pendiente".  | Es redirigido a una página que le informa que su pago está pendiente de confirmación. |
+| Estado en Mercado Pago | Acción del Backend (vía Webhook) | Experiencia del Usuario (Redirección) | Notificación Telegram |
+| :--------------------- | :--------------------------------- | :--------------------------------------------------------------------------------------- | :-------------------- |
+| `approved`           | Actualiza la orden a "PENDIENTE PAGADO". | Es redirigido a la página de éxito. | ✅ **SÍ SE ENVÍA** |
+| `rejected`           | Actualiza la orden a "Rechazado".  | Es redirigido a la página de fallo. | ❌ No se envía |
+| `pending`            | Actualiza la orden a "Pendiente".  | Es redirigido a una página que le informa que su pago está pendiente de confirmación. | ❌ No se envía |
 
   De esta manera, tu base de datos siempre refleja la realidad de la transacción, y el usuario recibe una respuesta clara e inmediata sobre el resultado de su compra.
 

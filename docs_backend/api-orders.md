@@ -662,12 +662,19 @@ const handlePaymentWebhook = async (paymentData) => {
   if (paymentData.status === 'approved') {
     await updateOrderStatus(order.id, 'processing', 'Pago confirmado automáticamente');
     await sendOrderConfirmationEmail(order);
+    // 🚀 IMPORTANTE: Las notificaciones de Telegram se envían SOLO cuando el pago es aprobado
     await sendTelegramNotification(`✅ Pago confirmado para pedido ${order.orderNumber}`);
   } else if (paymentData.status === 'rejected') {
     await updateOrderStatus(order.id, 'cancelled', 'Pago rechazado');
+    // ❌ NO se envía notificación de Telegram para pagos rechazados
   }
 };
 ```
+
+**📝 Nota Importante:** 
+- ✅ **Las notificaciones de Telegram se envían ÚNICAMENTE cuando el pago es aprobado** por MercadoPago vía webhook
+- ❌ **NO se envían notificaciones al crear la orden** (solo se crea la orden sin notificar)
+- 🎯 **Esto garantiza que solo se notifique cuando hay un pago real confirmado**
 
 #### Por Timeouts
 ```javascript

@@ -588,17 +588,22 @@ Una vez vinculado, recibirás notificaciones importantes sobre tus pedidos y má
 
 ### Notificaciones Automáticas
 
-| Evento | Email | Telegram | Destinatario |
-|--------|--------|----------|-------------|
-| **Nuevo pedido** | ✅ | ✅ | Cliente + Admin |
-| **Pago confirmado** | ✅ | ✅ | Cliente + Admin |
-| **Pago rechazado** | ✅ | ✅ | Cliente |
-| **Pedido enviado** | ✅ | ✅ | Cliente |
-| **Pedido entregado** | ✅ | ✅ | Cliente |
-| **Stock bajo** | ❌ | ✅ | Admin |
-| **Error del sistema** | ❌ | ✅ | Admin |
-| **Registro de usuario** | ✅ | ❌ | Cliente |
-| **Recuperar contraseña** | ✅ | ❌ | Cliente |
+| Evento | Email | Telegram | Destinatario | Momento de Envío |
+|--------|--------|----------|-------------|-----------------|
+| **Nuevo pedido** | ✅ | ❌ | Cliente + Admin | Al crear la orden |
+| **Pago confirmado** | ✅ | ✅ | Cliente + Admin | **Solo cuando MercadoPago aprueba el pago (webhook)** |
+| **Pago rechazado** | ✅ | ❌ | Cliente | Webhook de pago rechazado |
+| **Pedido enviado** | ✅ | ✅ | Cliente | Al cambiar estado manualmente |
+| **Pedido entregado** | ✅ | ✅ | Cliente | Al cambiar estado manualmente |
+| **Stock bajo** | ❌ | ✅ | Admin | Automático cuando stock < mínimo |
+| **Error del sistema** | ❌ | ✅ | Admin | Automático en errores críticos |
+| **Registro de usuario** | ✅ | ❌ | Cliente | Al registrarse |
+| **Recuperar contraseña** | ✅ | ❌ | Cliente | Al solicitar reset |
+
+**🎯 Nota Importante sobre Telegram:**
+- ✅ **Telegram solo notifica cuando el pago es REALMENTE confirmado** (status = "approved")
+- ❌ **NO se envía Telegram al crear la orden** (evita notificaciones de órdenes sin pagar)
+- 🔒 **Esto garantiza que solo se notifique sobre pedidos pagados confirmados**
 
 ### Notificaciones Promocionales
 
