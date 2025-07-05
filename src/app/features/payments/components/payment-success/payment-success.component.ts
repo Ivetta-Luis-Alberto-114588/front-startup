@@ -145,10 +145,10 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
 
       if (isPaymentSuccessful) {
         console.log('Orden pagada detectada. Status:', statusCode);
-        
+
         // ✅ NOTIFICACIÓN AHORA SE ENVÍA DESDE EL BACKEND (webhook de MercadoPago)
         // Ya no necesitamos enviar desde el frontend para evitar duplicados
-        
+
         // Limpiar el carrito solo cuando el pago es exitoso
         this.clearCartAfterSuccessfulPayment();
       } else {
