@@ -110,24 +110,36 @@
                 </small>
             </div>
         </div>
+
+        <!-- Control de navegación -->
+        <div class="mt-3 pt-3 border-top" *ngIf="verificationComplete">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" [(ngModel)]="showNavigationConfirmation"
+                    id="navigationConfirmation">
+                <label class="form-check-label small text-muted" for="navigationConfirmation">
+                    <i class="bi bi-shield-lock me-1"></i>
+                    Confirmar antes de salir de esta página
+                </label>
+            </div>
+        </div>
     </div>
     <!-- ***** FIN ESTADO VERIFICACIÓN ***** -->
 
     <!-- ***** BOTONES DE ACCIÓN ***** -->
     <div class="text-center mt-5">
         <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-            <a routerLink="/" class="btn btn-success btn-lg">
+            <button class="btn btn-success btn-lg" (click)="navigateToHome()">
                 <i class="bi bi-house-fill me-2"></i>
                 Volver al Inicio
-            </a>
-            <a routerLink="/my-orders" class="btn btn-primary btn-lg">
+            </button>
+            <button class="btn btn-primary btn-lg" (click)="navigateToMyOrders()">
                 <i class="bi bi-list-ul me-2"></i>
                 Ver Mis Pedidos
-            </a>
-            <a routerLink="/dashboard" class="btn btn-outline-secondary btn-lg">
+            </button>
+            <button class="btn btn-outline-secondary btn-lg" (click)="navigateToDashboard()">
                 <i class="bi bi-bag me-2"></i>
                 Seguir Comprando
-            </a>
+            </button>
         </div>
     </div>
 </div>

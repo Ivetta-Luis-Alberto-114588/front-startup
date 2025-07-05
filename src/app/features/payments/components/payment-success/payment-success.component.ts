@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { PaymentVerificationService, OrderStatusResponse } from '../../services/payment-verification.service';
 import { OrderNotificationService } from '../../../orders/services/order-notification.service';
@@ -23,12 +23,14 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
   public errorMessage: string | null = null; // Mensaje de error si algo falla
   public isUserAuthenticated: boolean = false;
   public orderDetails: IOrder | null = null; // Detalles de la orden con productos
+  public showNavigationConfirmation: boolean = true; // Controlar si mostrar confirmación antes de navegar
 
   private routeSub: Subscription | null = null; // Para manejar la suscripción
 
   // Inyectar servicios en el constructor
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private paymentVerificationService: PaymentVerificationService,
     private orderNotificationService: OrderNotificationService,
     private orderService: OrderService,
@@ -37,6 +39,9 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
+    // Prevenir redirecciones automáticas al inicializar
+    this.preventAutoRedirect();
+
     // Suscribirse a los query parameters al iniciar el componente
     this.routeSub = this.route.queryParamMap.subscribe(params => {
       // Obtener el valor del parámetro 'saleId' de la URL
@@ -48,6 +53,36 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
       if (this.orderId) {
         this.verifyPaymentAndNotify();
         this.loadOrderDetails();
+      }
+    });
+  }
+
+  /**
+   * Previene redirecciones automáticas manteniendo al usuario en la página
+   */
+  private preventAutoRedirect(): void {
+    // Interceptar intentos de redirección con window.beforeunload
+    window.addEventListener('beforeunload', (event) => {
+      if (this.showNavigationConfirmation && this.orderId) {
+        // Mostrar confirmación si el usuario intenta salir antes de usar los botones
+        event.preventDefault();
+        event.returnValue = '¿Estás seguro de que quieres salir? Aún puedes revisar los detalles de tu pago.';
+        return event.returnValue;
+      }
+    });
+
+    // Prevenir navegación del historial del navegador temporalmente
+    window.history.pushState(null, '', window.location.pathname + window.location.search);
+    window.addEventListener('popstate', (event) => {
+      if (this.showNavigationConfirmation && this.orderId) {
+        // Volver a empujar el estado actual
+        window.history.pushState(null, '', window.location.pathname + window.location.search);
+
+        // Opcional: mostrar mensaje al usuario
+        if (confirm('¿Estás seguro de que quieres salir? Aún puedes revisar los detalles de tu pago.')) {
+          this.showNavigationConfirmation = false;
+          window.history.back();
+        }
       }
     });
   }
@@ -259,6 +294,30 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
         // No mostramos error al usuario ya que el pago fue exitoso
       }
     });
+  }
+
+  /**
+   * Navega al inicio del sitio
+   */
+  navigateToHome(): void {
+    this.showNavigationConfirmation = false;
+    this.router.navigate(['/']);
+  }
+
+  /**
+   * Navega a la página de mis pedidos
+   */
+  navigateToMyOrders(): void {
+    this.showNavigationConfirmation = false;
+    this.router.navigate(['/my-orders']);
+  }
+
+  /**
+   * Navega al dashboard para seguir comprando
+   */
+  navigateToDashboard(): void {
+    this.showNavigationConfirmation = false;
+    this.router.navigate(['/dashboard']);
   }
 
   ngOnDestroy(): void {
