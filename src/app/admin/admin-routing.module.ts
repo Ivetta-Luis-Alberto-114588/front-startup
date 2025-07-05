@@ -152,7 +152,7 @@ const routes: Routes = [
   {
     path: 'orders/:id', // -> /admin/orders/order123 (Ruta para ver detalle)
     component: OrderDetailComponent // Usar el componente de detalle
-  },  {
+  }, {
     path: 'order-status-dashboard', // -> /admin/order-status-dashboard
     component: OrderStatusDashboardComponent
   },
@@ -192,7 +192,7 @@ const routes: Routes = [
   {
     path: 'users', // -> /admin/users
     component: UserListComponent
-  },  {
+  }, {
     path: 'users/edit/:id', // -> /admin/users/edit/user123
     component: UserFormComponent // Formulario para editar (principalmente roles)
   },

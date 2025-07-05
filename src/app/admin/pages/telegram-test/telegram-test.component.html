@@ -81,14 +81,16 @@
             <div class="alert alert-success">
                 <h4>✅ ¡BUENAS NOTICIAS!</h4>
                 <p><strong>El sistema de Telegram SÍ ESTÁ FUNCIONANDO.</strong></p>
-                <p>El endpoint de envío devolvió "Success", lo que significa que las notificaciones se están enviando.</p>
+                <p>El endpoint de envío devolvió "Success", lo que significa que las notificaciones se están enviando.
+                </p>
                 <div class="next-steps">
                     <h5>🔍 Posibles causas de que no veas las notificaciones:</h5>
                     <ul>
                         <li>Las notificaciones llegan a un <strong>chat diferente</strong> al que estás revisando</li>
                         <li>El bot está enviando a un <strong>grupo equivocado</strong></li>
                         <li>Estás revisando el <strong>chat personal</strong> en lugar del grupo de admins</li>
-                        <li>Las notificaciones llegan pero a <strong>otro horario</strong> (verifica todo el historial)</li>
+                        <li>Las notificaciones llegan pero a <strong>otro horario</strong> (verifica todo el historial)
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -132,7 +134,7 @@
     <!-- Instrucciones específicas si el envío funciona -->
     <div class="section" *ngIf="hasCriticalSuccess()">
         <h2>🔍 ¿Dónde Buscar las Notificaciones?</h2>
-        
+
         <div class="search-instructions">
             <div class="instruction-card">
                 <h3>1. 👥 Revisa TODOS los Grupos de Telegram</h3>
@@ -175,7 +177,7 @@
                     <li><strong>Observa en tiempo real dónde aparece el mensaje</strong></li>
                     <li>Si no aparece en ningún lado, el problema es de configuración del backend</li>
                 </ol>
-                
+
                 <div class="test-button-container">
                     <button class="btn btn-warning btn-large" (click)="testVisibleNotification()" [disabled]="loading">
                         <i class="fas fa-search"></i>
