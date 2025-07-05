@@ -4,58 +4,10 @@
     <p class="lead">Tu pedido ha sido confirmado y está siendo procesado.</p>
     <p>Recibirás una confirmación por correo electrónico en breve.</p>
 
-    <!-- ***** DEMOSTRACIÓN DEL NUEVO COMPONENTE ***** -->
+    <!-- ***** INFORMACIÓN COMPLETA DEL PAGO ***** -->
     <div *ngIf="orderId" class="mt-4">
         <app-payment-status-display [saleId]="orderId" [showTitle]="true" [compact]="false">
         </app-payment-status-display>
-    </div>
-    <!-- ***** FIN DEMOSTRACIÓN ***** -->
-
-    <!-- ***** MOSTRAR INFORMACIÓN COMPLETA DEL PAGO ***** -->
-    <!-- Usamos *ngIf para mostrarlo solo si orderId tiene un valor -->
-    <div *ngIf="orderId" class="mt-4 p-4 bg-light rounded">
-        <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Información del Pago (Método Anterior)</h5>
-        <div class="row">
-            <div class="col-md-6">
-                <p class="mb-2">
-                    <strong>ID de Pedido (OrderId):</strong><br>
-                    <span class="text-monospace badge bg-primary">{{ orderId }}</span>
-                </p>
-                <p class="mb-2" *ngIf="paymentId">
-                    <strong>Payment ID (MercadoPago):</strong><br>
-                    <span class="text-monospace badge bg-info">{{ paymentId }}</span>
-                </p>
-                <p class="mb-2">
-                    <strong>External Reference:</strong><br>
-                    <span class="text-monospace badge bg-secondary">{{ externalReference || orderId }}</span>
-                </p>
-                <p class="mb-2">
-                    <strong>Método de Pago:</strong><br>
-                    <span class="badge bg-primary">{{ paymentMethod }}</span>
-                </p>
-            </div>
-            <div class="col-md-6">
-                <p class="mb-2" *ngIf="idempotencyKey">
-                    <strong>X-Idempotency-Key:</strong><br>
-                    <span class="text-monospace badge bg-warning text-dark">{{ idempotencyKey }}</span>
-                </p>
-                <p class="mb-2" *ngIf="paymentAmount">
-                    <strong>Monto:</strong><br>
-                    <span class="badge bg-success">{{ paymentAmount | currency }}</span>
-                </p>
-                <p class="mb-2">
-                    <strong>Estado:</strong><br>
-                    <span class="badge" [ngClass]="getStatusBadgeClass(paymentStatus)">
-                        {{ paymentStatus }}
-                        <i *ngIf="oauthVerified" class="bi bi-shield-check ms-1" title="Verificado con OAuth"></i>
-                    </span>
-                </p>
-                <p class="mb-2">
-                    <strong>Proveedor:</strong><br>
-                    <span class="badge bg-info">{{ provider }}</span>
-                </p>
-            </div>
-        </div>
     </div>
     <!-- ***** FIN INFORMACIÓN COMPLETA ***** -->
 
@@ -71,19 +23,15 @@
 
         <!-- Verificación completada -->
         <div *ngIf="verificationComplete && !isVerifying">
-            <div *ngIf="paymentStatus === 'approved'" class="text-success">
+            <div class="text-success">
                 <i class="bi bi-check-circle me-1"></i>
-                Pago verificado exitosamente
+                Verificación completada
                 <div *ngIf="notificationSent" class="small text-muted mt-1">
                     <i class="bi bi-send-check me-1"></i>
                     Notificación enviada
                 </div>
             </div>
-            <div *ngIf="paymentStatus !== 'approved' && paymentStatus !== 'unknown'" class="text-warning">
-                <i class="bi bi-exclamation-triangle me-1"></i>
-                Estado del pago: {{ paymentStatus }}
-            </div>
-            <div *ngIf="errorMessage" class="text-danger">
+            <div *ngIf="errorMessage" class="text-danger mt-2">
                 <i class="bi bi-exclamation-circle me-1"></i>
                 {{ errorMessage }}
             </div>
