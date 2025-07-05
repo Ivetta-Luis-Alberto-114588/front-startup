@@ -233,4 +233,31 @@ export class PaymentStatusDisplayComponent implements OnInit {
                 return 'bi-question-circle-fill';
         }
     }
+
+    /**
+     * Copia texto al portapapeles
+     */
+    copyToClipboard(text: string): void {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Opcional: mostrar mensaje de confirmación
+                console.log('Payment ID copiado al portapapeles');
+            }).catch(err => {
+                console.error('Error al copiar al portapapeles:', err);
+            });
+        } else {
+            // Fallback para navegadores que no soportan clipboard API
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                console.log('Payment ID copiado al portapapeles (fallback)');
+            } catch (err) {
+                console.error('Error al copiar al portapapeles (fallback):', err);
+            }
+            document.body.removeChild(textArea);
+        }
+    }
 }

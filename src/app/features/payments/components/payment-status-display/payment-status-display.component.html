@@ -57,8 +57,20 @@
                         </div>
 
                         <div class="mb-3" *ngIf="paymentStatus.payment.mercadoPagoPaymentId">
-                            <label class="form-label fw-bold">Payment ID (MercadoPago)</label>
-                            <div class="font-monospace">{{ paymentStatus.payment.mercadoPagoPaymentId }}</div>
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-credit-card me-1"></i>
+                                Payment ID (MercadoPago)
+                            </label>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-primary font-monospace fs-6 me-2">
+                                    {{ paymentStatus.payment.mercadoPagoPaymentId }}
+                                </span>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                    (click)="copyToClipboard(paymentStatus.payment.mercadoPagoPaymentId)"
+                                    title="Copiar Payment ID">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -70,8 +82,20 @@
                     <!-- Información Técnica -->
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">External Reference</label>
-                            <div class="font-monospace small">{{ paymentStatus.payment.externalReference }}</div>
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-hash me-1"></i>
+                                External Reference
+                            </label>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-secondary font-monospace fs-6 me-2">
+                                    {{ paymentStatus.payment.externalReference }}
+                                </span>
+                                <button class="btn btn-sm btn-outline-secondary"
+                                    (click)="copyToClipboard(paymentStatus.payment.externalReference)"
+                                    title="Copiar External Reference">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="mb-3" *ngIf="paymentStatus.payment.idempotencyKey">
@@ -81,13 +105,27 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Método de Pago</label>
-                            <div>{{ paymentStatus.payment.paymentMethod | titlecase }}</div>
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-credit-card-2-front me-1"></i>
+                                Método de Pago
+                            </label>
+                            <div>
+                                <span class="badge bg-primary">
+                                    {{ paymentStatus.payment.paymentMethod | titlecase }}
+                                </span>
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Proveedor</label>
-                            <div>{{ paymentStatus.payment.provider | titlecase }}</div>
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-building me-1"></i>
+                                Proveedor
+                            </label>
+                            <div>
+                                <span class="badge bg-info">
+                                    {{ paymentStatus.payment.provider | titlecase }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

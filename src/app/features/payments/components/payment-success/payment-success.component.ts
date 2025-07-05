@@ -3,8 +3,10 @@ import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { PaymentVerificationService, OrderStatusResponse } from '../../services/payment-verification.service';
 import { OrderNotificationService } from '../../../orders/services/order-notification.service';
+import { OrderService } from '../../../orders/services/order.service';
 import { CartService } from '../../../cart/services/cart.service';
 import { AuthService } from '../../../../auth/services/auth.service';
+import { IOrder } from '../../../orders/models/iorder';
 
 @Component({
   selector: 'app-payment-success',
@@ -20,6 +22,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
   public notificationSent: boolean = false; // Notificación enviada
   public errorMessage: string | null = null; // Mensaje de error si algo falla
   public isUserAuthenticated: boolean = false;
+  public orderDetails: IOrder | null = null; // Detalles de la orden con productos
 
   private routeSub: Subscription | null = null; // Para manejar la suscripción
 
@@ -28,6 +31,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private paymentVerificationService: PaymentVerificationService,
     private orderNotificationService: OrderNotificationService,
+    private orderService: OrderService,
     private cartService: CartService,
     private authService: AuthService
   ) { }
@@ -43,6 +47,25 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
       // Si tenemos los datos necesarios, verificar el pago
       if (this.orderId) {
         this.verifyPaymentAndNotify();
+        this.loadOrderDetails();
+      }
+    });
+  }
+
+  /**
+   * Carga los detalles de la orden incluyendo productos
+   */
+  private loadOrderDetails(): void {
+    if (!this.orderId) return;
+
+    this.orderService.getOrderById(this.orderId).subscribe({
+      next: (order) => {
+        this.orderDetails = order;
+        console.log('Detalles de la orden cargados:', order);
+      },
+      error: (error) => {
+        console.warn('Error al cargar detalles de la orden:', error);
+        // No es crítico si no se pueden cargar los productos
       }
     });
   }
