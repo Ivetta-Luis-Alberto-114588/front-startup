@@ -23,7 +23,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
   public errorMessage: string | null = null; // Mensaje de error si algo falla
   public isUserAuthenticated: boolean = false;
   public orderDetails: IOrder | null = null; // Detalles de la orden con productos
-  public showNavigationConfirmation: boolean = true; // Controlar si mostrar confirmación antes de navegar
+  public showNavigationConfirmation: boolean = false; // Controlar si mostrar confirmación antes de navegar
 
   private routeSub: Subscription | null = null; // Para manejar la suscripción
 
@@ -144,20 +144,11 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
       const isPaymentSuccessful = this.isPaymentStatusSuccessful(statusCode);
 
       if (isPaymentSuccessful) {
-        console.log('Orden pagada detectada, enviando notificación. Status:', statusCode);
-
-        // Simular datos de pago para la notificación
-        const paymentData = {
-          status: 'approved',
-          transactionAmount: orderStatus.total,
-          paymentMethodId: this.paymentId ? 'mercadopago' : 'cash',
-          paymentMethod: this.paymentId ? 'online' : 'cash',
-          payer: {
-            email: orderStatus.customer?.email || 'cliente@ejemplo.com'
-          }
-        };
-
-        await this.sendOrderNotification(paymentData);
+        console.log('Orden pagada detectada. Status:', statusCode);
+        
+        // ✅ NOTIFICACIÓN AHORA SE ENVÍA DESDE EL BACKEND (webhook de MercadoPago)
+        // Ya no necesitamos enviar desde el frontend para evitar duplicados
+        
         // Limpiar el carrito solo cuando el pago es exitoso
         this.clearCartAfterSuccessfulPayment();
       } else {
@@ -235,8 +226,9 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
       items: orderData.items
     };
 
-    // Enviar notificación para pago en efectivo
-    this.sendOrderNotification(cashPaymentData);
+    // ✅ NOTIFICACIÓN PARA PAGOS EN EFECTIVO AHORA SE MANEJA DESDE EL BACKEND
+    // Comentado para evitar notificaciones duplicadas
+    // this.sendOrderNotification(cashPaymentData);
   }
 
   /**

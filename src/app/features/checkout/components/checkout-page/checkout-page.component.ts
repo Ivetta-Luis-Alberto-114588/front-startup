@@ -17,7 +17,7 @@ import { PaymentService } from 'src/app/features/payments/services/payment.servi
 import { ICreateOrderPayload } from 'src/app/features/orders/models/ICreateOrderPayload';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { CheckoutStateService, ShippingAddressOption } from '../../services/checkout-state.service'; // Importa el servicio de estado
-import { TelegramNotificationService } from 'src/app/shared/services/telegram-notification.service';
+// import { TelegramNotificationService } from 'src/app/shared/services/telegram-notification.service'; // Ya no necesario
 
 @Component({
   selector: 'app-checkout-page',
@@ -57,8 +57,8 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private checkoutStateService: CheckoutStateService, // Inyecta el servicio de estado
     private fb: FormBuilder,
-    private router: Router,
-    private telegramNotificationService: TelegramNotificationService // Inyecta el servicio de notificaciones
+    private router: Router
+    // private telegramNotificationService: TelegramNotificationService // Ya no necesario
   ) {
     this.cart$ = this.cartService.cart$;
     this.isAuthenticated$ = this.authService.isAuthenticated$;
@@ -295,9 +295,9 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       next: (preference) => {
 
 
+        // ✅ NOTIFICACIÓN ELIMINADA - Ahora se envía desde el backend cuando el pago es aprobado
         // una vez que se creo la orden
-        //enviar notificación a Telegram
-        this.telegramNotificationService.sendMessage('[checkout-page.component.ts] Preferencia de pago creada:' + JSON.stringify({ text: preference, parse_mode: 'HTML' }))
+        // this.telegramNotificationService.sendMessage('[checkout-page.component.ts] Preferencia de pago creada:' + JSON.stringify({ text: preference, parse_mode: 'HTML' }))
 
 
 
