@@ -25,9 +25,13 @@
                     <strong>Payment ID (MercadoPago):</strong><br>
                     <span class="text-monospace badge bg-info">{{ paymentId }}</span>
                 </p>
-                <p class="mb-2" *ngIf="externalReference">
+                <p class="mb-2">
                     <strong>External Reference:</strong><br>
-                    <span class="text-monospace badge bg-secondary">{{ externalReference }}</span>
+                    <span class="text-monospace badge bg-secondary">{{ externalReference || orderId }}</span>
+                </p>
+                <p class="mb-2">
+                    <strong>Método de Pago:</strong><br>
+                    <span class="badge bg-primary">{{ paymentMethod }}</span>
                 </p>
             </div>
             <div class="col-md-6">
@@ -45,6 +49,10 @@
                         {{ paymentStatus }}
                         <i *ngIf="oauthVerified" class="bi bi-shield-check ms-1" title="Verificado con OAuth"></i>
                     </span>
+                </p>
+                <p class="mb-2">
+                    <strong>Proveedor:</strong><br>
+                    <span class="badge bg-info">{{ provider }}</span>
                 </p>
             </div>
         </div>

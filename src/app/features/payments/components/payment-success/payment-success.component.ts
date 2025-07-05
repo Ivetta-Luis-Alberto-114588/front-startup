@@ -30,6 +30,11 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
   public paymentAmount: number | null = null;
   public oauthVerified: boolean = false;
   public isUserAuthenticated: boolean = false;
+  
+  // Campos adicionales para información completa
+  public paymentMethod: string = 'MercadoPago';  // Por defecto MercadoPago
+  public provider: string = 'MercadoPago';       // Por defecto MercadoPago
+  public customerEmail: string | null = null;
 
   private routeSub: Subscription | null = null; // Para manejar la suscripción
 
@@ -75,11 +80,43 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
         orderStatus = await this.paymentVerificationService.verifyOrderStatus(this.orderId!).toPromise();
         // Asegurar que el status sea un string
         this.paymentStatus = orderStatus?.status ? String(orderStatus.status) : 'unknown';
+        
+        // Mapear datos adicionales de la venta
+        if (orderStatus) {
+          // Obtener payment_id desde los query params o desde la venta
+          this.paymentId = this.paymentId || orderStatus.paymentId || orderStatus.mercadoPagoPaymentId;
+          
+          // Mapear el monto si no lo tenemos aún
+          if (orderStatus.total && !this.paymentAmount) {
+            this.paymentAmount = orderStatus.total;
+          }
+          
+          // External reference generalmente es el mismo saleId/orderId
+          if (!this.externalReference) {
+            this.externalReference = this.orderId;
+          }
+          
+          // Información del cliente
+          if (orderStatus.customerEmail) {
+            this.customerEmail = orderStatus.customerEmail;
+          }
+          
+          // Método de pago basado en la información disponible
+          if (orderStatus.paymentMethod) {
+            this.paymentMethod = orderStatus.paymentMethod;
+            this.provider = orderStatus.paymentMethod;
+          } else {
+            // Fallback basado en si hay payment_id
+            this.applyFallbackData();
+          }
+        }
+        
         console.log('Estado de la venta obtenido:', this.paymentStatus, orderStatus);
       } catch (orderError: any) {
         console.warn('Error al verificar venta, continuando sin verificación:', orderError);
         // Si el endpoint de ventas no existe, continuamos con un estado por defecto
         this.paymentStatus = 'pending';
+        this.externalReference = this.orderId; // Fallback: external reference es el orderId
         orderStatus = {
           saleId: this.orderId,
           status: 'pending',
@@ -96,9 +133,9 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
 
           if (paymentStatusResponse?.success && paymentStatusResponse.payment) {
             // Actualizar todos los campos con la información del pago
-            this.externalReference = paymentStatusResponse.payment.externalReference;
+            this.externalReference = paymentStatusResponse.payment.externalReference || this.externalReference;
             this.idempotencyKey = paymentStatusResponse.payment.idempotencyKey || null;
-            this.paymentAmount = paymentStatusResponse.payment.amount;
+            this.paymentAmount = paymentStatusResponse.payment.amount || this.paymentAmount;
             this.paymentId = paymentStatusResponse.payment.mercadoPagoPaymentId || this.paymentId;
 
             // Información de verificación OAuth
@@ -111,6 +148,8 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
             console.log('Información completa del pago obtenida:', paymentStatusResponse);
           } else {
             console.warn('Respuesta de pago incompleta:', paymentStatusResponse);
+            // Aplicar fallbacks cuando no hay información completa
+            this.applyFallbackData();
           }
         } catch (paymentError: any) {
           console.warn('No se pudo obtener información detallada del pago:', paymentError);
@@ -125,6 +164,8 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
       } else if (this.orderId && !this.authService.isAuthenticated()) {
         console.warn('Usuario no autenticado, no se pueden obtener detalles completos del pago');
         this.errorMessage = 'Para ver los detalles completos del pago, inicia sesión.';
+        // Aplicar datos de fallback para usuarios no autenticados
+        this.applyFallbackData();
       }
 
       this.verificationComplete = true;
@@ -243,6 +284,34 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy { // Implement
         console.error('Error al limpiar el carrito:', error);
         // No mostramos error al usuario ya que el pago fue exitoso
       }
+    });
+  }
+
+  /**
+   * Aplica datos de fallback cuando no hay información completa del pago
+   */
+  private applyFallbackData(): void {
+    // External reference es el orderId por defecto
+    if (!this.externalReference) {
+      this.externalReference = this.orderId;
+    }
+    
+    // Método de pago por defecto basado en si hay payment_id
+    if (this.paymentId) {
+      this.paymentMethod = 'MercadoPago';
+      this.provider = 'MercadoPago';
+    } else {
+      this.paymentMethod = 'Efectivo';
+      this.provider = 'Local';
+    }
+    
+    // Para demostración, establecer valores basados en lo que sabemos
+    console.log('Aplicando datos de fallback para:', {
+      orderId: this.orderId,
+      paymentId: this.paymentId,
+      externalReference: this.externalReference,
+      paymentMethod: this.paymentMethod,
+      provider: this.provider
     });
   }
 
