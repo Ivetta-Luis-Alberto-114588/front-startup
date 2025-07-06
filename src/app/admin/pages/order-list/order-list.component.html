@@ -69,6 +69,17 @@
                                 (click)="goToOrderDetail(order.id)">
                                 <i class="bi bi-eye"></i>
                             </button>
+                            <!-- Botón de Verificación Manual de Pago -->
+                            <button class="btn btn-sm btn-outline-success" title="Verificar Pago con MercadoPago"
+                                (click)="verifyPaymentManually(order)" [disabled]="isVerifyingPayment[order.id]">
+                                <span *ngIf="!isVerifyingPayment[order.id]">
+                                    <i class="bi bi-check-circle"></i>
+                                </span>
+                                <span *ngIf="isVerifyingPayment[order.id]" class="spinner-border spinner-border-sm"
+                                    role="status">
+                                    <span class="visually-hidden">Verificando...</span>
+                                </span>
+                            </button>
                         </div>
                     </td>
                 </tr>

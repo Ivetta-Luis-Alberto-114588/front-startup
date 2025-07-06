@@ -53,4 +53,20 @@ export class PaymentVerificationService {
     verifyOrderStatus(orderId: string): Observable<OrderStatusResponse> {
         return this.http.get<OrderStatusResponse>(`${this.ordersApiUrl}/${orderId}`);
     }
+
+    /**
+     * Verificación manual que fuerza consulta a MercadoPago y actualiza automáticamente
+     * Útil para administradores que quieren sincronizar el estado
+     */
+    manualVerifyAndUpdate(orderId: string): Observable<any> {
+        return this.http.post<any>(`${this.apiUrl}/manual-verify/${orderId}`, {});
+    }
+
+    /**
+     * Obtener estado detallado de pago con verificación OAuth
+     * Incluye información de verificación y sincronización automática
+     */
+    getPaymentStatusWithVerification(saleId: string): Observable<any> {
+        return this.http.get<any>(`${this.apiUrl}/status/sale/${saleId}`);
+    }
 }

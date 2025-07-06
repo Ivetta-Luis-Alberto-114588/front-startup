@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 
 import { PaymentStatusDisplayComponent } from './payment-status-display/payment-status-display.component';
@@ -22,6 +23,7 @@ describe('Payment Components Integration Tests', () => {
 
             await TestBed.configureTestingModule({
                 declarations: [PaymentStatusDisplayComponent],
+                imports: [HttpClientTestingModule],
                 providers: [
                     { provide: PaymentService, useValue: paymentServiceSpy }
                 ]
@@ -155,6 +157,7 @@ describe('Payment Components Integration Tests', () => {
 
             await TestBed.configureTestingModule({
                 declarations: [PaymentSuccessComponent],
+                imports: [HttpClientTestingModule],
                 providers: [
                     { provide: ActivatedRoute, useValue: activatedRouteStub },
                     { provide: PaymentVerificationService, useValue: paymentVerificationServiceSpy },
@@ -253,6 +256,7 @@ describe('Payment Components Integration Tests', () => {
 
             await TestBed.configureTestingModule({
                 declarations: [PaymentStatusDisplayComponent],
+                imports: [HttpClientTestingModule],
                 providers: [
                     { provide: PaymentService, useValue: paymentServiceSpy }
                 ]

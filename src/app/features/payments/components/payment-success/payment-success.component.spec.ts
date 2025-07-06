@@ -1,5 +1,7 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick, flush } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
 
 import { PaymentSuccessComponent } from './payment-success.component';
@@ -51,13 +53,15 @@ describe('PaymentSuccessComponent', () => {
 
         await TestBed.configureTestingModule({
             declarations: [PaymentSuccessComponent],
+            imports: [HttpClientTestingModule],
             providers: [
                 { provide: ActivatedRoute, useValue: activatedRouteStub },
                 { provide: PaymentVerificationService, useValue: paymentVerificationServiceSpy },
                 { provide: OrderNotificationService, useValue: orderNotificationServiceSpy },
                 { provide: CartService, useValue: cartServiceSpy },
                 { provide: AuthService, useValue: authServiceSpy }
-            ]
+            ],
+            schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
 
         mockActivatedRoute = TestBed.inject(ActivatedRoute);
@@ -70,6 +74,28 @@ describe('PaymentSuccessComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(PaymentSuccessComponent);
         component = fixture.componentInstance;
+
+        // Asegurar que todos los servicios estén configurados antes de detectChanges
+        mockAuthService.isAuthenticated.and.returnValue(true);
+        mockPaymentVerificationService.verifyOrderStatus.and.returnValue(of(mockOrderStatus));
+        mockCartService.clearCart.and.returnValue(of(mockCartResponse as ICart));
+        mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(of(mockNotificationResponse));
+        mockOrderNotificationService.sendCashOrderNotification.and.returnValue(of(mockNotificationResponse));
+    });
+
+    afterEach(() => {
+        // Limpiar subscripciones para evitar memory leaks
+        if (component && component.ngOnDestroy) {
+            component.ngOnDestroy();
+        }
+        fixture?.destroy();
+
+        // Asegurar que no quedan tasks pendientes
+        try {
+            flush();
+        } catch (e) {
+            // Ignorar errores de flush
+        }
     });
 
     it('should create', () => {
@@ -77,10 +103,11 @@ describe('PaymentSuccessComponent', () => {
     });
 
     describe('ngOnInit', () => {
-        it('should extract orderId and paymentId from query params and verify payment', async () => {
-            spyOn(component, 'verifyPaymentAndNotify' as any);
+        it('should extract orderId and paymentId from query params and verify payment', () => {
+            spyOn(component, 'verifyPaymentAndNotify' as any).and.returnValue(Promise.resolve());
 
             component.ngOnInit();
+            fixture.detectChanges();
 
             expect(component.orderId).toBe('sale-123');
             expect(component.paymentId).toBe('payment-456');
@@ -95,19 +122,20 @@ describe('PaymentSuccessComponent', () => {
             mockPaymentVerificationService.verifyOrderStatus.and.returnValue(of(mockOrderStatus));
         });
 
-        it('should verify payment and send notification for approved payment', async () => {
+        it('should verify payment and send notification for approved payment', fakeAsync(() => {
             mockCartService.clearCart.and.returnValue(of(mockCartResponse as ICart));
             mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(of(mockNotificationResponse));
 
-            await component['verifyPaymentAndNotify']();
+            component['verifyPaymentAndNotify']();
+            tick(); // Simular paso del tiempo
 
             expect(component.isVerifying).toBe(false);
             expect(component.verificationComplete).toBe(true);
             expect(component.isUserAuthenticated).toBe(true);
             expect(mockCartService.clearCart).toHaveBeenCalled();
-        });
+        }));
 
-        it('should handle order with object status containing code', async () => {
+        it('should handle order with object status containing code', fakeAsync(() => {
             const orderWithObjectStatus = {
                 ...mockOrderStatus,
                 status: { code: 'approved', name: 'Approved' } as any
@@ -116,25 +144,27 @@ describe('PaymentSuccessComponent', () => {
             mockCartService.clearCart.and.returnValue(of(mockCartResponse as ICart));
             mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(of(mockNotificationResponse));
 
-            await component['verifyPaymentAndNotify']();
+            component['verifyPaymentAndNotify']();
+            tick();
 
             expect(component.verificationComplete).toBe(true);
             expect(mockCartService.clearCart).toHaveBeenCalled();
-        });
+        }));
 
-        it('should not send notification for pending payment', async () => {
+        it('should not send notification for pending payment', fakeAsync(() => {
             const pendingOrderStatus = {
                 ...mockOrderStatus,
                 status: 'pending'
             };
             mockPaymentVerificationService.verifyOrderStatus.and.returnValue(of(pendingOrderStatus));
 
-            await component['verifyPaymentAndNotify']();
+            component['verifyPaymentAndNotify']();
+            tick();
 
             expect(component.verificationComplete).toBe(true);
             expect(mockOrderNotificationService.sendOrderPaidNotification).not.toHaveBeenCalled();
             expect(mockCartService.clearCart).not.toHaveBeenCalled();
-        });
+        }));
 
         it('should handle verification service error gracefully', async () => {
             mockPaymentVerificationService.verifyOrderStatus.and.returnValue(throwError('Service error'));
@@ -146,14 +176,17 @@ describe('PaymentSuccessComponent', () => {
             // Should continue with default status when service fails
         });
 
-        it('should handle general error', async () => {
-            component.orderId = null;
+        it('should handle general error', fakeAsync(() => {
+            // Simular una excepción real en el servicio de autenticación
+            mockAuthService.isAuthenticated.and.throwError('Authentication error');
 
-            await component['verifyPaymentAndNotify']();
+            component['verifyPaymentAndNotify']();
+            tick();
 
             expect(component.isVerifying).toBe(false);
             expect(component.errorMessage).toBe('Error al verificar el estado de la venta');
-        });
+            expect(component.verificationComplete).toBe(true);
+        }));
     });
 
     describe('isPaymentStatusSuccessful', () => {
@@ -270,7 +303,7 @@ describe('PaymentSuccessComponent', () => {
     });
 
     describe('confirmCashPayment', () => {
-        it('should confirm cash payment and send notification', () => {
+        it('should confirm cash payment without sending notification (handled by backend)', () => {
             spyOn(component, 'sendOrderNotification' as any);
             const orderData = {
                 orderId: 'order-123',
@@ -284,13 +317,9 @@ describe('PaymentSuccessComponent', () => {
 
             expect(component.orderId).toBe('order-123');
             expect(component.verificationComplete).toBe(true);
-            expect(component['sendOrderNotification']).toHaveBeenCalledWith({
-                paymentMethod: 'cash',
-                status: 'approved',
-                transactionAmount: 150,
-                payer: { email: 'john@example.com' },
-                items: [{ name: 'Product 1', price: 150 }]
-            });
+            // La notificación no se envía desde el frontend para pagos en efectivo
+            // ya que se maneja desde el backend para evitar duplicados
+            expect(component['sendOrderNotification']).not.toHaveBeenCalled();
         });
     });
 

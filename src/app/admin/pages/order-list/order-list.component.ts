@@ -10,6 +10,7 @@ import { NotificationService } from 'src/app/shared/services/notification.servic
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 import { IOrderStatus } from 'src/app/shared/models/iorder-status';
 import { OrderStatusService } from 'src/app/shared/services/order-status.service';
+import { PaymentVerificationService } from 'src/app/features/payments/services/payment-verification.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -29,13 +30,15 @@ export class OrderListComponent implements OnInit, OnDestroy {
   totalItems = 0;
 
   isUpdatingStatus: { [orderId: string]: boolean } = {};
+  isVerifyingPayment: { [orderId: string]: boolean } = {};
   allOrderStatuses: IOrderStatus[] = [];
 
   constructor(
     private adminOrderService: AdminOrderService,
     private notificationService: NotificationService,
     private router: Router,
-    private orderStatusService: OrderStatusService
+    private orderStatusService: OrderStatusService,
+    private paymentVerificationService: PaymentVerificationService
   ) { }
 
   ngOnInit(): void {
@@ -236,5 +239,87 @@ export class OrderListComponent implements OnInit, OnDestroy {
    */
   trackByOrderId(index: number, order: IOrder): string {
     return order.id;
+  }
+
+  /**
+   * Verificación manual de pago con MercadoPago
+   * Muestra notificaciones específicas según si el estado cambió o no
+   */
+  verifyPaymentManually(order: IOrder): void {
+    if (!order.id || this.isVerifyingPayment[order.id]) return;
+
+    // Capturar el estado actual antes de la verificación
+    const currentStatusId = order.status?._id;
+    const currentStatusName = order.status?.name || 'Desconocido';
+
+    this.isVerifyingPayment[order.id] = true;
+
+    this.paymentVerificationService.manualVerifyAndUpdate(order.id)
+      .pipe(finalize(() => this.isVerifyingPayment[order.id] = false))
+      .subscribe({
+        next: (result) => {
+          // Recargar las órdenes para obtener el estado actualizado
+          this.reloadOrderAndNotify(order.id, currentStatusId, currentStatusName);
+        },
+        error: (err: HttpErrorResponse) => {
+          console.error(`Error verifying payment for order ${order.id}:`, err);
+          const errorMsg = err.error?.error || 'No se pudo verificar el estado del pago.';
+          this.notificationService.showError(
+            `❌ Error al verificar el pago del pedido #${order.id.slice(0, 8)}: ${errorMsg}`,
+            'Error de Verificación'
+          );
+        }
+      });
+  }
+
+  /**
+   * Recarga una orden específica y muestra notificación según cambio de estado
+   */
+  private reloadOrderAndNotify(orderId: string, previousStatusId: string | undefined, previousStatusName: string): void {
+    // Recargar todas las órdenes para asegurar consistencia
+    const currentPagination: PaginationDto = { page: this.currentPage, limit: this.itemsPerPage };
+
+    this.adminOrderService.getOrders(currentPagination).subscribe({
+      next: (response: PaginatedAdminOrdersResponse) => {
+        this.orders = response.orders;
+        this.totalItems = response.total;
+
+        // Buscar la orden actualizada
+        const updatedOrder = this.orders.find(o => o.id === orderId);
+
+        if (updatedOrder) {
+          const newStatusId = updatedOrder.status?._id;
+          const newStatusName = updatedOrder.status?.name || 'Desconocido';
+
+          // Comparar estados y mostrar notificación apropiada
+          if (previousStatusId !== newStatusId) {
+            // Estado cambió
+            this.notificationService.showSuccess(
+              `✅ Estado actualizado del pedido #${orderId.slice(0, 8)}: ${previousStatusName} → ${newStatusName}`,
+              'Verificación Exitosa'
+            );
+          } else {
+            // Estado no cambió
+            this.notificationService.showInfo(
+              `ℹ️ Verificación completada para pedido #${orderId.slice(0, 8)}. El estado se mantiene: ${newStatusName}`,
+              'Sin Cambios'
+            );
+          }
+        } else {
+          // Orden no encontrada después de la actualización
+          this.notificationService.showSuccess(
+            `✅ Verificación completada para pedido #${orderId.slice(0, 8)}`,
+            'Verificación Exitosa'
+          );
+        }
+      },
+      error: (err) => {
+        console.error("Error reloading orders after verification:", err);
+        this.notificationService.showWarning(
+          `⚠️ Verificación completada, pero no se pudo actualizar la vista. Recarga la página para ver cambios.`,
+          'Advertencia'
+        );
+      }
+    });
   }
 }
