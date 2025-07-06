@@ -145,7 +145,7 @@ export class DeliveryMethodService {
      */
     getAllDeliveryMethods(): Observable<IDeliveryMethod[]> {
         this.loadingSubject.next(true);
-        return this.http.get<IDeliveryMethodsResponse>(`${this.apiUrl}/admin/delivery-methods`)
+        return this.http.get<IDeliveryMethodsResponse>(`${this.apiUrl}/delivery-methods`)
             .pipe(
                 map(response => response.deliveryMethods),
                 tap(() => this.loadingSubject.next(false)),
