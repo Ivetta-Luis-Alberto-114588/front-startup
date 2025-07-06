@@ -17,6 +17,8 @@ import { PaymentService } from 'src/app/features/payments/services/payment.servi
 import { ICreateOrderPayload } from 'src/app/features/orders/models/ICreateOrderPayload';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { CheckoutStateService, ShippingAddressOption } from '../../services/checkout-state.service'; // Importa el servicio de estado
+import { DeliveryMethodService } from 'src/app/shared/services/delivery-method.service';
+import { IDeliveryMethod } from 'src/app/shared/models/idelivery-method';
 // import { TelegramNotificationService } from 'src/app/shared/services/telegram-notification.service'; // Ya no necesario
 
 @Component({
@@ -31,6 +33,15 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
   addresses: IAddress[] = [];
   cities: ICity[] = [];
   neighborhoods: INeighborhood[] = [];
+
+  // Propiedades para métodos de entrega
+  availableDeliveryMethods: IDeliveryMethod[] = [];
+  selectedDeliveryMethod: IDeliveryMethod | null = null;
+  isLoadingDeliveryMethods = false;
+
+  // Estados derivados del CheckoutStateService
+  shouldShowAddressSection$ = this.checkoutStateService.shouldShowAddressSection$;
+  isCheckoutValid$ = this.checkoutStateService.isCheckoutValid$;
 
   selectedAddressOption: 'existing' | 'new' | null = null;
   selectedExistingAddressId: string | null = null;
@@ -56,6 +67,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     private paymentService: PaymentService,
     private notificationService: NotificationService,
     private checkoutStateService: CheckoutStateService, // Inyecta el servicio de estado
+    private deliveryMethodService: DeliveryMethodService, // Nuevo servicio
     private fb: FormBuilder,
     private router: Router
     // private telegramNotificationService: TelegramNotificationService // Ya no necesario
@@ -78,6 +90,9 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Cargar métodos de entrega disponibles
+    this.loadDeliveryMethods();
+
     // Redirigir si el carrito está vacío
     this.cartSubscription = this.cart$.subscribe(cart => {
       if (!cart || cart.items.length === 0) {
@@ -224,7 +239,14 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
 
   // Lógica final para confirmar y pagar
   confirmOrder(): void {
-    if (!this.isAddressSelectedOrValid || this.isProcessingOrder) {
+    // Validar que se haya seleccionado un método de entrega
+    if (!this.selectedDeliveryMethod) {
+      this.notificationService.showWarning('Por favor, selecciona un método de entrega.');
+      return;
+    }
+
+    // Validar dirección solo si el método requiere dirección
+    if (this.selectedDeliveryMethod.requiresAddress && (!this.isAddressSelectedOrValid || this.isProcessingOrder)) {
       this.notificationService.showWarning('Por favor, selecciona o completa una dirección de envío válida.');
       this.newAddressForm.markAllAsTouched(); // Mostrar errores del formulario si es 'new'
       return;
@@ -247,26 +269,28 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         quantity: item.quantity,
         unitPrice: item.unitPriceWithTax // Enviar precio CON IVA como unitPrice
       })),
-      deliveryMethod: 'temp-delivery-method', // TODO: Reemplazar con método seleccionado por el usuario
+      deliveryMethod: this.selectedDeliveryMethod.id, // Usar el método seleccionado
       // Añadir couponCode si se implementa
     };
 
-    // Añadir datos de dirección al payload
-    if (this.selectedAddressOption === 'existing') {
-      orderPayload.selectedAddressId = this.selectedExistingAddressId;
-    } else if (this.selectedAddressOption === 'new') {
-      const formValue = this.newAddressForm.value;
-      orderPayload = {
-        ...orderPayload,
-        shippingRecipientName: formValue.recipientName,
-        shippingPhone: formValue.phone,
-        shippingStreetAddress: formValue.streetAddress,
-        shippingPostalCode: formValue.postalCode,
-        shippingNeighborhoodId: formValue.neighborhoodId,
-        // shippingCityId: formValue.cityId, // El backend lo deriva del barrio
-        shippingAdditionalInfo: formValue.additionalInfo,
-        // Si es invitado, añadir customerName y customerEmail (necesitarías campos extra en el form)
-      };
+    // Añadir datos de dirección al payload SOLO si el método de entrega lo requiere
+    if (this.selectedDeliveryMethod.requiresAddress) {
+      if (this.selectedAddressOption === 'existing') {
+        orderPayload.selectedAddressId = this.selectedExistingAddressId;
+      } else if (this.selectedAddressOption === 'new') {
+        const formValue = this.newAddressForm.value;
+        orderPayload = {
+          ...orderPayload,
+          shippingRecipientName: formValue.recipientName,
+          shippingPhone: formValue.phone,
+          shippingStreetAddress: formValue.streetAddress,
+          shippingPostalCode: formValue.postalCode,
+          shippingNeighborhoodId: formValue.neighborhoodId,
+          // shippingCityId: formValue.cityId, // El backend lo deriva del barrio
+          shippingAdditionalInfo: formValue.additionalInfo,
+          // Si es invitado, añadir customerName y customerEmail (necesitarías campos extra en el form)
+        };
+      }
     }
 
     // 1. Crear la orden
@@ -313,6 +337,120 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       }
       // El error ya se maneja en catchError
     });
+  }
+
+  // ===========================================
+  // MÉTODOS PARA DELIVERY METHODS
+  // ===========================================
+
+  /**
+   * Carga los métodos de entrega disponibles desde el servidor
+   */
+  private loadDeliveryMethods(): void {
+    this.isLoadingDeliveryMethods = true;
+
+    this.deliveryMethodService.getActiveDeliveryMethods().subscribe({
+      next: (methods) => {
+        this.availableDeliveryMethods = methods;
+        this.checkoutStateService.setAvailableDeliveryMethods(methods);
+        this.isLoadingDeliveryMethods = false;
+
+        // Si solo hay un método disponible, seleccionarlo automáticamente
+        if (methods.length === 1) {
+          this.selectDeliveryMethod(methods[0]);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading delivery methods:', error);
+        this.notificationService.showError(
+          'No se pudieron cargar los métodos de entrega. Por favor, recarga la página.',
+          'Error'
+        );
+        this.isLoadingDeliveryMethods = false;
+      }
+    });
+  }
+
+  /**
+   * Selecciona un método de entrega
+   */
+  selectDeliveryMethod(method: IDeliveryMethod): void {
+    this.selectedDeliveryMethod = method;
+    this.checkoutStateService.setSelectedDeliveryMethod(method);
+
+    // Si el método no requiere dirección, limpiar la selección de dirección
+    if (!method.requiresAddress) {
+      this.selectedAddressOption = null;
+      this.selectedExistingAddressId = null;
+      this.newAddressForm.reset();
+    } else {
+      // Si requiere dirección y es un usuario autenticado, mostrar opciones
+      this.authService.isAuthenticated$.pipe(
+        tap(isAuth => {
+          if (isAuth && this.addresses.length > 0) {
+            // Si tiene direcciones guardadas, no seleccionar automáticamente
+            if (!this.selectedAddressOption) {
+              // No seleccionar nada por defecto para que el usuario elija
+            }
+          } else {
+            // Usuario invitado o sin direcciones, usar nueva dirección
+            this.selectedAddressOption = 'new';
+            this.loadCities(); // Cargar ciudades para el formulario
+          }
+        })
+      ).subscribe();
+    }
+  }
+
+  /**
+   * Verifica si un método de entrega está seleccionado
+   */
+  isDeliveryMethodSelected(method: IDeliveryMethod): boolean {
+    return this.selectedDeliveryMethod?.id === method.id;
+  }
+
+  /**
+   * Reintenta cargar los métodos de entrega en caso de error
+   */
+  retryLoadDeliveryMethods(): void {
+    this.loadDeliveryMethods();
+  }
+
+  /**
+   * Obtiene el icono de Bootstrap correspondiente al código del método de entrega
+   */
+  getDeliveryMethodIcon(code: string): string {
+    const iconMap: { [key: string]: string } = {
+      'SHIPPING': 'bi-truck',
+      'PICKUP': 'bi-shop',
+      'EXPRESS': 'bi-lightning-charge',
+      'SCHEDULED': 'bi-calendar-check'
+    };
+    return iconMap[code] || 'bi-box-seam';
+  }
+
+  /**
+   * Calcula el porcentaje de progreso del checkout
+   */
+  getProgressPercentage(): number {
+    let progress = 0;
+
+    // Paso 1: Método de entrega seleccionado (33%)
+    if (this.selectedDeliveryMethod) {
+      progress += 33;
+    }
+
+    // Paso 2: Dirección completa si es requerida (33%)
+    if (!this.selectedDeliveryMethod?.requiresAddress ||
+      (this.selectedAddressOption === 'existing' && this.selectedExistingAddressId) ||
+      (this.selectedAddressOption === 'new' && this.newAddressForm.valid)) {
+      progress += 33;
+    }
+
+    // Paso 3: Método de pago (siempre disponible) (34%)
+    progress += 34;
+
+    return Math.min(progress, 100);
   }
 
   // Método separado para navegación - fácil de mockear en tests

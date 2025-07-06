@@ -17,6 +17,7 @@ import { OrderService } from 'src/app/features/orders/services/order.service';
 import { PaymentService } from 'src/app/features/payments/services/payment.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { CheckoutStateService } from '../../services/checkout-state.service';
+import { DeliveryMethodService } from 'src/app/shared/services/delivery-method.service';
 import { ICart } from 'src/app/features/cart/models/icart';
 import { ICartItem } from 'src/app/features/cart/models/icart-item';
 import { IAddress } from 'src/app/features/customers/models/iaddress';
@@ -28,6 +29,7 @@ import { IOrderStatus } from 'src/app/shared/models/iorder-status';
 import { ICreatePaymentResponse } from 'src/app/features/orders/models/ICreatePaymentResponse';
 import { IPayment } from 'src/app/features/orders/models/IPayment';
 import { IPaymentPreferenceInfo } from 'src/app/features/orders/models/IPaymentPreferenceInfo';
+import { IDeliveryMethod } from 'src/app/shared/models/idelivery-method';
 
 describe('CheckoutPageComponent', () => {
     let component: CheckoutPageComponent;
@@ -41,6 +43,7 @@ describe('CheckoutPageComponent', () => {
     let paymentService: jasmine.SpyObj<PaymentService>;
     let notificationService: jasmine.SpyObj<NotificationService>;
     let checkoutStateService: jasmine.SpyObj<CheckoutStateService>;
+    let deliveryMethodService: jasmine.SpyObj<DeliveryMethodService>;
     let router: jasmine.SpyObj<Router>;
     let httpMock: HttpTestingController;  // Mock for window.location.href in specific tests that need it
 
@@ -125,6 +128,27 @@ describe('CheckoutPageComponent', () => {
         name: 'Centro',
         city: mockCity
     } as any;
+
+    // Mock delivery methods
+    const mockDeliveryMethods: IDeliveryMethod[] = [
+        {
+            id: 'delivery-method-1',
+            code: 'SHIPPING',
+            name: 'Envío a Domicilio',
+            description: 'Recibe tu pedido en la puerta de tu casa.',
+            requiresAddress: true,
+            isActive: true
+        },
+        {
+            id: 'delivery-method-2',
+            code: 'PICKUP',
+            name: 'Retiro en Local',
+            description: 'Acércate a nuestra tienda a retirar tu pedido.',
+            requiresAddress: false,
+            isActive: true
+        }
+    ];
+
     const mockOrderStatus: IOrderStatus = {
         _id: 'status-1',
         name: 'Pendiente',
@@ -233,7 +257,18 @@ describe('CheckoutPageComponent', () => {
 
         const checkoutStateServiceSpy = jasmine.createSpyObj('CheckoutStateService', [
             'setSelectedShippingAddress',
-            'getSelectedShippingAddress'
+            'getSelectedShippingAddress',
+            'setSelectedDeliveryMethod',
+            'getSelectedDeliveryMethod',
+            'setAvailableDeliveryMethods',
+            'shouldShowAddressSection$',
+            'isCheckoutValid$'
+        ]);
+
+        const deliveryMethodServiceSpy = jasmine.createSpyObj('DeliveryMethodService', [
+            'getActiveDeliveryMethods',
+            'getDeliveryMethodById',
+            'requiresAddress'
         ]);
 
         const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
@@ -246,7 +281,16 @@ describe('CheckoutPageComponent', () => {
         paymentServiceSpy.createPaymentPreference.and.returnValue(of(mockCreatePaymentResponse));
         cartServiceSpy.getCurrentCartValue.and.returnValue(mockCart);
         cartServiceSpy.clearCart.and.returnValue(of(mockEmptyCart));
-        checkoutStateServiceSpy.getSelectedShippingAddress.and.returnValue(null); await TestBed.configureTestingModule({
+        checkoutStateServiceSpy.getSelectedShippingAddress.and.returnValue(null);
+
+        // Configure delivery method service
+        deliveryMethodServiceSpy.getActiveDeliveryMethods.and.returnValue(of(mockDeliveryMethods));
+        deliveryMethodServiceSpy.getDeliveryMethodById.and.returnValue(of(mockDeliveryMethods[0]));
+        deliveryMethodServiceSpy.requiresAddress.and.returnValue(of(true));
+
+        // Configure checkout state service observables
+        checkoutStateServiceSpy.shouldShowAddressSection$ = of(true);
+        checkoutStateServiceSpy.isCheckoutValid$ = of(true); await TestBed.configureTestingModule({
             declarations: [CheckoutPageComponent],
             imports: [ReactiveFormsModule, HttpClientTestingModule],
             providers: [
@@ -260,6 +304,7 @@ describe('CheckoutPageComponent', () => {
                 { provide: PaymentService, useValue: paymentServiceSpy },
                 { provide: NotificationService, useValue: notificationServiceSpy },
                 { provide: CheckoutStateService, useValue: checkoutStateServiceSpy },
+                { provide: DeliveryMethodService, useValue: deliveryMethodServiceSpy },
                 { provide: Router, useValue: routerSpy }
             ]
         }).compileComponents();
@@ -274,6 +319,7 @@ describe('CheckoutPageComponent', () => {
         orderService = TestBed.inject(OrderService) as jasmine.SpyObj<OrderService>; paymentService = TestBed.inject(PaymentService) as jasmine.SpyObj<PaymentService>;
         notificationService = TestBed.inject(NotificationService) as jasmine.SpyObj<NotificationService>;
         checkoutStateService = TestBed.inject(CheckoutStateService) as jasmine.SpyObj<CheckoutStateService>;
+        deliveryMethodService = TestBed.inject(DeliveryMethodService) as jasmine.SpyObj<DeliveryMethodService>;
         router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
         httpMock = TestBed.inject(HttpTestingController);
 
@@ -283,6 +329,11 @@ describe('CheckoutPageComponent', () => {
     afterEach(() => {
         // Limpiar estado entre tests
         component.ngOnDestroy();
+
+        // Mock any pending HTTP requests that might have been made
+        const req = httpMock.match(`${environment.apiUrl}/api/delivery-methods`);
+        req.forEach(r => r.flush({ deliveryMethods: mockDeliveryMethods }));
+
         httpMock.verify();
     });
     beforeEach(() => {
@@ -301,6 +352,13 @@ describe('CheckoutPageComponent', () => {
         orderService.createOrder.calls.reset();
         paymentService.createPaymentPreference.calls.reset();
         cartService.clearCart.calls.reset();
+        deliveryMethodService.getActiveDeliveryMethods.calls.reset();
+        deliveryMethodService.getDeliveryMethodById.calls.reset();
+        deliveryMethodService.requiresAddress.calls.reset();
+
+        // Set default delivery method for all tests
+        component.selectedDeliveryMethod = mockDeliveryMethods[0];
+        component.availableDeliveryMethods = mockDeliveryMethods;
     });
 
     describe('Component Initialization', () => {
