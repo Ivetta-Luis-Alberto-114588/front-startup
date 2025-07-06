@@ -15,8 +15,8 @@ export interface IDeliveryMethod {
     /** Descripción detallada para mostrar al usuario */
     description?: string;
 
-    /** Precio del método de entrega */
-    price: number;
+    /** Precio del método de entrega (opcional por compatibilidad con API) */
+    price?: number;
 
     /** Indica si este método requiere que el usuario proporcione una dirección de envío */
     requiresAddress: boolean;

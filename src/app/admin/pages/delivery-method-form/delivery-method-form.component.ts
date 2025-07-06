@@ -65,8 +65,7 @@ export class DeliveryMethodFormComponent implements OnInit, OnDestroy {
                 DeliveryMethodValidationService.codeFormatValidator()
             ]],
             description: ['', [Validators.maxLength(500)]],
-            price: [0, [
-                Validators.required,
+            price: [null, [
                 Validators.min(0),
                 DeliveryMethodValidationService.reasonablePriceValidator()
             ]],

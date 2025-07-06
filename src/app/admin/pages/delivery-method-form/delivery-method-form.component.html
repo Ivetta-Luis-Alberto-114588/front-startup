@@ -129,17 +129,18 @@
                             <!-- Precio -->
                             <div class="col-md-4 mb-3">
                                 <label for="price" class="form-label fw-semibold">
-                                    Precio <span class="text-danger">*</span>
+                                    Precio
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
                                     <input type="number" id="price" class="form-control"
                                         [class.is-invalid]="isFieldInvalid('price')" formControlName="price" min="0"
-                                        step="0.01" placeholder="0.00">
+                                        step="0.01" placeholder="Opcional">
                                 </div>
                                 <div class="invalid-feedback">
                                     {{ getFieldError('price') }}
                                 </div>
+                                <div class="form-text">Opcional. Precio para mostrar al cliente</div>
                             </div>
 
                             <!-- Días de entrega -->
@@ -273,8 +274,13 @@
                         </p>
 
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-success">
-                                ${{ deliveryMethodForm.get('price')?.value || 0 | number:'1.2-2' }}
+                            <span class="fw-bold text-success"
+                                *ngIf="deliveryMethodForm.get('price')?.value !== null && deliveryMethodForm.get('price')?.value !== undefined">
+                                ${{ deliveryMethodForm.get('price')?.value | number:'1.2-2' }}
+                            </span>
+                            <span class="text-muted"
+                                *ngIf="deliveryMethodForm.get('price')?.value === null || deliveryMethodForm.get('price')?.value === undefined">
+                                Sin precio definido
                             </span>
                             <span class="badge"
                                 [class]="deliveryMethodForm.get('isActive')?.value ? 'bg-success' : 'bg-secondary'">

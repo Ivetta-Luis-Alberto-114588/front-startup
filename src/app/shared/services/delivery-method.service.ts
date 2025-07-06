@@ -48,9 +48,9 @@ export class DeliveryMethodService {
         this.loadingSubject.next(true);
 
         // Crear nueva petición con cache
-        this.deliveryMethodsCache$ = this.http.get<IDeliveryMethodsResponse>(`${this.apiUrl}/delivery-methods`)
+        this.deliveryMethodsCache$ = this.http.get<IDeliveryMethod[]>(`${this.apiUrl}/delivery-methods`)
             .pipe(
-                map(response => response.deliveryMethods),
+                // No necesitamos map porque la API devuelve directamente el array
                 tap(() => {
                     this.lastCacheTime = now;
                     this.loadingSubject.next(false);
@@ -145,9 +145,9 @@ export class DeliveryMethodService {
      */
     getAllDeliveryMethods(): Observable<IDeliveryMethod[]> {
         this.loadingSubject.next(true);
-        return this.http.get<IDeliveryMethodsResponse>(`${this.apiUrl}/delivery-methods`)
+        return this.http.get<IDeliveryMethod[]>(`${this.apiUrl}/delivery-methods`)
             .pipe(
-                map(response => response.deliveryMethods),
+                // No necesitamos map porque la API devuelve directamente el array
                 tap(() => this.loadingSubject.next(false)),
                 catchError(error => {
                     this.loadingSubject.next(false);

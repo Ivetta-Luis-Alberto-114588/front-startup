@@ -81,8 +81,11 @@
 
                             <!-- Precio -->
                             <td>
-                                <span class="fw-bold text-success">
+                                <span class="fw-bold text-success" *ngIf="method.price !== undefined">
                                     ${{ method.price | number:'1.2-2' }}
+                                </span>
+                                <span class="text-muted" *ngIf="method.price === undefined">
+                                    Sin precio
                                 </span>
                             </td>
 
