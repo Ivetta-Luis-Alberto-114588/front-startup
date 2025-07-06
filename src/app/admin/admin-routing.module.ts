@@ -30,6 +30,7 @@ import { PaymentMethodFormComponent } from './pages/payment-method-form/payment-
 import { TelegramTestComponent } from './pages/telegram-test/telegram-test.component';
 import { DeliveryMethodListComponent } from './pages/delivery-method-list/delivery-method-list.component';
 import { DeliveryMethodFormComponent } from './pages/delivery-method-form/delivery-method-form.component';
+import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -229,11 +230,13 @@ const routes: Routes = [
   },
   {
     path: 'delivery-methods/create', // -> /admin/delivery-methods/create
-    component: DeliveryMethodFormComponent
+    component: DeliveryMethodFormComponent,
+    canActivate: [SuperAdminGuard] // Solo SUPER_ADMIN_ROLE puede crear
   },
   {
     path: 'delivery-methods/edit/:id', // -> /admin/delivery-methods/edit/123
-    component: DeliveryMethodFormComponent
+    component: DeliveryMethodFormComponent,
+    canActivate: [SuperAdminGuard] // Solo SUPER_ADMIN_ROLE puede editar
   },
   // --- FIN RUTAS DELIVERY METHODS ---
 

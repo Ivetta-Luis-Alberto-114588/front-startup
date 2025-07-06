@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, UrlTree, Router } from '@angular/router';
 import { Observable, map, take } from 'rxjs';
-import { AuthService } from '../services/auth.service';
+import { RoleService } from 'src/app/shared/services/role.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 
 @Injectable({
@@ -11,7 +11,7 @@ import { NotificationService } from 'src/app/shared/services/notification.servic
 export class AdminGuard implements CanActivate {
 
   constructor(
-    private authService: AuthService,
+    private roleService: RoleService,
     private router: Router,
     private notificationService: NotificationService
   ) { }
@@ -20,17 +20,14 @@ export class AdminGuard implements CanActivate {
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
 
-    // Usamos el observable user$ para obtener la información del usuario actual
-    return this.authService.user$.pipe(
+    // Usamos el RoleService para verificar permisos de administración
+    return this.roleService.hasAdminPermissions().pipe(
       take(1), // Tomamos solo el primer valor emitido para evitar suscripciones persistentes
-      map(user => {
-        // Verificar si el usuario existe y si tiene el rol ADMIN_ROLE
-        const isAdmin = !!user && user.roles?.includes('ADMIN_ROLE');
-
-        if (isAdmin) {
-          return true; // Permitir acceso si es admin
+      map(hasPermissions => {
+        if (hasPermissions) {
+          return true; // Permitir acceso si tiene permisos de administración
         } else {
-          // Si no es admin, mostrar notificación y redirigir
+          // Si no tiene permisos de administración, mostrar notificación y redirigir
           this.notificationService.showError('No tienes permisos para acceder a esta sección.', 'Acceso Denegado');
           // Redirigir al dashboard o a donde consideres apropiado
           return this.router.createUrlTree(['/dashboard']);

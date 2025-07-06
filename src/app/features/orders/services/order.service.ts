@@ -49,7 +49,7 @@ export class OrderService {
 
     // Agregar notas descriptivas solo si no existen ya
     if (!adaptedPayload.notes) {
-      const deliveryMethodName = this.isPickupMethod(payload.deliveryMethod) ? 
+      const deliveryMethodName = this.isPickupMethod(payload.deliveryMethod) ?
         'Retiro en Local' : 'Envío a Domicilio';
       adaptedPayload.notes = `Pedido realizado desde el checkout - Método: ${deliveryMethodName}`;
     }

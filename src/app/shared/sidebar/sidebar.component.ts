@@ -2,6 +2,7 @@
 import { Component } from '@angular/core';
 import { SidebarService } from './sidebar.service';
 import { AuthService } from 'src/app/auth/services/auth.service';
+import { RoleService } from '../services/role.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -11,6 +12,7 @@ import { AuthService } from 'src/app/auth/services/auth.service';
 export class SidebarComponent {
   constructor(
     public sidebarService: SidebarService,
-    public authService: AuthService
+    public authService: AuthService,
+    public roleService: RoleService
   ) { }
 }

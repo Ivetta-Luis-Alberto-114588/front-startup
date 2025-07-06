@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
-import { map, catchError, tap, shareReplay } from 'rxjs/operators';
+import { map, catchError, tap, shareReplay, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { IDeliveryMethod, IDeliveryMethodsResponse } from '../models/idelivery-method';
+import { RoleService } from './role.service';
 
 @Injectable({
     providedIn: 'root'
@@ -23,7 +24,10 @@ export class DeliveryMethodService {
     public loading$ = this.loadingSubject.asObservable();
     public error$ = this.errorSubject.asObservable();
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private roleService: RoleService
+    ) { }
 
     /**
      * Obtiene todos los métodos de entrega activos disponibles para el cliente.
@@ -183,43 +187,61 @@ export class DeliveryMethodService {
 
     /**
      * Actualiza un método de entrega existente.
+     * Solo disponible para SUPER_ADMIN_ROLE.
      * @param id ID del método a actualizar
      * @param method Datos actualizados del método
      * @returns Observable con el método actualizado
      */
     updateDeliveryMethod(id: string, method: Partial<IDeliveryMethod>): Observable<IDeliveryMethod> {
-        this.loadingSubject.next(true);
-        return this.http.put<IDeliveryMethod>(`${this.apiUrl}/admin/delivery-methods/${id}`, method)
-            .pipe(
-                tap(() => {
-                    this.loadingSubject.next(false);
-                    this.clearCache(); // Limpiar cache después de actualizar
-                }),
-                catchError(error => {
-                    this.loadingSubject.next(false);
-                    return throwError(() => error);
-                })
-            );
+        return this.roleService.canUpdate().pipe(
+            switchMap(canUpdate => {
+                if (!canUpdate) {
+                    return throwError(() => new Error('No tienes permisos para actualizar métodos de entrega. Solo los Super Administradores pueden realizar esta acción.'));
+                }
+
+                this.loadingSubject.next(true);
+                return this.http.put<IDeliveryMethod>(`${this.apiUrl}/admin/delivery-methods/${id}`, method)
+                    .pipe(
+                        tap(() => {
+                            this.loadingSubject.next(false);
+                            this.clearCache(); // Limpiar cache después de actualizar
+                        }),
+                        catchError(error => {
+                            this.loadingSubject.next(false);
+                            return throwError(() => error);
+                        })
+                    );
+            })
+        );
     }
 
     /**
      * Elimina un método de entrega.
+     * Solo disponible para SUPER_ADMIN_ROLE.
      * @param id ID del método a eliminar
      * @returns Observable con confirmación de eliminación
      */
     deleteDeliveryMethod(id: string): Observable<void> {
-        this.loadingSubject.next(true);
-        return this.http.delete<void>(`${this.apiUrl}/admin/delivery-methods/${id}`)
-            .pipe(
-                tap(() => {
-                    this.loadingSubject.next(false);
-                    this.clearCache(); // Limpiar cache después de eliminar
-                }),
-                catchError(error => {
-                    this.loadingSubject.next(false);
-                    return throwError(() => error);
-                })
-            );
+        return this.roleService.canDelete().pipe(
+            switchMap(canDelete => {
+                if (!canDelete) {
+                    return throwError(() => new Error('No tienes permisos para eliminar métodos de entrega. Solo los Super Administradores pueden realizar esta acción.'));
+                }
+
+                this.loadingSubject.next(true);
+                return this.http.delete<void>(`${this.apiUrl}/admin/delivery-methods/${id}`)
+                    .pipe(
+                        tap(() => {
+                            this.loadingSubject.next(false);
+                            this.clearCache(); // Limpiar cache después de eliminar
+                        }),
+                        catchError(error => {
+                            this.loadingSubject.next(false);
+                            return throwError(() => error);
+                        })
+                    );
+            })
+        );
     }
 
     /**
