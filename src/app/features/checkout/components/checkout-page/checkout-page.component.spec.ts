@@ -415,7 +415,7 @@ describe('CheckoutPageComponent', () => {
 
                 expect(component.selectedAddressOption).toBe('new');
                 expect(cityService.getCities).toHaveBeenCalled();
-            });            it('should handle address loading error', () => {
+            }); it('should handle address loading error', () => {
                 addressService.getAddresses.and.returnValue(throwError(() => new Error('Address error')));
                 cityService.getCities.and.returnValue(of([mockCity]));
 
@@ -508,7 +508,7 @@ describe('CheckoutPageComponent', () => {
             expect(neighborhoodService.getNeighborhoodsByCity).toHaveBeenCalledWith('city-1');
             expect(component.neighborhoods).toEqual([mockNeighborhood]);
             expect(component.isLoadingNeighborhoods).toBe(false);
-        });        it('should handle neighborhoods loading error', () => {
+        }); it('should handle neighborhoods loading error', () => {
             neighborhoodService.getNeighborhoodsByCity.and.returnValue(throwError(() => new Error('Neighborhoods error')));
 
             component.loadNeighborhoods('city-1');
@@ -518,9 +518,9 @@ describe('CheckoutPageComponent', () => {
                 'Error'
             );
             expect(component.isLoadingNeighborhoods).toBe(false);
-        });        it('should clear neighborhoods when city changes to null', () => {
+        }); it('should clear neighborhoods when city changes to null', () => {
             component.neighborhoods = [mockNeighborhood];
-            
+
             // Manually call the logic that happens in the valueChanges subscription
             const neighborhoodControl = component.newAddressForm.get('neighborhoodId');
             neighborhoodControl?.reset();
@@ -533,7 +533,7 @@ describe('CheckoutPageComponent', () => {
         it('should enable neighborhood control when city is selected', () => {
             neighborhoodService.getNeighborhoodsByCity.and.returnValue(of([mockNeighborhood]));
             const neighborhoodControl = component.newAddressForm.get('neighborhoodId');
-            
+
             // Call the method directly instead of relying on valueChanges
             component.loadNeighborhoods('city-1');
 
@@ -543,7 +543,7 @@ describe('CheckoutPageComponent', () => {
         it('should disable neighborhood control when no city is selected', () => {
             const neighborhoodControl = component.newAddressForm.get('neighborhoodId');
             neighborhoodControl?.enable();
-            
+
             // Manually trigger the logic that happens when cityId is null
             neighborhoodControl?.reset();
             component.neighborhoods = [];
@@ -642,7 +642,7 @@ describe('CheckoutPageComponent', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = mockAddress.id;
 
-            component.onExistingAddressChange();            expect(checkoutStateService.setSelectedShippingAddress).toHaveBeenCalledWith({
+            component.onExistingAddressChange(); expect(checkoutStateService.setSelectedShippingAddress).toHaveBeenCalledWith({
                 type: 'existing',
                 address: mockAddress
             });
@@ -847,7 +847,7 @@ describe('CheckoutPageComponent', () => {
 
             expect(notificationService.showError).toHaveBeenCalledWith('Payment error', 'Error');
             expect(component.isProcessingOrder).toBe(false);
-        });        it('should handle missing payment preference init_point', () => {
+        }); it('should handle missing payment preference init_point', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
             const invalidPaymentResponse: ICreatePaymentResponse = {
@@ -862,7 +862,7 @@ describe('CheckoutPageComponent', () => {
                 'No se pudo iniciar el proceso de pago.',
                 'Error'
             );
-        });        it('should handle order creation without ID', () => {
+        }); it('should handle order creation without ID', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
             const orderWithoutId = { ...mockOrder, id: '' };
