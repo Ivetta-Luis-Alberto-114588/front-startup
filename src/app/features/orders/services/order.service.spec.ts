@@ -97,6 +97,7 @@ describe('OrderService', () => {
                 unitPrice: 15.00
             }
         ],
+        deliveryMethod: 'delivery-method-1',
         notes: 'Entrega en horario de oficina',
         selectedAddressId: 'addr-1'
     };
@@ -162,7 +163,8 @@ describe('OrderService', () => {
 
         it('should create order with minimal payload', () => {
             const minimalPayload: ICreateOrderPayload = {
-                items: [{ productId: 'prod-1', quantity: 1, unitPrice: 10.00 }]
+                items: [{ productId: 'prod-1', quantity: 1, unitPrice: 10.00 }],
+                deliveryMethod: 'delivery-method-1'
             };
 
             service.createOrder(minimalPayload).subscribe(order => {

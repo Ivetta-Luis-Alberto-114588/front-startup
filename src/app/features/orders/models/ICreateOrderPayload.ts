@@ -15,14 +15,24 @@ export interface ICreateOrderPayload {
     /** Código de cupón a aplicar. Opcional. */
     couponCode?: string;
 
+    /** 
+     * ID del método de entrega seleccionado. REQUERIDO.
+     * Debe corresponder a un método de entrega activo del sistema.
+     * Determina si se requiere dirección de envío o no.
+     */
+    deliveryMethod: string;
+
     // --- Opciones de Dirección de Envío ---
-    // El frontend debe enviar UNA de las siguientes opciones:
+    // IMPORTANTE: Los campos de shipping ahora son opcionales y dependen del método de entrega.
+    // Si deliveryMethod.requiresAddress = true, entonces se requieren los datos de envío.
+    // Si deliveryMethod.requiresAddress = false (ej: retiro en local), estos campos no son necesarios.
+    // El frontend debe enviar UNA de las siguientes opciones (solo si requiresAddress = true):
     // 1. selectedAddressId (si el usuario está logueado y elige una guardada)
     // 2. El conjunto de campos shipping... (si el usuario logueado ingresa una nueva O si es invitado)
 
     /**
      * ID de una dirección previamente guardada por el usuario.
-     * Solo aplica para usuarios autenticados.
+     * Solo aplica para usuarios autenticados y cuando deliveryMethod.requiresAddress = true.
      * Si se envía este campo, NO se deben enviar los campos shipping...
      * Opcional.
      */
@@ -30,19 +40,19 @@ export interface ICreateOrderPayload {
 
     /**
      * Nombre de la persona que recibe el envío.
-     * Requerido si NO se envía `selectedAddressId`.
+     * Requerido solo si deliveryMethod.requiresAddress = true Y NO se envía `selectedAddressId`.
      */
     shippingRecipientName?: string;
 
     /**
      * Teléfono de contacto para el envío.
-     * Requerido si NO se envía `selectedAddressId`.
+     * Requerido solo si deliveryMethod.requiresAddress = true Y NO se envía `selectedAddressId`.
      */
     shippingPhone?: string;
 
     /**
      * Dirección completa (calle, número, piso, etc.) para el envío.
-     * Requerido si NO se envía `selectedAddressId`.
+     * Requerido solo si deliveryMethod.requiresAddress = true Y NO se envía `selectedAddressId`.
      */
     shippingStreetAddress?: string;
 
@@ -51,7 +61,7 @@ export interface ICreateOrderPayload {
 
     /**
      * ID (de MongoDB) del barrio para el envío.
-     * Requerido si NO se envía `selectedAddressId`.
+     * Requerido solo si deliveryMethod.requiresAddress = true Y NO se envía `selectedAddressId`.
      */
     shippingNeighborhoodId?: string;
 

@@ -765,6 +765,7 @@ describe('CheckoutPageComponent', () => {
                         unitPrice: mockCartItem.unitPriceWithTax
                     })
                 ]),
+                deliveryMethod: jasmine.any(String),
                 selectedAddressId: 'addr-1'
             });
         }); it('should create order with new address', () => {
@@ -796,6 +797,7 @@ describe('CheckoutPageComponent', () => {
                         unitPrice: mockCartItem.unitPriceWithTax
                     })
                 ]),
+                deliveryMethod: jasmine.any(String),
                 shippingRecipientName: 'John Doe',
                 shippingPhone: '+1234567890',
                 shippingStreetAddress: '123 Main St',

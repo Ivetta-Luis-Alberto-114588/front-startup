@@ -247,6 +247,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         quantity: item.quantity,
         unitPrice: item.unitPriceWithTax // Enviar precio CON IVA como unitPrice
       })),
+      deliveryMethod: 'temp-delivery-method', // TODO: Reemplazar con método seleccionado por el usuario
       // Añadir couponCode si se implementa
     };
 
