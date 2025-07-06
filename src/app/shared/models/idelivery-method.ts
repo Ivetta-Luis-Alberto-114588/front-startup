@@ -13,13 +13,25 @@ export interface IDeliveryMethod {
     name: string;
 
     /** Descripción detallada para mostrar al usuario */
-    description: string;
+    description?: string;
+
+    /** Precio del método de entrega */
+    price: number;
 
     /** Indica si este método requiere que el usuario proporcione una dirección de envío */
     requiresAddress: boolean;
 
     /** Indica si el método está activo y disponible para selección */
     isActive: boolean;
+
+    /** Días estimados de entrega */
+    estimatedDeliveryDays?: number;
+
+    /** Peso máximo permitido en kg */
+    maxWeight?: number;
+
+    /** Áreas geográficas donde está disponible */
+    availableAreas?: string[];
 }
 
 /**

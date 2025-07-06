@@ -1,0 +1,37 @@
+// Usando principalmente Bootstrap - minimal custom styling
+
+.form-control:focus {
+  border-color: var(--bs-primary);
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+.card-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.border-bottom {
+  border-bottom: 1px solid #dee2e6 !important;
+}
+
+.input-group .form-control.is-invalid {
+  border-right: 1px solid #dc3545;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+// Vista previa
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+code {
+  font-size: 0.875em;
+}

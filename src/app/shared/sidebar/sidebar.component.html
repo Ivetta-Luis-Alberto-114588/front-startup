@@ -176,6 +176,15 @@
           </a>
         </li>
 
+        <!-- === NUEVO ENLACE PARA MÉTODOS DE ENTREGA === -->
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/delivery-methods" routerLinkActive="active">
+            <i class="bi bi-truck me-2"></i> <!-- Icono para métodos de entrega -->
+            <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Métodos de Entrega</span>
+          </a>
+        </li>
+        <!-- === FIN NUEVO ENLACE === -->
+
         <!-- === FIN NUEVO ENLACE === -->
 
 

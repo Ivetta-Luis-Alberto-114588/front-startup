@@ -161,10 +161,11 @@ describe('OrderService', () => {
             req.flush(errorMessage, { status: 400, statusText: 'Bad Request' });
         });
 
-        it('should create order with minimal payload', () => {
+        it('should create order with minimal payload using selected address', () => {
             const minimalPayload: ICreateOrderPayload = {
                 items: [{ productId: 'prod-1', quantity: 1, unitPrice: 10.00 }],
-                deliveryMethod: 'delivery-method-1'
+                deliveryMethod: 'delivery-method-1',
+                selectedAddressId: 'address-123'
             };
 
             service.createOrder(minimalPayload).subscribe(order => {
@@ -173,7 +174,8 @@ describe('OrderService', () => {
 
             const req = httpMock.expectOne(apiUrl);
             expect(req.request.body.items.length).toBe(1);
-            expect(req.request.body.notes).toBeUndefined();
+            expect(req.request.body.selectedAddressId).toBe('address-123');
+            expect(req.request.body.notes).toContain('Pedido realizado desde el checkout');
             req.flush(mockOrder);
         });
 

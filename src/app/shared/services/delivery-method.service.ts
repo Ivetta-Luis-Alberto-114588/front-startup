@@ -130,4 +130,105 @@ export class DeliveryMethodService {
         this.clearCache();
         return this.getActiveDeliveryMethods();
     }
+
+    /**
+     * ADMIN METHODS - Para gestión administrativa de métodos de entrega
+     */
+
+    /**
+     * Obtiene TODOS los métodos de entrega (activos e inactivos) para administración.
+     * @returns Observable con array de todos los métodos de entrega
+     */
+    getAllDeliveryMethods(): Observable<IDeliveryMethod[]> {
+        this.loadingSubject.next(true);
+        return this.http.get<IDeliveryMethodsResponse>(`${this.apiUrl}/admin/delivery-methods`)
+            .pipe(
+                map(response => response.deliveryMethods),
+                tap(() => this.loadingSubject.next(false)),
+                catchError(error => {
+                    this.loadingSubject.next(false);
+                    let errorMessage = 'Error al cargar métodos de entrega';
+                    if (error.status === 0) {
+                        errorMessage = 'No se pudo conectar con el servidor';
+                    } else if (error.status >= 500) {
+                        errorMessage = 'Error interno del servidor';
+                    } else if (error.error?.message) {
+                        errorMessage = error.error.message;
+                    }
+                    this.errorSubject.next(errorMessage);
+                    return throwError(() => error);
+                })
+            );
+    }
+
+    /**
+     * Crea un nuevo método de entrega.
+     * @param method Datos del método de entrega a crear
+     * @returns Observable con el método creado
+     */
+    createDeliveryMethod(method: Omit<IDeliveryMethod, 'id'>): Observable<IDeliveryMethod> {
+        this.loadingSubject.next(true);
+        return this.http.post<IDeliveryMethod>(`${this.apiUrl}/admin/delivery-methods`, method)
+            .pipe(
+                tap(() => {
+                    this.loadingSubject.next(false);
+                    this.clearCache(); // Limpiar cache después de crear
+                }),
+                catchError(error => {
+                    this.loadingSubject.next(false);
+                    return throwError(() => error);
+                })
+            );
+    }
+
+    /**
+     * Actualiza un método de entrega existente.
+     * @param id ID del método a actualizar
+     * @param method Datos actualizados del método
+     * @returns Observable con el método actualizado
+     */
+    updateDeliveryMethod(id: string, method: Partial<IDeliveryMethod>): Observable<IDeliveryMethod> {
+        this.loadingSubject.next(true);
+        return this.http.put<IDeliveryMethod>(`${this.apiUrl}/admin/delivery-methods/${id}`, method)
+            .pipe(
+                tap(() => {
+                    this.loadingSubject.next(false);
+                    this.clearCache(); // Limpiar cache después de actualizar
+                }),
+                catchError(error => {
+                    this.loadingSubject.next(false);
+                    return throwError(() => error);
+                })
+            );
+    }
+
+    /**
+     * Elimina un método de entrega.
+     * @param id ID del método a eliminar
+     * @returns Observable con confirmación de eliminación
+     */
+    deleteDeliveryMethod(id: string): Observable<void> {
+        this.loadingSubject.next(true);
+        return this.http.delete<void>(`${this.apiUrl}/admin/delivery-methods/${id}`)
+            .pipe(
+                tap(() => {
+                    this.loadingSubject.next(false);
+                    this.clearCache(); // Limpiar cache después de eliminar
+                }),
+                catchError(error => {
+                    this.loadingSubject.next(false);
+                    return throwError(() => error);
+                })
+            );
+    }
+
+    /**
+     * Activa o desactiva un método de entrega.
+     * @param id ID del método
+     * @param isActive Estado activo/inactivo
+     * @returns Observable con el método actualizado
+     */
+    toggleDeliveryMethodStatus(id: string, isActive: boolean): Observable<IDeliveryMethod> {
+        return this.updateDeliveryMethod(id, { isActive });
+    }
 }

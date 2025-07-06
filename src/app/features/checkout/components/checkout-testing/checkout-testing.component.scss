@@ -1,0 +1,16 @@
+/* Solo Bootstrap - sin estilos personalizados */
+
+/* Animación para elementos en rotación */
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

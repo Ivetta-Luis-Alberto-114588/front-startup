@@ -28,6 +28,8 @@ import { OrderStatusFormComponent } from './pages/order-status-form/order-status
 import { PaymentMethodListComponent } from './pages/payment-method-list/payment-method-list.component';
 import { PaymentMethodFormComponent } from './pages/payment-method-form/payment-method-form.component';
 import { TelegramTestComponent } from './pages/telegram-test/telegram-test.component';
+import { DeliveryMethodListComponent } from './pages/delivery-method-list/delivery-method-list.component';
+import { DeliveryMethodFormComponent } from './pages/delivery-method-form/delivery-method-form.component';
 // Importa aquí otros componentes de admin a medida que los crees
 
 const routes: Routes = [
@@ -219,6 +221,21 @@ const routes: Routes = [
     component: TelegramTestComponent
   },
   // --- FIN RUTAS TELEGRAM ---
+
+  // --- RUTAS DELIVERY METHODS ---
+  {
+    path: 'delivery-methods', // -> /admin/delivery-methods
+    component: DeliveryMethodListComponent
+  },
+  {
+    path: 'delivery-methods/create', // -> /admin/delivery-methods/create
+    component: DeliveryMethodFormComponent
+  },
+  {
+    path: 'delivery-methods/edit/:id', // -> /admin/delivery-methods/edit/123
+    component: DeliveryMethodFormComponent
+  },
+  // --- FIN RUTAS DELIVERY METHODS ---
 
   // Ruta por defecto si se entra a /admin sin subruta específica
   // Cambiar a un dashboard si lo creas, o mantener categorías

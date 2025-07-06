@@ -14,6 +14,7 @@ describe('DeliveryMethodService', () => {
             code: 'SHIPPING',
             name: 'Envío a Domicilio',
             description: 'Recibe tu pedido en la puerta de tu casa.',
+            price: 150.00,
             requiresAddress: true,
             isActive: true
         },
@@ -22,6 +23,7 @@ describe('DeliveryMethodService', () => {
             code: 'PICKUP',
             name: 'Retiro en Local',
             description: 'Acércate a nuestra tienda a retirar tu pedido.',
+            price: 0.00,
             requiresAddress: false,
             isActive: true
         }

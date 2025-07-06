@@ -136,6 +136,7 @@ describe('CheckoutPageComponent', () => {
             code: 'SHIPPING',
             name: 'Envío a Domicilio',
             description: 'Recibe tu pedido en la puerta de tu casa.',
+            price: 150.00,
             requiresAddress: true,
             isActive: true
         },
@@ -144,6 +145,7 @@ describe('CheckoutPageComponent', () => {
             code: 'PICKUP',
             name: 'Retiro en Local',
             description: 'Acércate a nuestra tienda a retirar tu pedido.',
+            price: 0.00,
             requiresAddress: false,
             isActive: true
         }
@@ -824,6 +826,7 @@ describe('CheckoutPageComponent', () => {
                     })
                 ]),
                 deliveryMethod: jasmine.any(String),
+                notes: jasmine.any(String),
                 selectedAddressId: 'addr-1'
             });
         }); it('should create order with new address', () => {
@@ -856,6 +859,7 @@ describe('CheckoutPageComponent', () => {
                     })
                 ]),
                 deliveryMethod: jasmine.any(String),
+                notes: jasmine.any(String),
                 shippingRecipientName: 'John Doe',
                 shippingPhone: '+1234567890',
                 shippingStreetAddress: '123 Main St',
@@ -892,7 +896,7 @@ describe('CheckoutPageComponent', () => {
 
             component.confirmOrder();
 
-            expect(notificationService.showError).toHaveBeenCalledWith('Order creation failed', 'Error');
+            expect(notificationService.showError).toHaveBeenCalledWith('Ocurrió un error al procesar tu pedido.', 'Error en Pedido');
             expect(component.isProcessingOrder).toBe(false);
         });
 
@@ -903,7 +907,7 @@ describe('CheckoutPageComponent', () => {
 
             component.confirmOrder();
 
-            expect(notificationService.showError).toHaveBeenCalledWith('Payment error', 'Error');
+            expect(notificationService.showError).toHaveBeenCalledWith('Ocurrió un error al procesar tu pedido.', 'Error en Pedido');
             expect(component.isProcessingOrder).toBe(false);
         }); it('should handle missing payment preference init_point', () => {
             component.selectedAddressOption = 'existing';
@@ -917,8 +921,8 @@ describe('CheckoutPageComponent', () => {
             component.confirmOrder();
 
             expect(notificationService.showError).toHaveBeenCalledWith(
-                'No se pudo iniciar el proceso de pago.',
-                'Error'
+                'No se pudo inicializar el pago. Inténtalo nuevamente.',
+                'Error de Pago'
             );
         }); it('should handle order creation without ID', () => {
             component.selectedAddressOption = 'existing';
@@ -929,8 +933,8 @@ describe('CheckoutPageComponent', () => {
             component.confirmOrder();
 
             expect(notificationService.showError).toHaveBeenCalledWith(
-                'No se recibió ID de la orden creada.',
-                'Error'
+                'Ocurrió un error al procesar tu pedido.',
+                'Error en Pedido'
             );
             expect(paymentService.createPaymentPreference).not.toHaveBeenCalled();
         });

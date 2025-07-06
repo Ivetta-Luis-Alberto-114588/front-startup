@@ -1,0 +1,208 @@
+<div class="container-fluid py-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="h3 mb-0">
+        <i class="bi bi-truck me-2"></i>
+        Métodos de Entrega
+      </h2>
+      <p class="text-muted mb-0">Gestión de métodos de entrega disponibles</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button 
+        type="button" 
+        class="btn btn-outline-secondary"
+        (click)="refreshList()"
+        [disabled]="loading">
+        <i class="bi bi-arrow-clockwise me-1"></i>
+        Actualizar
+      </button>
+      <a 
+        routerLink="/admin/delivery-methods/create" 
+        class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>
+        Nuevo Método
+      </a>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="d-flex justify-content-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Delivery Methods Table -->
+  <div *ngIf="!loading" class="card shadow-sm">
+    <div class="card-header bg-light">
+      <h5 class="card-title mb-0">
+        <i class="bi bi-list-ul me-2"></i>
+        Lista de Métodos
+      </h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Estado</th>
+              <th scope="col">Método</th>
+              <th scope="col">Código</th>
+              <th scope="col">Precio</th>
+              <th scope="col">Requiere Dirección</th>
+              <th scope="col">Descripción</th>
+              <th scope="col" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let method of deliveryMethods$ | async; trackBy: trackByMethodId">
+              <!-- Estado Active/Inactive -->
+              <td>
+                <div class="form-check form-switch">
+                  <input 
+                    class="form-check-input" 
+                    type="checkbox" 
+                    [checked]="method.isActive"
+                    [disabled]="loading"
+                    (change)="toggleActive(method)">
+                  <label class="form-check-label">
+                    <span class="badge" 
+                          [class]="method.isActive ? 'bg-success' : 'bg-secondary'">
+                      {{ method.isActive ? 'Activo' : 'Inactivo' }}
+                    </span>
+                  </label>
+                </div>
+              </td>
+
+              <!-- Nombre del método -->
+              <td>
+                <div class="d-flex align-items-center">
+                  <i class="bi me-2" 
+                     [class]="getMethodIcon(method.code)"></i>
+                  <strong>{{ method.name }}</strong>
+                </div>
+              </td>
+
+              <!-- Código -->
+              <td>
+                <code class="bg-light px-2 py-1 rounded">{{ method.code }}</code>
+              </td>
+
+              <!-- Precio -->
+              <td>
+                <span class="fw-bold text-success">
+                  ${{ method.price | number:'1.2-2' }}
+                </span>
+              </td>
+
+              <!-- Requiere dirección -->
+              <td>
+                <span class="badge" 
+                      [class]="method.requiresAddress ? 'bg-warning' : 'bg-info'">
+                  <i class="bi me-1" 
+                     [class]="method.requiresAddress ? 'bi-geo-alt-fill' : 'bi-shop'"></i>
+                  {{ method.requiresAddress ? 'Sí' : 'No' }}
+                </span>
+              </td>
+
+              <!-- Descripción -->
+              <td>
+                <small class="text-muted">
+                  {{ method.description || 'Sin descripción' }}
+                </small>
+              </td>
+
+              <!-- Acciones -->
+              <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <a 
+                    [routerLink]="['/admin/delivery-methods/edit', method.id]" 
+                    class="btn btn-outline-primary"
+                    title="Editar método">
+                    <i class="bi bi-pencil-square"></i>
+                  </a>
+                  <button 
+                    type="button" 
+                    class="btn btn-outline-danger"
+                    (click)="deleteMethod(method)"
+                    [disabled]="loading"
+                    title="Eliminar método">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="(deliveryMethods$ | async)?.length === 0" class="text-center py-5">
+        <i class="bi bi-truck display-1 text-muted"></i>
+        <h4 class="mt-3 text-muted">No hay métodos de entrega</h4>
+        <p class="text-muted">Comience creando su primer método de entrega</p>
+        <a routerLink="/admin/delivery-methods/create" class="btn btn-primary">
+          <i class="bi bi-plus-lg me-1"></i>
+          Crear Primer Método
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mt-4" *ngIf="deliveryMethods$ | async as methods">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">Total Métodos</h6>
+              <h3 class="mb-0">{{ methods.length }}</h3>
+            </div>
+            <i class="bi bi-truck display-6 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">Activos</h6>
+              <h3 class="mb-0">{{ getActiveMethodsCount(methods) }}</h3>
+            </div>
+            <i class="bi bi-check-circle display-6 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">Con Entrega</h6>
+              <h3 class="mb-0">{{ getShippingMethodsCount(methods) }}</h3>
+            </div>
+            <i class="bi bi-geo-alt display-6 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">Retiro en Local</h6>
+              <h3 class="mb-0">{{ getPickupMethodsCount(methods) }}</h3>
+            </div>
+            <i class="bi bi-shop display-6 opacity-50"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

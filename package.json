@@ -7,10 +7,13 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:coverage": "ng test --code-coverage --watch=false --browsers=ChromeHeadless",
-    "test:coverage:open": "ng test --code-coverage --watch=false --browsers=ChromeHeadless && start coverage/test2/index.html",
+    "test:coverage": "ng test --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox",
+    "test:coverage:open": "ng test --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox && start coverage/test2/index.html",
     "test:watch": "ng test --watch",
-    "test:ci": "ng test --watch=false --browsers=ChromeHeadless"
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessNoSandbox",
+    "test:checkout": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --watch=false --browsers=ChromeHeadlessNoSandbox",
+    "test:checkout:coverage": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --karma-config=karma-checkout.conf.js --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox",
+    "test:checkout:coverage:open": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --karma-config=karma-checkout.conf.js --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox && start coverage/checkout/index.html"
   },
   "private": true,
   "dependencies": {

@@ -23,18 +23,87 @@
                 <i class="bi bi-shield-check me-1"></i>Compra Segura
             </span>
         </div>
-    </div> <!-- Indicador de Progreso Simple -->
+    </div>
+
+    <!-- Indicador de Progreso Paso a Paso -->
     <div class="card mb-4">
         <div class="card-body py-3">
-            <div class="progress" style="height: 8px;">
+            <div class="row align-items-center text-center">
+                <!-- Paso 1: Método de Entrega -->
+                <div class="col-3">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mb-2"
+                            style="width: 40px; height: 40px;" [class.bg-success]="isStep1Complete()"
+                            [class.bg-primary]="!isStep1Complete()" [class.text-white]="true">
+                            <i class="bi" [class.bi-check-lg]="isStep1Complete()"
+                                [class.bi-1-circle]="!isStep1Complete()"></i>
+                        </div>
+                        <small class="fw-bold" [class.text-success]="isStep1Complete()"
+                            [class.text-primary]="!isStep1Complete()">
+                            Método de Entrega
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Paso 2: Dirección -->
+                <div class="col-3">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mb-2"
+                            style="width: 40px; height: 40px;" [class.bg-success]="canShowStep2() && isStep2Complete()"
+                            [class.bg-primary]="canShowStep2() && !isStep2Complete()"
+                            [class.bg-secondary]="!canShowStep2()" [class.text-white]="true">
+                            <i class="bi" [class.bi-check-lg]="canShowStep2() && isStep2Complete()"
+                                [class.bi-2-circle]="canShowStep2() && !isStep2Complete()"
+                                [class.bi-2-circle]="!canShowStep2()"></i>
+                        </div>
+                        <small class="fw-bold" [class.text-success]="canShowStep2() && isStep2Complete()"
+                            [class.text-primary]="canShowStep2() && !isStep2Complete()"
+                            [class.text-muted]="!canShowStep2()">
+                            Dirección
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Paso 3: Método de Pago -->
+                <div class="col-3">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mb-2"
+                            style="width: 40px; height: 40px;" [class.bg-success]="canShowStep3() && isStep3Complete()"
+                            [class.bg-primary]="canShowStep3() && !isStep3Complete()"
+                            [class.bg-secondary]="!canShowStep3()" [class.text-white]="true">
+                            <i class="bi" [class.bi-check-lg]="canShowStep3() && isStep3Complete()"
+                                [class.bi-3-circle]="canShowStep3() && !isStep3Complete()"
+                                [class.bi-3-circle]="!canShowStep3()"></i>
+                        </div>
+                        <small class="fw-bold" [class.text-success]="canShowStep3() && isStep3Complete()"
+                            [class.text-primary]="canShowStep3() && !isStep3Complete()"
+                            [class.text-muted]="!canShowStep3()">
+                            Método de Pago
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Paso 4: Confirmación -->
+                <div class="col-3">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mb-2"
+                            style="width: 40px; height: 40px;" [class.bg-success]="canShowStep4()"
+                            [class.bg-secondary]="!canShowStep4()" [class.text-white]="true">
+                            <i class="bi" [class.bi-check-lg]="canShowStep4()"
+                                [class.bi-4-circle]="!canShowStep4()"></i>
+                        </div>
+                        <small class="fw-bold" [class.text-success]="canShowStep4()"
+                            [class.text-muted]="!canShowStep4()">
+                            Listo
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress mt-3" style="height: 8px;">
                 <div class="progress-bar bg-success" role="progressbar" [style.width]="getProgressPercentage() + '%'"
                     [attr.aria-valuenow]="getProgressPercentage()" aria-valuemin="0" aria-valuemax="100">
                 </div>
-            </div>
-            <div class="d-flex justify-content-between mt-2">
-                <small class="text-muted">Método de Entrega</small>
-                <small class="text-muted">Dirección</small>
-                <small class="text-muted">Pago</small>
             </div>
         </div>
     </div>
@@ -128,10 +197,16 @@
                             </div>
                         </div>
                     </div>
-                </div> <!-- Sección Dirección de Envío (solo si el método seleccionado lo requiere) -->
-                <div class="card mb-4" *ngIf="shouldShowAddressSection$ | async">
+                </div>
+                <!-- Paso 2: Sección Dirección de Envío (solo si el paso 1 está completo y requiere dirección) -->
+                <div class="card mb-4" *ngIf="canShowStep2() && selectedDeliveryMethod?.requiresAddress">
                     <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Dirección de Envío</h5>
+                        <h5 class="mb-0">
+                            <i class="bi bi-geo-alt me-2"></i>Paso 2: Dirección de Envío
+                            <span *ngIf="isStep2Complete()" class="badge bg-success ms-2">
+                                <i class="bi bi-check-lg me-1"></i>Completado
+                            </span>
+                        </h5>
                     </div>
                     <div class="card-body"> <!-- Opciones solo si está autenticado y tiene direcciones -->
                         <ng-container *ngIf="(isAuthenticated$ | async) && addresses.length > 0">
@@ -259,10 +334,15 @@
                             </div>
                         </form>
                     </div>
-                </div> <!-- Sección Método de Pago -->
-                <div class="card mb-4">
+                </div> <!-- Paso 3: Sección Método de Pago (solo si los pasos anteriores están completos) -->
+                <div class="card mb-4" *ngIf="canShowStep3()">
                     <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Método de Pago</h5>
+                        <h5 class="mb-0">
+                            <i class="bi bi-credit-card me-2"></i>Paso 3: Método de Pago
+                            <span *ngIf="isStep3Complete()" class="badge bg-success ms-2">
+                                <i class="bi bi-check-lg me-1"></i>Completado
+                            </span>
+                        </h5>
                     </div>
                     <div class="card-body">
                         <div class="form-check">
@@ -281,7 +361,12 @@
             <div class="col-lg-5">
                 <div class="card sticky-top" style="top: 90px;">
                     <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0"><i class="bi bi-cart3 me-2"></i>Resumen del Pedido</h5>
+                        <h5 class="mb-0">
+                            <i class="bi bi-cart3 me-2"></i>Resumen del Pedido
+                            <span *ngIf="canShowStep4()" class="badge bg-success ms-2">
+                                <i class="bi bi-check-lg me-1"></i>Listo
+                            </span>
+                        </h5>
                     </div>
                     <div class="card-body" *ngIf="cart$ | async as cart">
                         <ul class="list-group list-group-flush">
@@ -307,13 +392,48 @@
                                 <strong class="h5">{{ cart.total | currency }}</strong>
                             </li>
                         </ul>
+
+                        <!-- Resumen del método de entrega -->
+                        <div *ngIf="selectedDeliveryMethod" class="mt-3 p-3 bg-light rounded">
+                            <h6 class="mb-2">Método de Entrega:</h6>
+                            <div class="d-flex align-items-center">
+                                <i
+                                    class="bi {{ getDeliveryMethodIcon(selectedDeliveryMethod.code) }} me-2 text-primary"></i>
+                                <strong>{{ selectedDeliveryMethod.name }}</strong>
+                            </div>
+                            <small class="text-muted">{{ selectedDeliveryMethod.description }}</small>
+                        </div>
+
+                        <!-- Resumen de dirección si aplica -->
+                        <div *ngIf="selectedDeliveryMethod?.requiresAddress && isStep2Complete()"
+                            class="mt-3 p-3 bg-light rounded">
+                            <h6 class="mb-2">Dirección de Entrega:</h6>
+                            <div *ngIf="selectedAddressOption === 'existing' && selectedExistingAddressId">
+                                <small class="text-muted">Dirección guardada seleccionada</small>
+                            </div>
+                            <div *ngIf="selectedAddressOption === 'new' && newAddressForm.valid">
+                                <small class="text-muted">
+                                    {{ newAddressForm.get('streetAddress')?.value }}<br>
+                                    {{ newAddressForm.get('recipientName')?.value }}
+                                </small>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-footer">
-                        <button class="btn btn-primary btn-lg w-100" (click)="confirmOrder()"
-                            [disabled]="!(isCheckoutValid$ | async) || isProcessingOrder">
+                        <button class="btn btn-lg w-100" [class.btn-success]="canShowStep4()"
+                            [class.btn-secondary]="!canShowStep4()" (click)="confirmOrder()"
+                            [disabled]="!canShowStep4() || isProcessingOrder">
                             <span *ngIf="isProcessingOrder" class="spinner-border spinner-border-sm me-2" role="status"
                                 aria-hidden="true"></span>
-                            {{ isProcessingOrder ? 'Procesando...' : 'Confirmar y Pagar' }}
+                            <span *ngIf="!canShowStep4() && !isProcessingOrder">
+                                <i class="bi bi-hourglass me-2"></i>Complete los pasos anteriores
+                            </span>
+                            <span *ngIf="canShowStep4() && !isProcessingOrder">
+                                <i class="bi bi-check-circle me-2"></i>Confirmar y Pagar
+                            </span>
+                            <span *ngIf="isProcessingOrder">
+                                Procesando...
+                            </span>
                         </button>
                     </div>
                 </div>

@@ -30,6 +30,8 @@ import { OrderStatusFormComponent } from './pages/order-status-form/order-status
 import { PaymentMethodListComponent } from './pages/payment-method-list/payment-method-list.component';
 import { PaymentMethodFormComponent } from './pages/payment-method-form/payment-method-form.component';
 import { TelegramTestComponent } from './pages/telegram-test/telegram-test.component';
+import { DeliveryMethodListComponent } from './pages/delivery-method-list/delivery-method-list.component';
+import { DeliveryMethodFormComponent } from './pages/delivery-method-form/delivery-method-form.component';
 
 @NgModule({
   declarations: [
@@ -59,6 +61,8 @@ import { TelegramTestComponent } from './pages/telegram-test/telegram-test.compo
     PaymentMethodListComponent,
     PaymentMethodFormComponent,
     TelegramTestComponent,
+    DeliveryMethodListComponent,
+    DeliveryMethodFormComponent,
   ],
   imports: [
     AdminRoutingModule,

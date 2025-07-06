@@ -40,13 +40,17 @@ module.exports = function (config) {
                 base: 'ChromeHeadless',
                 flags: [
                     '--no-sandbox',
-                    // Required for running Chrome in a containerized environment
-                    '--disable-dev-shm-usage'
+                    '--disable-dev-shm-usage',
+                    '--disable-web-security',
+                    '--disable-features=VizDisplayCompositor',
+                    '--remote-debugging-port=9222'
                 ]
             }
         },
-        browserDisconnectTimeout: 10000, // Default is 2000
-        browserNoActivityTimeout: 60000, // Default is 30000
+        browserDisconnectTimeout: 60000, // 1 minuto
+        browserNoActivityTimeout: 120000, // 2 minutos  
+        captureTimeout: 60000, // 1 minuto
+        pingTimeout: 120000, // 2 minutos
         singleRun: false,
         restartOnFileChange: true
     });

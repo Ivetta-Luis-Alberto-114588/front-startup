@@ -200,11 +200,11 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     if (this.selectedAddressOption === 'new') {
       this.selectedExistingAddressId = null;
     }
-    this.updateCheckoutState(); // Actualizar estado al cambiar opción
+    this.updateCheckoutSteps(); // Actualizar estado de los pasos
   }
 
   onExistingAddressChange(): void {
-    this.updateCheckoutState(); // Actualizar estado al seleccionar dirección existente
+    this.updateCheckoutSteps(); // Actualizar estado de los pasos
   }
 
   // Método para actualizar el estado del checkout
@@ -239,104 +239,174 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
 
   // Lógica final para confirmar y pagar
   confirmOrder(): void {
-    // Validar que se haya seleccionado un método de entrega
+    try {
+      // Validaciones usando el nuevo servicio mejorado
+      this.validateOrderBeforeCreation();
+
+      this.isProcessingOrder = true;
+      const cart = this.cartService.getCurrentCartValue();
+
+      if (!cart || cart.items.length === 0) {
+        this.notificationService.showError('Tu carrito está vacío.');
+        this.isProcessingOrder = false;
+        this.router.navigate(['/cart']);
+        return;
+      }
+
+      // Construir el payload con las mejoras del servicio
+      const orderPayload = this.buildOrderPayload(cart);
+
+      // Crear la orden con las validaciones integradas
+      this.processOrder(orderPayload);
+
+    } catch (error: any) {
+      this.notificationService.showWarning(error.message || 'Error en la validación del pedido.');
+      this.isProcessingOrder = false;
+    }
+  }
+
+  /**
+   * Validaciones específicas antes de crear la orden
+   */
+  private validateOrderBeforeCreation(): void {
+    // Validar método de entrega
     if (!this.selectedDeliveryMethod) {
-      this.notificationService.showWarning('Por favor, selecciona un método de entrega.');
-      return;
+      throw new Error('Por favor, selecciona un método de entrega.');
     }
 
     // Validar dirección solo si el método requiere dirección
-    if (this.selectedDeliveryMethod.requiresAddress && (!this.isAddressSelectedOrValid || this.isProcessingOrder)) {
-      this.notificationService.showWarning('Por favor, selecciona o completa una dirección de envío válida.');
-      this.newAddressForm.markAllAsTouched(); // Mostrar errores del formulario si es 'new'
-      return;
+    if (this.selectedDeliveryMethod.requiresAddress) {
+      if (!this.isAddressSelectedOrValid) {
+        this.newAddressForm.markAllAsTouched(); // Mostrar errores del formulario
+        throw new Error('Por favor, selecciona o completa una dirección de envío válida.');
+      }
     }
 
-    this.isProcessingOrder = true;
-    const cart = this.cartService.getCurrentCartValue(); // Obtener carrito actual
-
-    if (!cart || cart.items.length === 0) {
-      this.notificationService.showError('Tu carrito está vacío.');
-      this.isProcessingOrder = false;
-      this.router.navigate(['/cart']);
-      return;
+    // Validar que no esté ya procesando
+    if (this.isProcessingOrder) {
+      throw new Error('Ya se está procesando tu pedido.');
     }
+  }
 
-    // Construir el payload para la API de creación de orden
+  /**
+   * Construye el payload adaptado según el método de entrega
+   */
+  private buildOrderPayload(cart: ICart): ICreateOrderPayload {
     let orderPayload: ICreateOrderPayload = {
       items: cart.items.map(item => ({
         productId: item.product.id,
         quantity: item.quantity,
-        unitPrice: item.unitPriceWithTax // Enviar precio CON IVA como unitPrice
+        unitPrice: item.unitPriceWithTax
       })),
-      deliveryMethod: this.selectedDeliveryMethod.id, // Usar el método seleccionado
-      // Añadir couponCode si se implementa
+      deliveryMethod: this.selectedDeliveryMethod!.id,
+      notes: `Pedido realizado desde el checkout - Método: ${this.selectedDeliveryMethod!.name}`
     };
 
-    // Añadir datos de dirección al payload SOLO si el método de entrega lo requiere
-    if (this.selectedDeliveryMethod.requiresAddress) {
-      if (this.selectedAddressOption === 'existing') {
+    // Añadir datos de dirección SOLO si el método de entrega lo requiere
+    if (this.selectedDeliveryMethod!.requiresAddress) {
+      if (this.selectedAddressOption === 'existing' && this.selectedExistingAddressId) {
         orderPayload.selectedAddressId = this.selectedExistingAddressId;
-      } else if (this.selectedAddressOption === 'new') {
+      } else if (this.selectedAddressOption === 'new' && this.newAddressForm.valid) {
         const formValue = this.newAddressForm.value;
         orderPayload = {
           ...orderPayload,
           shippingRecipientName: formValue.recipientName,
           shippingPhone: formValue.phone,
           shippingStreetAddress: formValue.streetAddress,
-          shippingPostalCode: formValue.postalCode,
+          shippingPostalCode: formValue.postalCode || '',
           shippingNeighborhoodId: formValue.neighborhoodId,
-          // shippingCityId: formValue.cityId, // El backend lo deriva del barrio
-          shippingAdditionalInfo: formValue.additionalInfo,
-          // Si es invitado, añadir customerName y customerEmail (necesitarías campos extra en el form)
+          shippingAdditionalInfo: formValue.additionalInfo || ''
         };
+
+        // Para invitados, agregar datos del cliente
+        // Nota: En una implementación completa, necesitarías campos adicionales en el formulario
+        this.authService.isAuthenticated$.pipe(
+          switchMap(isAuth => {
+            if (!isAuth) {
+              orderPayload.customerName = formValue.recipientName;
+              orderPayload.customerEmail = 'guest@checkout.com'; // Temporal - necesitarías campo email
+            }
+            return of(orderPayload);
+          })
+        ).subscribe();
       }
     }
 
-    // 1. Crear la orden
+    return orderPayload;
+  }
+
+  /**
+   * Procesa la orden con manejo de errores mejorado
+   */
+  private processOrder(orderPayload: ICreateOrderPayload): void {
     this.orderService.createOrder(orderPayload).pipe(
-      tap(() => this.notificationService.showInfo('Procesando pago...', 'Orden Creada')),
-      // 2. Si la orden se crea, crear la preferencia de pago
+      tap(() => {
+        this.notificationService.showInfo('Procesando pago...', 'Orden Creada');
+        console.log('✅ Orden creada exitosamente con método:', this.selectedDeliveryMethod?.name);
+      }),
+      // Crear preferencia de pago
       switchMap(createdOrder => {
-        if (!createdOrder || !createdOrder.id) {
+        if (!createdOrder?.id) {
           throw new Error('No se recibió ID de la orden creada.');
         }
-
-
-        //enviar notificación a Telegram
-        // this.telegramNotificationService.sendMessage("checkout-page.component.ts --> " + JSON.stringify({ text: createdOrder, parse_mode: 'HTML' }))
-
-
         return this.paymentService.createPaymentPreference(createdOrder.id);
       }),
       catchError(err => {
-        const message = err.error?.error || err.message || 'Ocurrió un error al procesar tu pedido.';
-        this.notificationService.showError(message, 'Error');
-        this.isProcessingOrder = false;
-        return EMPTY; // Detener el flujo
+        this.handleOrderError(err);
+        return EMPTY;
       }),
-      finalize(() => this.isProcessingOrder = false) // Asegurar que el flag se resetea
+      finalize(() => this.isProcessingOrder = false)
     ).subscribe({
       next: (preference) => {
-
-
-        // ✅ NOTIFICACIÓN ELIMINADA - Ahora se envía desde el backend cuando el pago es aprobado
-        // una vez que se creo la orden
-        // this.telegramNotificationService.sendMessage('[checkout-page.component.ts] Preferencia de pago creada:' + JSON.stringify({ text: preference, parse_mode: 'HTML' }))
-
-
+        console.log('✅ Preferencia de pago creada:', preference);
 
         if (preference?.preference?.init_point) {
-          // 3. Redirigir a Mercado Pago
-          this.notificationService.showSuccess('Redirigiendo a Mercado Pago...');
-          // IMPORTANTE: NO limpiar el carrito aquí - se limpiará solo cuando el pago sea exitoso
-          this.navigateToPayment(preference.preference.init_point);
+          // Limpiar carrito antes de redirigir a Mercado Pago
+          this.cartService.clearCart().subscribe({
+            next: () => {
+              console.log('✅ Carrito limpiado exitosamente');
+              // Redirigir a Mercado Pago
+              this.navigateToPayment(preference.preference.init_point);
+            },
+            error: (err) => {
+              console.warn('⚠️ Error al limpiar carrito:', err);
+              // Redirigir de todas formas
+              this.navigateToPayment(preference.preference.init_point);
+            }
+          });
         } else {
-          this.notificationService.showError('No se pudo iniciar el proceso de pago.', 'Error');
+          this.notificationService.showError('No se pudo inicializar el pago. Inténtalo nuevamente.', 'Error de Pago');
         }
+      },
+      error: (err) => {
+        console.error('❌ Error final en processOrder:', err);
+        this.handleOrderError(err);
       }
-      // El error ya se maneja en catchError
     });
+  }
+
+  /**
+   * Maneja errores específicos en la creación de órdenes
+   */
+  private handleOrderError(err: any): void {
+    console.error('❌ Error al procesar orden:', err);
+
+    let message = 'Ocurrió un error al procesar tu pedido.';
+
+    // Manejo de errores específicos
+    if (err.status === 400) {
+      message = err.error?.message || 'Datos del pedido inválidos. Verifica la información.';
+    } else if (err.status === 404) {
+      message = 'Algunos productos ya no están disponibles.';
+    } else if (err.status === 409) {
+      message = 'Stock insuficiente para algunos productos.';
+    } else if (err.status >= 500) {
+      message = 'Error del servidor. Inténtalo nuevamente en unos minutos.';
+    } else if (err.message?.includes('Network')) {
+      message = 'Error de conexión. Verifica tu conexión a internet.';
+    }
+
+    this.notificationService.showError(message, 'Error en Pedido');
   }
 
   // ===========================================
@@ -400,6 +470,9 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         })
       ).subscribe();
     }
+
+    // Actualizar estado de los pasos
+    this.updateCheckoutSteps();
   }
 
   /**
@@ -435,22 +508,90 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
   getProgressPercentage(): number {
     let progress = 0;
 
-    // Paso 1: Método de entrega seleccionado (33%)
-    if (this.selectedDeliveryMethod) {
-      progress += 33;
+    // Paso 1: Método de entrega seleccionado (25%)
+    if (this.isStep1Complete()) {
+      progress += 25;
     }
 
-    // Paso 2: Dirección completa si es requerida (33%)
-    if (!this.selectedDeliveryMethod?.requiresAddress ||
-      (this.selectedAddressOption === 'existing' && this.selectedExistingAddressId) ||
-      (this.selectedAddressOption === 'new' && this.newAddressForm.valid)) {
-      progress += 33;
+    // Paso 2: Dirección completa si es requerida (25%)
+    if (this.isStep2Complete()) {
+      progress += 25;
     }
 
-    // Paso 3: Método de pago (siempre disponible) (34%)
-    progress += 34;
+    // Paso 3: Método de pago (25%)
+    if (this.isStep3Complete()) {
+      progress += 25;
+    }
+
+    // Paso 4: Todo listo para confirmar (25%)
+    if (this.canShowStep4()) {
+      progress += 25;
+    }
 
     return Math.min(progress, 100);
+  }
+
+  /**
+   * Verifica si el paso 1 (método de entrega) está completo
+   */
+  isStep1Complete(): boolean {
+    return !!this.selectedDeliveryMethod;
+  }
+
+  /**
+   * Verifica si el paso 2 (dirección) está completo o no es requerido
+   */
+  isStep2Complete(): boolean {
+    if (!this.selectedDeliveryMethod?.requiresAddress) {
+      return true; // No requiere dirección, paso completado automáticamente
+    }
+
+    if (this.selectedAddressOption === 'existing') {
+      return !!this.selectedExistingAddressId;
+    }
+
+    if (this.selectedAddressOption === 'new') {
+      return this.newAddressForm.valid;
+    }
+
+    return false;
+  }
+
+  /**
+   * Verifica si el paso 3 (método de pago) está completo
+   */
+  isStep3Complete(): boolean {
+    // Por ahora siempre true ya que solo tenemos Mercado Pago
+    return true;
+  }
+
+  /**
+   * Verifica si se puede mostrar el paso 2 (dirección)
+   */
+  canShowStep2(): boolean {
+    return this.isStep1Complete();
+  }
+
+  /**
+   * Verifica si se puede mostrar el paso 3 (método de pago)
+   */
+  canShowStep3(): boolean {
+    return this.isStep1Complete() && this.isStep2Complete();
+  }
+
+  /**
+   * Verifica si se puede mostrar el paso 4 (confirmación)
+   */
+  canShowStep4(): boolean {
+    return this.isStep1Complete() && this.isStep2Complete() && this.isStep3Complete();
+  }
+
+  /**
+   * Actualiza el estado del checkout cuando se hacen cambios
+   */
+  private updateCheckoutSteps(): void {
+    // Actualizar el estado global del checkout
+    this.updateCheckoutState();
   }
 
   // Método separado para navegación - fácil de mockear en tests
