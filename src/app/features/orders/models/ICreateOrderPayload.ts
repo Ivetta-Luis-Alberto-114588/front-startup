@@ -20,7 +20,7 @@ export interface ICreateOrderPayload {
      * Debe corresponder a un método de entrega activo del sistema.
      * Determina si se requiere dirección de envío o no.
      */
-    deliveryMethod: string;
+    deliveryMethodId: string;
 
     /** 
      * Código del método de entrega seleccionado. OPCIONAL.

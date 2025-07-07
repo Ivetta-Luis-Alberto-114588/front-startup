@@ -68,7 +68,7 @@ export class OrderService {
       throw new Error('El carrito no puede estar vacío');
     }
 
-    if (!payload.deliveryMethod) {
+    if (!payload.deliveryMethodId) {
       throw new Error('Debe seleccionar un método de entrega');
     }
 
@@ -103,24 +103,20 @@ export class OrderService {
     console.log('🚚 Is pickup method?', isPickup);
 
     if (isPickup) {
-      // Para métodos pickup, limpiar campos de envío excepto selectedAddressId
-      console.log('🏪 Pickup method detected - cleaning shipping fields (backend validates conditionally)');
-
-      // TEMPORAL: El backend aún requiere selectedAddressId incluso para pickup
-      // Usar un ID dummy hasta que el backend implemente las validaciones condicionales completas
-      if (!adaptedPayload.selectedAddressId) {
-        adaptedPayload.selectedAddressId = '000000000000000000000000'; // ID dummy para pickup
-        console.log('⚠️ TEMPORAL: Added dummy selectedAddressId for pickup method');
-      }
-
-      // Remover otros campos de envío ya que con selectedAddressId dummy el backend no los requerirá
+      console.log('🏪 Pickup method detected - removing ALL shipping-related fields');
+      
+      // Para pickup, NO enviamos ningún dato de dirección según la documentación
+      // El backend debe detectar que es pickup por el deliveryMethodId
+      delete adaptedPayload.selectedAddressId;
       delete adaptedPayload.shippingRecipientName;
       delete adaptedPayload.shippingPhone;
       delete adaptedPayload.shippingStreetAddress;
-      delete adaptedPayload.shippingAdditionalInfo;
       delete adaptedPayload.shippingNeighborhoodId;
+      delete adaptedPayload.shippingCityId;
+      delete adaptedPayload.shippingPostalCode;
+      delete adaptedPayload.shippingAdditionalInfo;
 
-      console.log('✅ Shipping fields cleaned for pickup method (keeping selectedAddressId)');
+      console.log('✅ Removed ALL shipping/address data for pickup method');
     } else {
       // Para métodos que SÍ requieren dirección, validar que tenemos los datos necesarios
       console.log('📍 Validating shipping data for delivery method');
@@ -152,8 +148,8 @@ export class OrderService {
     }
 
     // Fallback: usar el ID (menos confiable)
-    console.log('🚚 Checking pickup method using ID (fallback):', payload.deliveryMethod);
-    const lowerCaseId = payload.deliveryMethod.toLowerCase();
+    console.log('🚚 Checking pickup method using ID (fallback):', payload.deliveryMethodId);
+    const lowerCaseId = payload.deliveryMethodId.toLowerCase();
     const isPickup = lowerCaseId.includes('pickup') ||
       lowerCaseId.includes('retiro') ||
       lowerCaseId.includes('local');

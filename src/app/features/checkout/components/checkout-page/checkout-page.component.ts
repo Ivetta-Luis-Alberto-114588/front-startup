@@ -327,7 +327,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         quantity: item.quantity,
         unitPrice: item.unitPriceWithTax
       })),
-      deliveryMethod: this.selectedDeliveryMethod.id,
+      deliveryMethodId: this.selectedDeliveryMethod.id,
       // ¡AGREGAR EL PAYMENT METHOD ID!
       paymentMethodId: this.selectedPaymentMethod,
       notes: `Pedido realizado desde el checkout - Método: ${this.selectedDeliveryMethod.name}`,
@@ -369,7 +369,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     // Validación adicional para debugging
     console.log('Final payload validation:');
     console.log('- Has items?', orderPayload.items?.length > 0);
-    console.log('- Has deliveryMethod?', !!orderPayload.deliveryMethod);
+    console.log('- Has deliveryMethodId?', !!orderPayload.deliveryMethodId);
     console.log('- Has deliveryMethodCode?', !!orderPayload.deliveryMethodCode);
     console.log('- Has paymentMethodId?', !!orderPayload.paymentMethodId);
     console.log('- RequiresAddress?', this.selectedDeliveryMethod.requiresAddress);

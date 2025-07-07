@@ -41,7 +41,7 @@ export class CheckoutTestingService {
                     unitPrice: 25.99
                 }
             ],
-            deliveryMethod: homeDeliveryMethod.id,
+            deliveryMethodId: homeDeliveryMethod.id,
             paymentMethodId: 'mercado_pago',
             notes: 'Prueba de envío a domicilio',
             // Datos de envío completos
@@ -95,7 +95,7 @@ export class CheckoutTestingService {
                     unitPrice: 12.50
                 }
             ],
-            deliveryMethod: pickupMethod.id,
+            deliveryMethodId: pickupMethod.id,
             paymentMethodId: 'cash',
             notes: 'Prueba de retiro en local - Cliente prefiere retiro por la tarde',
             // Para retiro en local, NO incluimos datos de shipping
@@ -137,7 +137,7 @@ export class CheckoutTestingService {
                     unitPrice: 89.99
                 }
             ],
-            deliveryMethod: expressDeliveryMethod.id,
+            deliveryMethodId: expressDeliveryMethod.id,
             paymentMethodId: 'mercado_pago',
             selectedAddressId: 'user-address-123456', // Usuario usa dirección guardada
             notes: 'Envío express para usuario autenticado',
@@ -166,7 +166,7 @@ export class CheckoutTestingService {
                 name: 'Carrito vacío',
                 payload: {
                     items: [],
-                    deliveryMethod: 'test-delivery',
+                    deliveryMethodId: 'test-delivery',
                     paymentMethodId: 'cash'
                 } as ICreateOrderPayload,
                 expectedError: 'El carrito no puede estar vacío'
@@ -182,7 +182,7 @@ export class CheckoutTestingService {
                 name: 'Envío sin dirección completa',
                 payload: {
                     items: [{ productId: 'test', quantity: 1, unitPrice: 10 }],
-                    deliveryMethod: 'home-delivery-001',
+                    deliveryMethodId: 'home-delivery-001',
                     paymentMethodId: 'mercado_pago',
                     shippingRecipientName: 'Test',
                     // Faltan otros campos requeridos
@@ -290,7 +290,7 @@ export class CheckoutTestingService {
                     id: `order-${scenario}-${Date.now()}`,
                     status: 'confirmed',
                     total: payload.items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0),
-                    deliveryMethod: payload.deliveryMethod,
+                    deliveryMethodId: payload.deliveryMethodId,
                     items: payload.items,
                     createdAt: new Date().toISOString(),
                     scenario: scenario
