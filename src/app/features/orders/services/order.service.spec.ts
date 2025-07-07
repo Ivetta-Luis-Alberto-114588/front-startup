@@ -98,6 +98,7 @@ describe('OrderService', () => {
             }
         ],
         deliveryMethod: 'delivery-method-1',
+        paymentMethodId: 'cash',
         notes: 'Entrega en horario de oficina',
         selectedAddressId: 'addr-1'
     };
@@ -165,6 +166,7 @@ describe('OrderService', () => {
             const minimalPayload: ICreateOrderPayload = {
                 items: [{ productId: 'prod-1', quantity: 1, unitPrice: 10.00 }],
                 deliveryMethod: 'delivery-method-1',
+                paymentMethodId: 'cash',
                 selectedAddressId: 'address-123'
             };
 

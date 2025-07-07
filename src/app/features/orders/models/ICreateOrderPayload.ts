@@ -22,6 +22,20 @@ export interface ICreateOrderPayload {
      */
     deliveryMethod: string;
 
+    /** 
+     * Código del método de entrega seleccionado. OPCIONAL.
+     * Usado para facilitar la validación en el backend.
+     * Ejemplos: "PICKUP", "SHIPPING", "EXPRESS"
+     */
+    deliveryMethodCode?: string;
+
+    /** 
+     * ID del método de pago seleccionado. REQUERIDO.
+     * Debe corresponder a un método de pago activo del sistema.
+     * Ejemplos: "cash", "mercado_pago", "credit_card"
+     */
+    paymentMethodId: string;
+
     // --- Opciones de Dirección de Envío ---
     // IMPORTANTE: Los campos de shipping ahora son opcionales y dependen del método de entrega.
     // Si deliveryMethod.requiresAddress = true, entonces se requieren los datos de envío.

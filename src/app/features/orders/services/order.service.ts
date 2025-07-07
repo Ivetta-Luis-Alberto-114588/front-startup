@@ -21,9 +21,32 @@ export class OrderService {
     // Validar el payload antes de enviarlo
     const validatedPayload = this.validateAndAdaptPayload(payload);
 
+    console.log('📤 Sending payload to backend:', JSON.stringify(validatedPayload, null, 2));
+    console.log('📤 Payload keys:', Object.keys(validatedPayload));
+    console.log('📤 Payload size:', JSON.stringify(validatedPayload).length, 'characters');
+
     return this.http.post<IOrder>(this.apiUrl, validatedPayload).pipe(
       catchError(err => {
-        console.error('Error creating order:', err);
+        console.error('❌ COMPLETE Backend error details:', err);
+        console.error('❌ Error status:', err.status);
+        console.error('❌ Error statusText:', err.statusText);
+        console.error('❌ Error headers:', err.headers);
+
+        // Intentar extraer el mensaje de error más específico
+        if (err.error) {
+          console.error('❌ Error body:', err.error);
+
+          if (typeof err.error === 'string') {
+            console.error('❌ Error message (string):', err.error);
+          } else if (err.error.message) {
+            console.error('❌ Error message (object):', err.error.message);
+          } else if (err.error.errors) {
+            console.error('❌ Validation errors:', err.error.errors);
+          } else if (err.error.details) {
+            console.error('❌ Error details:', err.error.details);
+          }
+        }
+
         return throwError(() => err);
       })
     );
@@ -35,6 +58,8 @@ export class OrderService {
    * @returns Payload validado y adaptado
    */
   private validateAndAdaptPayload(payload: ICreateOrderPayload): ICreateOrderPayload {
+    console.log('🔧 Starting payload validation...');
+
     // Clonar el payload para no mutar el original
     const adaptedPayload: ICreateOrderPayload = { ...payload };
 
@@ -47,45 +72,94 @@ export class OrderService {
       throw new Error('Debe seleccionar un método de entrega');
     }
 
+    if (!payload.paymentMethodId) {
+      throw new Error('Debe seleccionar un método de pago');
+    }
+
+    // Validar que cada item tenga los campos requeridos
+    payload.items.forEach((item, index) => {
+      if (!item.productId) {
+        throw new Error(`Item ${index + 1}: productId es requerido`);
+      }
+      if (!item.quantity || item.quantity <= 0) {
+        throw new Error(`Item ${index + 1}: quantity debe ser mayor a 0`);
+      }
+      if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice < 0) {
+        throw new Error(`Item ${index + 1}: unitPrice debe ser un número válido`);
+      }
+    });
+
+    console.log('✅ Basic validations passed');
+
     // Agregar notas descriptivas solo si no existen ya
     if (!adaptedPayload.notes) {
-      const deliveryMethodName = this.isPickupMethod(payload.deliveryMethod) ?
+      const deliveryMethodName = this.isPickupMethod(payload) ?
         'Retiro en Local' : 'Envío a Domicilio';
       adaptedPayload.notes = `Pedido realizado desde el checkout - Método: ${deliveryMethodName}`;
     }
 
-    // Para métodos que NO requieren dirección (ej: retiro en local),
-    // limpiar todos los campos de shipping para evitar confusión en el backend
-    if (this.isPickupMethod(payload.deliveryMethod)) {
-      // Limpiar todos los campos de shipping
-      delete adaptedPayload.selectedAddressId;
+    // Determinar si es método de retiro
+    const isPickup = this.isPickupMethod(payload);
+    console.log('🚚 Is pickup method?', isPickup);
+
+    if (isPickup) {
+      // Para métodos pickup, limpiar campos de envío excepto selectedAddressId
+      console.log('🏪 Pickup method detected - cleaning shipping fields (backend validates conditionally)');
+
+      // TEMPORAL: El backend aún requiere selectedAddressId incluso para pickup
+      // Usar un ID dummy hasta que el backend implemente las validaciones condicionales completas
+      if (!adaptedPayload.selectedAddressId) {
+        adaptedPayload.selectedAddressId = '000000000000000000000000'; // ID dummy para pickup
+        console.log('⚠️ TEMPORAL: Added dummy selectedAddressId for pickup method');
+      }
+
+      // Remover otros campos de envío ya que con selectedAddressId dummy el backend no los requerirá
       delete adaptedPayload.shippingRecipientName;
       delete adaptedPayload.shippingPhone;
       delete adaptedPayload.shippingStreetAddress;
-      delete adaptedPayload.shippingPostalCode;
-      delete adaptedPayload.shippingNeighborhoodId;
-      delete adaptedPayload.shippingCityId;
       delete adaptedPayload.shippingAdditionalInfo;
+      delete adaptedPayload.shippingNeighborhoodId;
+
+      console.log('✅ Shipping fields cleaned for pickup method (keeping selectedAddressId)');
     } else {
       // Para métodos que SÍ requieren dirección, validar que tenemos los datos necesarios
+      console.log('📍 Validating shipping data for delivery method');
       this.validateShippingData(adaptedPayload);
     }
+
+    // Log final del payload adaptado
+    console.log('🔧 Final adapted payload:', adaptedPayload);
+    console.log('🔧 Adapted payload keys:', Object.keys(adaptedPayload));
 
     return adaptedPayload;
   }
 
   /**
    * Determina si el método de entrega es de tipo "retiro" (no requiere dirección).
-   * Nota: En una implementación real, esto podría consultarse desde el backend
-   * o basarse en propiedades del método de entrega.
+   * Primero intenta usar el código, luego hace fallback al ID.
    */
-  private isPickupMethod(deliveryMethodId: string): boolean {
-    // Por ahora, asumimos que si el ID contiene "pickup" o "retiro", es retiro en local
-    // En una implementación real, esto debería basarse en la propiedad `requiresAddress`
-    const lowerCaseId = deliveryMethodId.toLowerCase();
-    return lowerCaseId.includes('pickup') ||
+  private isPickupMethod(payload: ICreateOrderPayload): boolean {
+    // Si tenemos el código del método, usarlo (más confiable)
+    if (payload.deliveryMethodCode) {
+      console.log('🚚 Checking pickup method using CODE:', payload.deliveryMethodCode);
+      const lowerCaseCode = payload.deliveryMethodCode.toLowerCase();
+      const isPickup = lowerCaseCode.includes('pickup') ||
+        lowerCaseCode.includes('retiro') ||
+        lowerCaseCode.includes('local');
+
+      console.log('Is pickup method (by code)?', isPickup);
+      return isPickup;
+    }
+
+    // Fallback: usar el ID (menos confiable)
+    console.log('🚚 Checking pickup method using ID (fallback):', payload.deliveryMethod);
+    const lowerCaseId = payload.deliveryMethod.toLowerCase();
+    const isPickup = lowerCaseId.includes('pickup') ||
       lowerCaseId.includes('retiro') ||
       lowerCaseId.includes('local');
+
+    console.log('Is pickup method (by ID)?', isPickup);
+    return isPickup;
   }
 
   /**

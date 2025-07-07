@@ -42,6 +42,7 @@ export class CheckoutTestingService {
                 }
             ],
             deliveryMethod: homeDeliveryMethod.id,
+            paymentMethodId: 'mercado_pago',
             notes: 'Prueba de envío a domicilio',
             // Datos de envío completos
             shippingRecipientName: 'Juan Pérez Test',
@@ -95,6 +96,7 @@ export class CheckoutTestingService {
                 }
             ],
             deliveryMethod: pickupMethod.id,
+            paymentMethodId: 'cash',
             notes: 'Prueba de retiro en local - Cliente prefiere retiro por la tarde',
             // Para retiro en local, NO incluimos datos de shipping
             // Solo datos del cliente
@@ -136,6 +138,7 @@ export class CheckoutTestingService {
                 }
             ],
             deliveryMethod: expressDeliveryMethod.id,
+            paymentMethodId: 'mercado_pago',
             selectedAddressId: 'user-address-123456', // Usuario usa dirección guardada
             notes: 'Envío express para usuario autenticado',
             couponCode: 'DESCUENTO10'
@@ -163,7 +166,8 @@ export class CheckoutTestingService {
                 name: 'Carrito vacío',
                 payload: {
                     items: [],
-                    deliveryMethod: 'test-delivery'
+                    deliveryMethod: 'test-delivery',
+                    paymentMethodId: 'cash'
                 } as ICreateOrderPayload,
                 expectedError: 'El carrito no puede estar vacío'
             },
@@ -179,6 +183,7 @@ export class CheckoutTestingService {
                 payload: {
                     items: [{ productId: 'test', quantity: 1, unitPrice: 10 }],
                     deliveryMethod: 'home-delivery-001',
+                    paymentMethodId: 'mercado_pago',
                     shippingRecipientName: 'Test',
                     // Faltan otros campos requeridos
                 } as ICreateOrderPayload,

@@ -2,7 +2,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subscription, switchMap, tap, catchError, EMPTY, of, finalize } from 'rxjs';
+import { Observable, Subscription, switchMap, tap, catchError, EMPTY, of, finalize, map } from 'rxjs';
 import { AuthService } from 'src/app/auth/services/auth.service';
 import { CartService } from 'src/app/features/cart/services/cart.service';
 import { ICart } from 'src/app/features/cart/models/icart';
@@ -38,6 +38,10 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
   availableDeliveryMethods: IDeliveryMethod[] = [];
   selectedDeliveryMethod: IDeliveryMethod | null = null;
   isLoadingDeliveryMethods = false;
+
+  // Propiedades para métodos de pago
+  availablePaymentMethods: { id: string; name: string; code: string; description?: string; icon?: string }[] = [];
+  selectedPaymentMethod: string | null = null;
 
   // Estados derivados del CheckoutStateService
   shouldShowAddressSection$ = this.checkoutStateService.shouldShowAddressSection$;
@@ -228,6 +232,11 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
 
   // Helper para saber si la dirección está lista para confirmar
   get isAddressSelectedOrValid(): boolean {
+    // Si el método de entrega no requiere dirección, siempre es válido
+    if (!this.selectedDeliveryMethod?.requiresAddress) {
+      return true;
+    }
+
     if (this.selectedAddressOption === 'existing') {
       return !!this.selectedExistingAddressId;
     }
@@ -274,10 +283,18 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       throw new Error('Por favor, selecciona un método de entrega.');
     }
 
+    // Validar método de pago
+    if (!this.selectedPaymentMethod) {
+      throw new Error('Por favor, selecciona un método de pago.');
+    }
+
     // Validar dirección solo si el método requiere dirección
     if (this.selectedDeliveryMethod.requiresAddress) {
       if (!this.isAddressSelectedOrValid) {
-        this.newAddressForm.markAllAsTouched(); // Mostrar errores del formulario
+        // Solo marcar el formulario como touched si realmente se requiere dirección
+        if (this.selectedAddressOption === 'new') {
+          this.newAddressForm.markAllAsTouched(); // Mostrar errores del formulario
+        }
         throw new Error('Por favor, selecciona o completa una dirección de envío válida.');
       }
     }
@@ -292,22 +309,43 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    * Construye el payload adaptado según el método de entrega
    */
   private buildOrderPayload(cart: ICart): ICreateOrderPayload {
+    console.log('🔍 Building order payload...');
+    console.log('Selected delivery method:', this.selectedDeliveryMethod);
+    console.log('Selected payment method:', this.selectedPaymentMethod);
+
+    if (!this.selectedDeliveryMethod) {
+      throw new Error('No se ha seleccionado un método de entrega');
+    }
+
+    if (!this.selectedPaymentMethod) {
+      throw new Error('No se ha seleccionado un método de pago');
+    }
+
     let orderPayload: ICreateOrderPayload = {
       items: cart.items.map(item => ({
         productId: item.product.id,
         quantity: item.quantity,
         unitPrice: item.unitPriceWithTax
       })),
-      deliveryMethod: this.selectedDeliveryMethod!.id,
-      notes: `Pedido realizado desde el checkout - Método: ${this.selectedDeliveryMethod!.name}`
+      deliveryMethod: this.selectedDeliveryMethod.id,
+      // ¡AGREGAR EL PAYMENT METHOD ID!
+      paymentMethodId: this.selectedPaymentMethod,
+      notes: `Pedido realizado desde el checkout - Método: ${this.selectedDeliveryMethod.name}`,
+      // Agregar el código del método para facilitar la validación en el backend
+      deliveryMethodCode: this.selectedDeliveryMethod.code
     };
 
+    console.log('Base payload:', orderPayload);
+
     // Añadir datos de dirección SOLO si el método de entrega lo requiere
-    if (this.selectedDeliveryMethod!.requiresAddress) {
+    if (this.selectedDeliveryMethod.requiresAddress) {
+      console.log('📍 Delivery method requires address');
       if (this.selectedAddressOption === 'existing' && this.selectedExistingAddressId) {
         orderPayload.selectedAddressId = this.selectedExistingAddressId;
+        console.log('Using existing address:', this.selectedExistingAddressId);
       } else if (this.selectedAddressOption === 'new' && this.newAddressForm.valid) {
         const formValue = this.newAddressForm.value;
+        console.log('Using new address form:', formValue);
         orderPayload = {
           ...orderPayload,
           shippingRecipientName: formValue.recipientName,
@@ -318,20 +356,26 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
           shippingAdditionalInfo: formValue.additionalInfo || ''
         };
 
-        // Para invitados, agregar datos del cliente
-        // Nota: En una implementación completa, necesitarías campos adicionales en el formulario
-        this.authService.isAuthenticated$.pipe(
-          switchMap(isAuth => {
-            if (!isAuth) {
-              orderPayload.customerName = formValue.recipientName;
-              orderPayload.customerEmail = 'guest@checkout.com'; // Temporal - necesitarías campo email
-            }
-            return of(orderPayload);
-          })
-        ).subscribe();
+        // Para invitados, agregar datos del cliente si no está autenticado
+        // NOTA: Esto se maneja de forma síncrona ahora
+        // En una implementación real, necesitarías verificar el estado de autenticación primero
+        // orderPayload.customerName = formValue.recipientName;
+        // orderPayload.customerEmail = 'guest@checkout.com'; // Temporal - necesitarías campo email
       }
+    } else {
+      console.log('🏪 Delivery method does NOT require address (pickup)');
     }
 
+    // Validación adicional para debugging
+    console.log('Final payload validation:');
+    console.log('- Has items?', orderPayload.items?.length > 0);
+    console.log('- Has deliveryMethod?', !!orderPayload.deliveryMethod);
+    console.log('- Has deliveryMethodCode?', !!orderPayload.deliveryMethodCode);
+    console.log('- Has paymentMethodId?', !!orderPayload.paymentMethodId);
+    console.log('- RequiresAddress?', this.selectedDeliveryMethod.requiresAddress);
+    console.log('- Has shipping data?', !!(orderPayload.selectedAddressId || orderPayload.shippingRecipientName));
+
+    console.log('Final payload to send:', orderPayload);
     return orderPayload;
   }
 
@@ -340,16 +384,31 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    */
   private processOrder(orderPayload: ICreateOrderPayload): void {
     this.orderService.createOrder(orderPayload).pipe(
-      tap(() => {
-        this.notificationService.showInfo('Procesando pago...', 'Orden Creada');
+      tap((createdOrder) => {
         console.log('✅ Orden creada exitosamente con método:', this.selectedDeliveryMethod?.name);
+
+        // Mostrar mensaje según el tipo de pago
+        if (this.selectedPaymentMethod === 'cash') {
+          this.notificationService.showSuccess('¡Pedido confirmado! Puedes retirarlo y pagar en efectivo.', 'Orden Creada');
+        } else {
+          this.notificationService.showInfo('Procesando pago...', 'Orden Creada');
+        }
       }),
-      // Crear preferencia de pago
+      // Decidir si crear preferencia de pago o finalizar directamente
       switchMap(createdOrder => {
         if (!createdOrder?.id) {
           throw new Error('No se recibió ID de la orden creada.');
         }
-        return this.paymentService.createPaymentPreference(createdOrder.id);
+
+        // Si es pago en efectivo, no crear preferencia de pago
+        if (this.selectedPaymentMethod === 'cash') {
+          return of({ orderId: createdOrder.id, paymentType: 'cash' });
+        }
+
+        // Si es Mercado Pago, crear preferencia de pago
+        return this.paymentService.createPaymentPreference(createdOrder.id).pipe(
+          map((preference: any) => ({ orderId: createdOrder.id, paymentType: 'mercado_pago', preference }))
+        );
       }),
       catchError(err => {
         this.handleOrderError(err);
@@ -357,26 +416,34 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       }),
       finalize(() => this.isProcessingOrder = false)
     ).subscribe({
-      next: (preference) => {
-        console.log('✅ Preferencia de pago creada:', preference);
+      next: (result: any) => {
+        console.log('✅ Resultado del procesamiento:', result);
 
-        if (preference?.preference?.init_point) {
-          // Limpiar carrito antes de redirigir a Mercado Pago
-          this.cartService.clearCart().subscribe({
-            next: () => {
-              console.log('✅ Carrito limpiado exitosamente');
-              // Redirigir a Mercado Pago
-              this.navigateToPayment(preference.preference.init_point);
-            },
-            error: (err) => {
-              console.warn('⚠️ Error al limpiar carrito:', err);
-              // Redirigir de todas formas
-              this.navigateToPayment(preference.preference.init_point);
+        // Limpiar carrito en ambos casos
+        this.cartService.clearCart().subscribe({
+          next: () => {
+            console.log('✅ Carrito limpiado exitosamente');
+
+            if (result.paymentType === 'cash') {
+              // Para pago en efectivo, redirigir a una página de confirmación
+              this.handleCashPaymentSuccess(result.orderId);
+            } else if (result.preference?.preference?.init_point) {
+              // Para Mercado Pago, redirigir al pago
+              this.navigateToPayment(result.preference.preference.init_point);
+            } else {
+              this.notificationService.showError('No se pudo inicializar el pago. Inténtalo nuevamente.', 'Error de Pago');
             }
-          });
-        } else {
-          this.notificationService.showError('No se pudo inicializar el pago. Inténtalo nuevamente.', 'Error de Pago');
-        }
+          },
+          error: (err) => {
+            console.warn('⚠️ Error al limpiar carrito:', err);
+            // Continuar según el tipo de pago
+            if (result.paymentType === 'cash') {
+              this.handleCashPaymentSuccess(result.orderId);
+            } else if (result.preference?.preference?.init_point) {
+              this.navigateToPayment(result.preference.preference.init_point);
+            }
+          }
+        });
       },
       error: (err) => {
         console.error('❌ Error final en processOrder:', err);
@@ -448,11 +515,18 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     this.selectedDeliveryMethod = method;
     this.checkoutStateService.setSelectedDeliveryMethod(method);
 
-    // Si el método no requiere dirección, limpiar la selección de dirección
+    // Actualizar métodos de pago disponibles basados en el método de entrega
+    this.updateAvailablePaymentMethods(method);
+
+    // Si el método no requiere dirección, limpiar la selección de dirección y errores
     if (!method.requiresAddress) {
       this.selectedAddressOption = null;
       this.selectedExistingAddressId = null;
       this.newAddressForm.reset();
+      // Limpiar cualquier estado de error del formulario
+      Object.keys(this.newAddressForm.controls).forEach(key => {
+        this.newAddressForm.get(key)?.setErrors(null);
+      });
     } else {
       // Si requiere dirección y es un usuario autenticado, mostrar opciones
       this.authService.isAuthenticated$.pipe(
@@ -473,6 +547,58 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
 
     // Actualizar estado de los pasos
     this.updateCheckoutSteps();
+  }
+
+  /**
+   * Actualiza los métodos de pago disponibles basados en el método de entrega seleccionado
+   */
+  updateAvailablePaymentMethods(method: IDeliveryMethod): void {
+    // Resetear selección de pago anterior
+    this.selectedPaymentMethod = null;
+
+    // Definir métodos de pago disponibles según el tipo de entrega
+    if (method.code === 'pickup' || method.code === 'local-pickup' || method.name.toLowerCase().includes('retiro')) {
+      // Para retiro en local: efectivo y Mercado Pago
+      this.availablePaymentMethods = [
+        {
+          id: 'cash',
+          name: 'Pago en Efectivo',
+          code: 'cash',
+          description: 'Paga en efectivo al retirar tu pedido',
+          icon: 'bi-cash-coin'
+        },
+        {
+          id: 'mercado_pago',
+          name: 'Mercado Pago',
+          code: 'mercado_pago',
+          description: 'Tarjetas, dinero en cuenta, etc.',
+          icon: 'bi-credit-card'
+        }
+      ];
+    } else {
+      // Para delivery: solo Mercado Pago (pago anticipado)
+      this.availablePaymentMethods = [
+        {
+          id: 'mercado_pago',
+          name: 'Mercado Pago',
+          code: 'mercado_pago',
+          description: 'Tarjetas, dinero en cuenta, etc.',
+          icon: 'bi-credit-card'
+        }
+      ];
+    }
+
+    // Si solo hay un método disponible, seleccionarlo automáticamente
+    if (this.availablePaymentMethods.length === 1) {
+      this.selectedPaymentMethod = this.availablePaymentMethods[0].id;
+    }
+  }
+
+  /**
+   * Selecciona un método de pago
+   */
+  selectPaymentMethod(methodId: string): void {
+    this.selectedPaymentMethod = methodId;
   }
 
   /**
@@ -561,8 +687,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    * Verifica si el paso 3 (método de pago) está completo
    */
   isStep3Complete(): boolean {
-    // Por ahora siempre true ya que solo tenemos Mercado Pago
-    return true;
+    return !!this.selectedPaymentMethod && this.availablePaymentMethods.length > 0;
   }
 
   /**
@@ -592,6 +717,28 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
   private updateCheckoutSteps(): void {
     // Actualizar el estado global del checkout
     this.updateCheckoutState();
+  }
+
+  /**
+   * Maneja el éxito de un pago en efectivo
+   */
+  private handleCashPaymentSuccess(orderId: string): void {
+    // Redirigir a una página de confirmación o mostrar mensaje de éxito
+    this.notificationService.showSuccess(
+      '¡Pedido confirmado exitosamente! Acércate al local para retirar y pagar en efectivo.',
+      'Pago en Efectivo'
+    );
+
+    // Redirigir a la página de inicio o a una página de confirmación específica
+    setTimeout(() => {
+      this.router.navigate(['/'], {
+        queryParams: {
+          orderConfirmed: 'true',
+          orderId: orderId,
+          paymentType: 'cash'
+        }
+      });
+    }, 3000);
   }
 
   // Método separado para navegación - fácil de mockear en tests
