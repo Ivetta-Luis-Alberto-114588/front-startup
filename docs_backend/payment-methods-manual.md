@@ -32,10 +32,10 @@ Tu backend soporta **4 métodos de pago** configurados:
 
 | Código | Método | Tipo | Confirmación | Estado Inicial |
 |--------|--------|------|--------------|----------------|
-| `CASH` | Efectivo | Manual | Requerida | `CONFIRMED` |
-| `MERCADO_PAGO` | Mercado Pago | Automático | Automática | `AWAITING_PAYMENT` |
-| `BANK_TRANSFER` | Transferencia | Manual | Requerida | `CONFIRMED` |
-| `PENDING` | Sin Método | N/A | N/A | `PENDING` |
+| `CASH` | Efectivo | Manual | Requerida | `PENDIENTE PAGADO` |
+| `CREDIT_CARD` | Tarjeta de Crédito | Automático | Automática | `PENDIENTE_SIN_PAGAR` |
+| `DEBIT_CARD` | Tarjeta de Débito | Automático | Automática | `PENDIENTE PAGADO` |
+| `BANK_TRANSFER` | Transferencia Bancaria | Manual | Requerida | `PENDIENTE_SIN_PAGAR` |
 
 ---
 
@@ -79,18 +79,26 @@ if (deliveryMethod.requiresAddress) {
     "allowsManualConfirmation": true,
     "flow": "manual"
   },
-  "mercadoPago": {
-    "code": "MERCADO_PAGO", 
-    "name": "Mercado Pago",
-    "description": "Pago online con tarjeta de crédito/débito",
+  "creditCard": {
+    "code": "CREDIT_CARD", 
+    "name": "Tarjeta de Crédito Visa/MasterCard",
+    "description": "Pago con tarjeta de crédito Visa o MasterCard procesada online de forma segura",
     "requiresOnlinePayment": true,
-    "allowsManualConfirmation": false,
+    "allowsManualConfirmation": true,
+    "flow": "automatic"
+  },
+  "debitCard": {
+    "code": "DEBIT_CARD",
+    "name": "Tarjeta de Débito", 
+    "description": "Pago con tarjeta de débito procesada online",
+    "requiresOnlinePayment": true,
+    "allowsManualConfirmation": true,
     "flow": "automatic"
   },
   "bankTransfer": {
     "code": "BANK_TRANSFER",
-    "name": "Transferencia Bancaria", 
-    "description": "Transferencia bancaria manual",
+    "name": "Transferencia Bancaria",
+    "description": "Pago mediante transferencia bancaria",
     "requiresOnlinePayment": false,
     "allowsManualConfirmation": true,
     "flow": "manual"
@@ -142,9 +150,10 @@ if (deliveryMethod.requiresAddress) {
 
 | Método | Estado Inicial | Pago Exitoso | Pago Fallido |
 |--------|----------------|---------------|--------------|
-| **Efectivo** | `CONFIRMED` | `CONFIRMED` → `COMPLETED` | - |
-| **Mercado Pago** | `AWAITING_PAYMENT` | `PENDIENTE PAGADO` → `COMPLETED` | `CANCELLED` |
-| **Transferencia** | `CONFIRMED` | `CONFIRMED` → `COMPLETED` | - |
+| **Efectivo** | `PENDIENTE PAGADO` | `PENDIENTE PAGADO` → `COMPLETED` | - |
+| **Tarjeta de Crédito** | `PENDIENTE_SIN_PAGAR` | `PENDIENTE PAGADO` → `COMPLETED` | `CANCELLED` |
+| **Tarjeta de Débito** | `PENDIENTE PAGADO` | `PENDIENTE PAGADO` → `COMPLETED` | `CANCELLED` |
+| **Transferencia** | `PENDIENTE_SIN_PAGAR` | `PENDIENTE PAGADO` → `COMPLETED` | - |
 
 ---
 
@@ -309,7 +318,7 @@ sequenceDiagram
     B->>B: Actualiza estado a completado
 ```
 
-### � **2. Flujo con Entrega a Domicilio (DELIVERY + MERCADO_PAGO)**
+### 💳 **2. Flujo con Entrega a Domicilio (DELIVERY + CREDIT_CARD)**
 
 #### **Características:**
 - ✅ **Con campos de envío requeridos**
@@ -323,12 +332,12 @@ sequenceDiagram
     participant C as Cliente
     participant F as Frontend
     participant B as Backend
-    participant MP as MercadoPago
+    participant PG as Payment Gateway
     
     C->>F: Selecciona "Entrega a Domicilio"
     F->>F: Muestra campos de envío
     C->>F: Completa dirección de envío
-    C->>F: Selecciona "Mercado Pago"
+    C->>F: Selecciona "Tarjeta de Crédito"
     F->>B: POST /api/sales {deliveryMethodCode: "DELIVERY", shippingFields...}
     B->>B: Valida campos shipping requeridos
     B->>B: Crea orden con estado "AWAITING_PAYMENT"
@@ -389,7 +398,7 @@ sequenceDiagram
 #### **1. Obtener Métodos de Pago Disponibles**
 
 ```http
-GET /api/payment-methods
+GET /api/payment-methods/active
 ```
 
 **Autenticación:** No requerida  
@@ -399,22 +408,55 @@ GET /api/payment-methods
 ```json
 [
   {
-    "id": "64a7f8c9b123456789abcdef",
+    "id": "683f4c5a448d70effea1b242",
     "code": "CASH",
     "name": "Efectivo",
     "description": "Pago en efectivo al momento de la entrega",
     "isActive": true,
     "requiresOnlinePayment": false,
+    "allowsManualConfirmation": true,
+    "defaultOrderStatusId": {
+      "_id": "675a1a39dd398aae92ab05f8",
+      "code": "PENDIENTE PAGADO",
+      "name": "Pendiente pagado"
+    }
+  },
+  {
+    "id": "683f4dbd448d70effea1b25e",
+    "code": "CREDIT_CARD",
+    "name": "Tarjeta de Crédito Visa/MasterCard",
+    "description": "Pago con tarjeta de crédito Visa o MasterCard procesada online de forma segura",
+    "isActive": true,
+    "requiresOnlinePayment": true,
+    "allowsManualConfirmation": true,
+    "defaultOrderStatusId": {
+      "_id": "683f3ba29ca44b0f790855df",
+      "code": "PENDIENTE_SIN_PAGAR",
+      "name": "pendiente sin pagar"
+    }
+  },
+  {
+    "id": "683f4dc6448d70effea1b262",
+    "code": "DEBIT_CARD",
+    "name": "Tarjeta de Débito",
+    "description": "Pago con tarjeta de débito procesada online",
+    "isActive": true,
+    "requiresOnlinePayment": true,
     "allowsManualConfirmation": true
   },
   {
-    "id": "64a7f8c9b123456789abcdeg",
-    "code": "MERCADO_PAGO",
-    "name": "Mercado Pago",
-    "description": "Pago online con tarjeta",
+    "id": "683f4dcf448d70effea1b266",
+    "code": "BANK_TRANSFER",
+    "name": "Transferencia Bancaria",
+    "description": "Pago mediante transferencia bancaria",
     "isActive": true,
-    "requiresOnlinePayment": true,
-    "allowsManualConfirmation": false
+    "requiresOnlinePayment": false,
+    "allowsManualConfirmation": true,
+    "defaultOrderStatusId": {
+      "_id": "683f3ba29ca44b0f790855df",
+      "code": "PENDIENTE_SIN_PAGAR",
+      "name": "pendiente sin pagar"
+    }
   }
 ]
 ```
@@ -422,7 +464,7 @@ GET /api/payment-methods
 #### **2. Obtener Métodos de Entrega Activos**
 
 ```http
-GET /api/delivery-methods/active
+GET /api/delivery-methods
 ```
 
 **Autenticación:** No requerida  
@@ -432,21 +474,27 @@ GET /api/delivery-methods/active
 ```json
 [
   {
-    "id": "64a7f8c9b123456789abcdeh",
+    "id": "686b18f09808aab4814098cb",
+    "code": "PICKUP",
     "name": "Retiro en Local",
-    "description": "Retiro en nuestro local",
+    "description": "Acércate a nuestra tienda a retirar tu pedido.",
     "requiresAddress": false,
-    "cost": 0,
-    "estimatedTime": "Inmediato",
     "isActive": true
   },
   {
-    "id": "64a7f8c9b123456789abcdei",
+    "id": "686b18f09808aab4814098cc",
+    "code": "DELIVERY",
     "name": "Entrega a Domicilio",
-    "description": "Envío a tu domicilio", 
+    "description": "Recibe tu pedido en la puerta de tu casa.",
     "requiresAddress": true,
-    "cost": 150,
-    "estimatedTime": "24-48 horas",
+    "isActive": true
+  },
+  {
+    "id": "686b18f09808aab4814098cd",
+    "code": "EXPRESS",
+    "name": "Entrega Express",
+    "description": "Entrega el mismo día (servicio premium).",
+    "requiresAddress": true,
     "isActive": true
   }
 ]

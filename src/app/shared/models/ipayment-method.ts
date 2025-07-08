@@ -1,6 +1,6 @@
 // src/app/shared/models/ipayment-method.ts
 /**
- * Interfaz para el método de pago según la respuesta del backend
+ * Interfaz para el método de pago según la respuesta del backend (admin)
  */
 export interface IPaymentMethod {
     _id: string;
@@ -12,6 +12,24 @@ export interface IPaymentMethod {
     requiresOnlinePayment: boolean;
     createdAt: Date | string;
     updatedAt: Date | string;
+}
+
+/**
+ * Interfaz para el método de pago según la respuesta del endpoint público
+ */
+export interface IPaymentMethodPublic {
+    id: string;
+    name: string;
+    code: string;
+    description: string;
+    isActive: boolean;
+    requiresOnlinePayment: boolean;
+    allowsManualConfirmation?: boolean;
+    defaultOrderStatusId?: {
+        _id: string;
+        code: string;
+        name: string;
+    };
 }
 
 /**

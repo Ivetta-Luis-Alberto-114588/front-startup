@@ -18,7 +18,9 @@ import { ICreateOrderPayload } from 'src/app/features/orders/models/ICreateOrder
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { CheckoutStateService, ShippingAddressOption } from '../../services/checkout-state.service'; // Importa el servicio de estado
 import { DeliveryMethodService } from 'src/app/shared/services/delivery-method.service';
+import { PaymentMethodService } from 'src/app/shared/services/payment-method.service';
 import { IDeliveryMethod } from 'src/app/shared/models/idelivery-method';
+import { IPaymentMethod } from 'src/app/shared/models/ipayment-method';
 // import { TelegramNotificationService } from 'src/app/shared/services/telegram-notification.service'; // Ya no necesario
 
 @Component({
@@ -40,7 +42,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
   isLoadingDeliveryMethods = false;
 
   // Propiedades para métodos de pago
-  availablePaymentMethods: { id: string; name: string; code: string; description?: string; icon?: string }[] = [];
+  availablePaymentMethods: IPaymentMethod[] = [];
   selectedPaymentMethod: string | null = null;
 
   // Estados derivados del CheckoutStateService
@@ -72,6 +74,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private checkoutStateService: CheckoutStateService, // Inyecta el servicio de estado
     private deliveryMethodService: DeliveryMethodService, // Nuevo servicio
+    private paymentMethodService: PaymentMethodService, // Nuevo servicio para métodos de pago
     private fb: FormBuilder,
     private router: Router
     // private telegramNotificationService: TelegramNotificationService // Ya no necesario
@@ -555,42 +558,68 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
   updateAvailablePaymentMethods(method: IDeliveryMethod): void {
     // Resetear selección de pago anterior
     this.selectedPaymentMethod = null;
+    this.checkoutStateService.setSelectedPaymentMethodId(null);
 
-    // Definir métodos de pago disponibles según el tipo de entrega
-    if (method.code === 'pickup' || method.code === 'local-pickup' || method.name.toLowerCase().includes('retiro')) {
-      // Para retiro en local: efectivo y Mercado Pago
+    // Obtener métodos de pago reales del backend
+    this.paymentMethodService.getActivePaymentMethods().subscribe({
+      next: (allPaymentMethods) => {
+        console.log('🔍 Todos los métodos de pago obtenidos:', allPaymentMethods);
+        
+        // Filtrar métodos según el tipo de entrega
+        this.availablePaymentMethods = this.paymentMethodService.filterPaymentMethodsByDelivery(
+          allPaymentMethods, 
+          method.code
+        );
+
+        console.log('🔍 Métodos de pago filtrados para', method.code, ':', this.availablePaymentMethods);
+
+        // Debug: verificar estructura de los métodos de pago
+        if (this.availablePaymentMethods.length > 0) {
+          console.log('🔍 Primer método de pago:', this.availablePaymentMethods[0]);
+          console.log('🔍 ID del primer método:', this.availablePaymentMethods[0]._id);
+          console.log('🔍 Estructura completa:', JSON.stringify(this.availablePaymentMethods[0], null, 2));
+        }
+
+        // Si solo hay un método disponible, seleccionarlo automáticamente
+        if (this.availablePaymentMethods.length === 1) {
+          this.selectedPaymentMethod = this.availablePaymentMethods[0]._id;
+          this.checkoutStateService.setSelectedPaymentMethodId(this.availablePaymentMethods[0]._id);
+          console.log('✅ Método de pago seleccionado automáticamente:', this.availablePaymentMethods[0]._id);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener métodos de pago:', error);
+        // Fallback: usar métodos hardcodeados temporalmente
+        this.setFallbackPaymentMethods(method);
+      }
+    });
+  }
+
+  /**
+   * Métodos de pago de respaldo en caso de error del backend
+   */
+  private setFallbackPaymentMethods(method: IDeliveryMethod): void {
+    console.warn('⚠️ Usando métodos de pago de respaldo');
+    
+    if (method.code === 'PICKUP' || method.code === 'pickup' || method.code === 'local-pickup' || method.name.toLowerCase().includes('retiro')) {
+      // Para retiro en local: incluir efectivo como opción temporal
       this.availablePaymentMethods = [
         {
-          id: 'cash',
+          _id: 'fallback-cash', // ID temporal - será reemplazado por ID real del backend
           name: 'Pago en Efectivo',
-          code: 'cash',
+          code: 'CASH',
           description: 'Paga en efectivo al retirar tu pedido',
-          icon: 'bi-cash-coin'
-        },
-        {
-          id: 'mercado_pago',
-          name: 'Mercado Pago',
-          code: 'mercado_pago',
-          description: 'Tarjetas, dinero en cuenta, etc.',
-          icon: 'bi-credit-card'
+          isActive: true,
+          defaultOrderStatusId: '',
+          requiresOnlinePayment: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
         }
       ];
     } else {
-      // Para delivery: solo Mercado Pago (pago anticipado)
-      this.availablePaymentMethods = [
-        {
-          id: 'mercado_pago',
-          name: 'Mercado Pago',
-          code: 'mercado_pago',
-          description: 'Tarjetas, dinero en cuenta, etc.',
-          icon: 'bi-credit-card'
-        }
-      ];
-    }
-
-    // Si solo hay un método disponible, seleccionarlo automáticamente
-    if (this.availablePaymentMethods.length === 1) {
-      this.selectedPaymentMethod = this.availablePaymentMethods[0].id;
+      // Para delivery: mostrar error, no métodos disponibles
+      this.availablePaymentMethods = [];
+      this.notificationService.showError('No se pudieron cargar los métodos de pago. Por favor, recarga la página.');
     }
   }
 
@@ -598,7 +627,11 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    * Selecciona un método de pago
    */
   selectPaymentMethod(methodId: string): void {
+    console.log('🔍 selectPaymentMethod llamado con:', methodId, typeof methodId);
     this.selectedPaymentMethod = methodId;
+    // Notificar al CheckoutStateService para la validación global
+    this.checkoutStateService.setSelectedPaymentMethodId(methodId);
+    console.log('✅ Método de pago seleccionado:', methodId);
   }
 
   /**
@@ -626,6 +659,26 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       'SCHEDULED': 'bi-calendar-check'
     };
     return iconMap[code] || 'bi-box-seam';
+  }
+
+  /**
+   * Obtiene el icono apropiado para un método de pago según su código
+   */
+  getPaymentMethodIcon(code: string): string {
+    switch (code?.toUpperCase()) {
+      case 'CASH':
+        return 'bi-cash-coin';
+      case 'CREDIT_CARD':
+        return 'bi-credit-card';
+      case 'DEBIT_CARD':
+        return 'bi-credit-card-2-front';
+      case 'BANK_TRANSFER':
+        return 'bi-bank';
+      case 'MERCADO_PAGO':
+        return 'bi-credit-card';
+      default:
+        return 'bi-credit-card';
+    }
   }
 
   /**

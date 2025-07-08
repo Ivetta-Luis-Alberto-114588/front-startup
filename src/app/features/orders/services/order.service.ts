@@ -104,7 +104,7 @@ export class OrderService {
 
     if (isPickup) {
       console.log('🏪 Pickup method detected - removing ALL shipping-related fields');
-      
+
       // Para pickup, NO enviamos ningún dato de dirección según la documentación
       // El backend debe detectar que es pickup por el deliveryMethodId
       delete adaptedPayload.selectedAddressId;

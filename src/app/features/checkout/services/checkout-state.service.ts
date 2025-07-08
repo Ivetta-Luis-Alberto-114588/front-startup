@@ -18,6 +18,10 @@ export class CheckoutStateService {
   private availableDeliveryMethodsSubject = new BehaviorSubject<IDeliveryMethod[]>([]);
   availableDeliveryMethods$ = this.availableDeliveryMethodsSubject.asObservable();
 
+  // Nuevo estado para método de pago
+  private selectedPaymentMethodIdSubject = new BehaviorSubject<string | null>(null);
+  selectedPaymentMethodId$ = this.selectedPaymentMethodIdSubject.asObservable();
+
   // Observable derivado: determina si se debe mostrar la sección de dirección
   shouldShowAddressSection$: Observable<boolean> = this.selectedDeliveryMethod$.pipe(
     map(method => method?.requiresAddress || false)
@@ -26,12 +30,16 @@ export class CheckoutStateService {
   // Observable derivado: valida si el checkout está completo
   isCheckoutValid$: Observable<boolean> = combineLatest([
     this.selectedDeliveryMethod$,
+    this.selectedPaymentMethodId$,
     this.shippingAddress$,
     this.shouldShowAddressSection$
   ]).pipe(
-    map(([deliveryMethod, shippingAddress, shouldShowAddress]) => {
+    map(([deliveryMethod, paymentMethodId, shippingAddress, shouldShowAddress]) => {
       // Debe tener método de entrega seleccionado
       if (!deliveryMethod) return false;
+
+      // Debe tener método de pago seleccionado
+      if (!paymentMethodId) return false;
 
       // Si requiere dirección, debe tener una dirección seleccionada
       if (shouldShowAddress && !shippingAddress) return false;
@@ -80,6 +88,7 @@ export class CheckoutStateService {
   // Método para resetear todo el estado del checkout
   resetCheckoutState() {
     this.setSelectedDeliveryMethod(null);
+    this.setSelectedPaymentMethodId(null);
     this.setSelectedShippingAddress(null);
     this.setAvailableDeliveryMethods([]);
   }
@@ -93,5 +102,14 @@ export class CheckoutStateService {
       deliveryMethod: method?.id || null,
       shippingInfo: method?.requiresAddress ? shipping : null
     };
+  }
+
+  // Nuevos métodos para método de pago
+  setSelectedPaymentMethodId(paymentMethodId: string | null) {
+    this.selectedPaymentMethodIdSubject.next(paymentMethodId);
+  }
+
+  getSelectedPaymentMethodId(): string | null {
+    return this.selectedPaymentMethodIdSubject.value;
   }
 }
