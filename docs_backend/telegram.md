@@ -1,3 +1,4 @@
+
 # 📱 Notificaciones de Telegram
 
 Sistema completo de notificaciones usando Telegram Bot API para alertas en tiempo real.
@@ -39,30 +40,43 @@ const telegramAdapter = TelegramAdapter.getInstance();
 
 ## 🚀 Funcionalidades
 
-### ✅ Implementadas
+### ✅ Implementadas y Funcionando
 
-- **Envío de mensajes** de texto
-- **Mensajes con formato** (HTML/Markdown)
-- **Notificaciones de pedidos** automáticas
-- **Alertas de pagos** en tiempo real
-- **Notificaciones de errores** críticos
-- **Mensajes a múltiples chats** (admin, general)
-- **Rate limiting** para evitar spam
-- **Retry automático** en caso de fallo
+- **✅ Envío de mensajes** de texto con formato HTML
+- **✅ Notificaciones de pedidos** automáticas (post-pago)
+- **✅ Notificaciones de pagos** en tiempo real via webhook
+- **✅ Mensajes administrativos** desde panel de admin
+- **✅ Rate limiting** y manejo de errores robusto
+- **✅ Logging detallado** para debugging y auditoría
+- **✅ Tests automatizados** unitarios e integración
+- **✅ Singleton pattern** para instancia única del servicio
+- **✅ Configuración flexible** via variables de entorno
 
-### 🚧 En Desarrollo
+### 🔧 Configuradas pero Deshabilitadas
 
-- Envío de archivos/imágenes
-- Botones interactivos (InlineKeyboard)
-- Comandos del bot
-- Webhooks de Telegram
+- **⚠️ Notificaciones de orden inmediatas**: Actualmente se envían solo cuando el pago es confirmado, no al crear el pedido
+
+### 🚧 En Desarrollo / Pendientes
+
+- **📎 Envío de archivos/imágenes**
+- **⌨️ Botones interactivos** (InlineKeyboard)  
+- **🤖 Comandos del bot** para interacción bidireccional
+- **🔄 Webhooks de Telegram** para recibir mensajes
+- **📊 Notificaciones de resúmenes** diarios/semanales automáticos
+- **⚠️ Sistema de alertas** para errores críticos
 
 ## 📋 API Endpoints
 
-### Envío de Notificaciones
+### Administración de Telegram
+**Base URL:** `/api/admin/telegram`
+**Autenticación:** Bearer Token (rol ADMIN requerido)
 
-#### `POST /api/notifications/telegram/send`
-Enviar mensaje de Telegram (solo admins).
+> ⚠️ **IMPORTANTE:** Todos los endpoints requieren autenticación JWT válida y rol ADMIN. Si el usuario no es admin, se responde con 401/403.
+
+---
+
+#### `POST /api/admin/telegram/send-notification`
+Envía mensaje personalizado de Telegram (solo admins).
 
 **Headers:**
 ```
@@ -73,9 +87,65 @@ Content-Type: application/json
 **Body:**
 ```json
 {
-  "message": "Mensaje a enviar",
-  "chatId": "optional_chat_id",
-  "parseMode": "HTML"
+  "message": "Mensaje a enviar",      // (obligatorio, string, máx 4096 caracteres)
+  "chatId": "opcional"                // (opcional, string)
+  // "parseMode" y "disablePreview" pueden enviarse pero serán ignorados
+}
+```
+
+> ℹ️ **Notas:**
+> - El campo `message` es obligatorio y debe ser un string no vacío (máx 4096 caracteres).
+> - El campo `chatId` es opcional. Si no se envía, se usa el chatId por defecto configurado en el backend.
+> - El mensaje siempre se envía en formato **HTML**. Los campos `parseMode` y `disablePreview` NO tienen efecto.
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "message": "Notification sent successfully",
+  "timestamp": "2025-07-05T17:30:00Z",
+  "sentTo": "default chat"
+}
+```
+
+---
+
+#### `GET /api/admin/telegram/bot-info`
+Obtiene información del bot de Telegram.
+
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
+
+**Respuesta:**
+```json
+{
+  "success": true,
+  "data": {
+    "botName": "StartUp_test_luis_bot",
+    "status": "active",
+    "defaultChatId": "-123456789",
+    "apiConfigured": true
+  }
+}
+```
+
+---
+
+#### `POST /api/admin/telegram/send-test`
+Envía mensaje de prueba para verificar conectividad.
+
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+```
+
+**Body (opcional):**
+```json
+{
+  "message": "Mensaje personalizado de prueba"
 }
 ```
 
@@ -83,13 +153,21 @@ Content-Type: application/json
 ```json
 {
   "success": true,
-  "messageId": 123,
-  "timestamp": "2025-01-15T10:30:00Z"
+  "message": "Test message sent successfully",
+  "timestamp": "2025-07-05T17:30:00Z"
 }
 ```
 
-#### `POST /api/notifications/telegram/order`
-Notificación automática de nuevo pedido.
+---
+
+#### `POST /api/admin/telegram/send-order-notification`
+Envía notificación de orden manualmente.
+
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+```
 
 **Body:**
 ```json
@@ -107,63 +185,80 @@ Notificación automática de nuevo pedido.
 }
 ```
 
-#### `POST /api/notifications/telegram/payment`
-Notificación de pago recibido.
-
-**Body:**
+**Respuesta:**
 ```json
 {
-  "paymentId": "PAY_123",
-  "orderId": "ORDER_123",
-  "amount": 2500.00,
-  "method": "MercadoPago",
-  "status": "approved"
+  "success": true,
+  "message": "Order notification sent successfully",
+  "orderId": "ORDER_123"
 }
 ```
 
+---
+
+### Diagrama de Flujo de Envío de Notificación
+
+```mermaid
+flowchart TD
+    A[Frontend Admin] -- POST /send-notification --> B[API Backend]
+    B -- Valida JWT y rol ADMIN --> C{¿message válido?}
+    C -- No --> D[400 Error]
+    C -- Sí --> E[Envia mensaje a Telegram]
+    E -- OK --> F[200 Success]
+    E -- Error --> G[400/500 Error]
+```
+
+---
+```
+
+
 ## 🔔 Tipos de Notificaciones
 
-### 📦 Nuevo Pedido
+### 📦 Nuevo Pedido (Automática)
 
-**Trigger:** Cuando se crea un nuevo pedido
-**Destinatario:** Chat de administración
+- **Trigger:** Cuando se confirma un pago exitoso (webhook de MercadoPago)
+- **Destinatario:** Chat de administración
+- **Implementación:** Automática desde `PaymentController.processWebhook()`
+- **Nota:** Las notificaciones de orden se envían automáticamente **solo cuando el pago es aprobado**, no al crear el pedido inicial.
+
 **Formato:**
 ```
-🛒 NUEVO PEDIDO #ORDER_123
+🛒 Nueva Orden Recibida
 
+📋 ID: ORDER_123
 👤 Cliente: Juan Pérez
-📧 Email: juan@email.com
 💰 Total: $2,500.00
 
-📋 Productos:
-• Producto A × 2 - $1,250.00
-• Producto B × 1 - $1,250.00
+📦 Items:
+• Producto A x2 - $50.25
+• Producto B x1 - $50.25
 
-🚚 Dirección: Av. Corrientes 1234, CABA
 ⏰ Fecha: 15/01/2025 10:30
 ```
 
-### 💳 Pago Confirmado
+### 💳 Pago Confirmado (Automática)
 
-**Trigger:** Cuando se confirma un pago via webhook
-**Destinatario:** Chat de administración
+- **Trigger:** Cuando se confirma un pago via webhook de MercadoPago
+- **Destinatario:** Chat de administración
+- **Implementación:** Automática desde `PaymentController.processWebhook()`
+
 **Formato:**
 ```
-✅ PAGO CONFIRMADO
+💳 Notificación de Pago
 
-💳 ID MercadoPago: 123456789
-📝 Pedido: #ORDER_123
+✅ Estado: APPROVED
+📋 Orden: ORDER_123
 💰 Monto: $2,500.00
-🏦 Método: Visa ****3704
-👤 Cliente: Juan Pérez
+🏦 Método: Credit Card
 
-⏰ 15/01/2025 10:30
+⏰ Fecha: 15/01/2025 10:30
 ```
 
 ### ⚠️ Error Crítico
 
-**Trigger:** Errores en el sistema que requieren atención
-**Destinatario:** Chat de administración
+- **Trigger:** Errores en el sistema que requieren atención
+- **Destinatario:** Chat de administración
+
 **Formato:**
 ```
 🚨 ERROR CRÍTICO
@@ -176,10 +271,11 @@ Notificación de pago recibido.
 🔧 Requiere atención inmediata
 ```
 
-### 📊 Resumen Diario
+### 📊 Resumen Diario (Futuro)
 
-**Trigger:** Automático todos los días a las 23:59
-**Destinatario:** Chat de administración
+- **Trigger:** Automático todos los días a las 23:59
+- **Destinatario:** Chat de administración
+
 **Formato:**
 ```
 📊 RESUMEN DEL DÍA - 15/01/2025
@@ -196,59 +292,66 @@ Notificación de pago recibido.
 
 ## 💡 Ejemplos de Uso
 
-### Notificación Manual
+### Notificación Manual (desde Admin Panel)
 
 ```typescript
-// Enviar notificación manual desde cualquier parte del código
-await telegramService.sendMessage({
-  message: '🎉 Promoción especial activada!',
-  chatId: process.env.TELEGRAM_CHAT_ID
-});
+// Usando el endpoint del admin panel
+POST /api/admin/telegram/send-notification
+{
+  "message": "🎉 Promoción especial activada!",
+  "chatId": "optional_specific_chat_id"
+}
 ```
 
-### Notificación de Pedido (Automática)
+### Notificación de Pedido (Automática desde Webhook)
 
 ```typescript
-// En el OrderController después de crear pedido
-const orderNotification = {
-  orderId: newOrder.id,
-  customerName: customer.name,
-  total: newOrder.totalWithTax,
-  items: newOrder.items.map(item => ({
-    name: item.productName,
-    quantity: item.quantity,
-    price: item.price
-  })),
-  shippingAddress: newOrder.shippingDetails.address
-};
-
-await telegramService.sendOrderNotification(orderNotification);
+// En PaymentController.processWebhook() cuando pago es aprobado
+if (paymentInfo.status === 'approved') {
+  const order = await this.orderRepository.findById(payment.saleId);
+  
+  if (order && this.notificationService) {
+    await this.notificationService.sendOrderNotification({
+      orderId: order.id,
+      customerName: order.customer?.name || 'Cliente',
+      total: order.total,
+      items: order.items?.map(item => ({
+        name: item.product?.name || 'Producto',
+        quantity: item.quantity,
+        price: item.unitPrice
+      })) || []
+    });
+  }
+}
 ```
 
-### Notificación de Pago (Webhook)
+### Notificación Manual de Orden (desde Admin Panel)
 
 ```typescript
-// En el webhook handler después de confirmar pago
-await telegramService.sendPaymentNotification({
-  paymentId: payment.id,
-  orderId: payment.external_reference,
-  amount: payment.transaction_amount,
-  method: payment.payment_method_id,
-  status: payment.status,
-  customerEmail: payment.payer.email
-});
+// Usando el endpoint específico para órdenes
+POST /api/admin/telegram/send-order-notification
+{
+  "orderId": "ORDER_123",
+  "customerName": "Juan Pérez",
+  "total": 2500.00,
+  "items": [
+    {
+      "name": "Producto A",
+      "quantity": 2,
+      "price": 1250.00
+    }
+  ]
+}
 ```
 
-### Notificación de Error
+### Mensaje de Prueba
 
 ```typescript
-// En cualquier catch block crítico
-await telegramService.sendErrorNotification({
-  module: 'PaymentController',
-  error: error.message,
-  details: `Error al procesar pago ${orderId}`,
-  timestamp: new Date().toISOString()
-});
+// Verificar conectividad del bot
+POST /api/admin/telegram/send-test
+{
+  "message": "🧪 Prueba personalizada del sistema" // Opcional
+}
 ```
 
 ## ⚙️ Configuración Avanzada
@@ -355,14 +458,31 @@ await metrics.increment('telegram.notifications.sent', {
 ### Testing
 
 ```typescript
-// Test de conectividad
-await telegramService.testConnection();
+// Test de conectividad desde admin panel
+POST /api/admin/telegram/send-test
+Authorization: Bearer <admin_token>
 
-// Test de mensaje
-await telegramService.sendMessage({
-  message: '🧪 Test message from backend',
-  chatId: process.env.TELEGRAM_CHAT_ID
-});
+// Test de funcionalidad básica
+POST /api/admin/telegram/bot-info
+Authorization: Bearer <admin_token>
+
+// Ejecutar tests automatizados
+npm test -- --testNamePattern="Telegram"
+```
+
+**Estado de los Tests:**
+- ✅ Tests unitarios: `telegram-notification.adapter.test.ts` - PASSING
+- ✅ Tests de integración: `telegram-notification.test.ts` - PASSING
+- ✅ Cobertura: Métodos principales cubiertos
+- ✅ Mocks: Configurados para evitar llamadas reales en testing
+
+**Ejemplo de salida exitosa:**
+```
+PASS  tests/unit/infrastructure/adapters/telegram-notification.adapter.test.ts
+PASS  tests/integration/telegram-notification.test.ts
+
+Test Suites: 3 passed
+Tests: 16 passed
 ```
 
 ---

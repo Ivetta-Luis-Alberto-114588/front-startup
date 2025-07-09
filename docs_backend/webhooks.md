@@ -1,13 +1,15 @@
-# 🔗 Sistema de Webhooks - Captura y Análisis Completo
 
-Sistema robusto para capturar, almacenar y consultar webhooks de MercadoPago con trazabilidad total y obtención de información real desde la API.
+# 🔗 Sistema de Webhooks - Flujo Completo de Notificaciones
+
+Sistema robusto para capturar webhooks de MercadoPago y activar notificaciones automáticas cuando el estado es "approved". Esta documentación está alineada con el código real y es clave para la integración frontend y monitoreo.
 
 ## 📑 Índice
 
 - [🎯 Propósito](#-propósito)
+- [🔄 Flujo Completo de Webhook a Notificación](#-flujo-completo-de-webhook-a-notificación)
 - [🏗️ Arquitectura](#-arquitectura)
-- [📋 Endpoints Disponibles](#-endpoints-disponibles)
-- [🔍 Endpoint Estrella](#-endpoint-estrella)
+- [� Sistema de Logging y Trazabilidad](#-sistema-de-logging-y-trazabilidad)
+- [� Endpoints Disponibles](#-endpoints-disponibles)
 - [💡 Casos de Uso](#-casos-de-uso)
 - [🔧 Configuración](#-configuración)
 - [📊 Monitoreo](#-monitoreo)
@@ -16,12 +18,193 @@ Sistema robusto para capturar, almacenar y consultar webhooks de MercadoPago con
 
 El sistema de webhooks permite:
 
-- **🔄 Captura automática** de todos los webhooks recibidos
+- **🔄 Captura automática** de todos los webhooks de MercadoPago
 - **💾 Almacenamiento completo** de datos crudos para auditoría
-- **🔍 Consulta directa** a MercadoPago para información real
-- **🔗 Trazabilidad total** para vincular pagos con ventas
+- **🔍 Procesamiento inteligente** basado en el estado del pago
+- **📧 Activación automática** de notificaciones (Email + Telegram)
+- **🔗 Trazabilidad total** con IDs únicos por webhook
 - **📊 Análisis** de duplicados y problemas
-- **⚠️ Transparencia** sin romper el funcionamiento actual
+
+---
+
+## 🔄 Flujo Completo de Webhook a Notificación
+
+### 📝 Diagrama de Flujo General
+
+```mermaid
+sequenceDiagram
+    participant MP as MercadoPago
+    participant API as Backend (POST /api/payments/webhook)
+    participant DB as MongoDB (WebhookLog)
+    participant MPAPI as MercadoPago API
+    participant ORD as Order/Payment Repo
+    participant NOTI as Notificación (Telegram/Email)
+    MP->>API: POST /api/payments/webhook
+    API->>DB: Guardar datos crudos (headers, query, body)
+    API->>API: Validar tipo/topic
+    API->>MPAPI: Consultar paymentId
+    API->>ORD: Buscar pago local (external_reference)
+    alt Pago aprobado
+        API->>ORD: Actualizar estado de orden
+        API->>NOTI: Enviar notificación
+    end
+    API->>DB: Actualizar log con resultado
+    API-->>MP: 200 OK (siempre)
+```
+
+### 📝 Secuencia Paso a Paso
+
+#### 1. 📥 **Recepción del Webhook**
+```
+MercadoPago → POST /api/payments/webhook
+```
+
+**Datos recibidos (pueden variar):**
+```json
+// Formato por query
+{
+  "id": "12345678901",
+  "topic": "payment"
+}
+// Formato por body
+{
+  "type": "payment",
+  "data": { "id": "12345678901" }
+}
+```
+
+#### 2. 🔍 **Captura y Logging Inmediato**
+```typescript
+// Middleware guarda TODO: headers, query, body, IP, user-agent
+const webhookTraceId = `webhook-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+logger.info('🎯 Webhook recibido y datos crudos guardados:', {
+  webhookLogId: req.webhookLogId,
+  query: req.query,
+  body: req.body,
+  headers: {
+    'content-type': req.headers['content-type'],
+    'user-agent': req.headers['user-agent'],
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    'x-signature': req.headers['x-signature'],
+    'x-request-id': req.headers['x-request-id']
+  }
+});
+```
+
+
+#### 3. 🔎 **Consulta a MercadoPago y procesamiento**
+```typescript
+// Validar tipo/topic
+if (req.query.topic !== 'payment' && req.body.type !== 'payment') {
+  // Ignorar y responder 200
+}
+// Obtener información real del pago
+const paymentInfo = await paymentService.getPayment(paymentId);
+logger.info('📊 Información del pago MP:', {
+  id: paymentInfo.id,
+  status: paymentInfo.status,
+  external_reference: paymentInfo.externalReference,
+  transaction_amount: paymentInfo.transactionAmount
+});
+// Buscar pago local
+const payment = await paymentRepository.getPaymentByExternalReference(paymentInfo.externalReference);
+logger.info('✅ Pago encontrado en DB:', { id: payment.id, saleId: payment.saleId, ... });
+// Idempotencia: si ya está procesado, ignorar
+if (payment.status === paymentInfo.status && payment.providerPaymentId === paymentInfo.id.toString()) {
+  // Webhook duplicado, responder 200
+}
+// Actualizar estado de orden si corresponde
+if (paymentInfo.status === 'approved') {
+  // Buscar estado 'PENDIENTE PAGADO' dinámicamente
+  const paidStatus = await orderStatusRepository.findByCode('PENDIENTE PAGADO');
+  await orderRepository.updateStatus(payment.saleId, {
+    statusId: paidStatus.id,
+    notes: `Pago aprobado con ID ${paymentInfo.id}`
+  });
+  // Enviar notificación (Telegram/Email)
+  await notificationService.sendOrderNotification({ ... });
+}
+// Actualizar log con resultado
+await updateWebhookLog(req.webhookLogId, { ... });
+// Siempre responder 200
+res.status(200).json({ message: 'Notificación procesada exitosamente', ... });
+```
+
+#### 7. � **Activación de Notificaciones Automáticas**
+```typescript
+// Obtener datos completos de la orden
+const order = await this.orderRepository.findById(payment.saleId);
+
+const notificationData = {
+  orderId: order.id,
+  customerName: order.customer?.name || 'Cliente',
+  total: order.total,
+  items: order.items?.map(item => ({
+    name: item.product?.name || 'Producto',
+    quantity: item.quantity,
+    price: item.unitPrice
+  })) || []
+};
+
+logger.info('📤 [NOTIFICATION] === LLAMANDO sendOrderNotification ===', {
+  notificationData: JSON.stringify(notificationData, null, 2),
+  dataValidation: {
+    orderIdValid: !!notificationData.orderId,
+    customerNameValid: !!notificationData.customerName,
+    totalValid: typeof notificationData.total === 'number',
+    itemsValid: Array.isArray(notificationData.items),
+    itemsCount: notificationData.items.length
+  }
+});
+
+// 🔥 ENVÍO SIMULTÁNEO: Email + Telegram
+await this.notificationService.sendOrderNotification(notificationData);
+
+logger.info('✅ [NOTIFICATION] === NOTIFICACIÓN COMPLETADA ===', {
+  orderId: payment.saleId,
+  duration: '1250ms'
+});
+```
+
+---
+
+## 🔍 Sistema de Logging y Trazabilidad
+
+### 🔖 Trace ID Único por Webhook
+
+Cada webhook recibe un ID único para trazabilidad completa:
+
+```typescript
+const webhookTraceId = `webhook-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+// Ejemplo: webhook-1720223845123-k7m9p2x
+```
+
+### 📊 Logs Estructurados
+
+**Formato estándar:**
+```json
+{
+  "timestamp": "2025-07-05T20:30:15.123Z",
+  "level": "info",
+  "service": "tu-api",
+  "environment": "production",
+  "webhookTraceId": "webhook-1720223845123-k7m9p2x",
+  "paymentId": "12345678901",
+  "orderId": "ORD123456789",
+  "action": "payment_approved",
+  "duration": "1250ms"
+}
+```
+
+### 🔍 Búsqueda de Logs por Trace ID
+
+```bash
+# Buscar todos los logs de un webhook específico
+grep "webhook-1720223845123-k7m9p2x" /opt/render/project/src/logs/*.log
+
+# Buscar logs de pagos aprobados
+grep "PAGO APROBADO DETECTADO" /opt/render/project/src/logs/*.log
+```
 
 ## 🏗️ Arquitectura
 
@@ -44,14 +227,47 @@ Webhook MercadoPago → Middleware Logger → Base de Datos → Consulta API →
 - **`WebhookController`**: Endpoints de administración y consulta
 - **`MercadoPagoAdapter`**: Integración con API de MercadoPago
 
+
 ## 📋 Endpoints Disponibles
 
-### 🔐 Autenticación
-**Todos los endpoints requieren:**
-- Token JWT válido
-- Rol de ADMIN
+| Endpoint | Método | Autenticación | Descripción |
+|----------|--------|---------------|-------------|
+| `/api/payments/webhook` | POST | Ninguna (público para MercadoPago) | Recibe webhooks de MercadoPago. |
+| `/api/webhooks` | GET | JWT + ADMIN | Listar webhooks capturados (paginado, filtrado). |
+| `/api/webhooks/stats` | GET | JWT + ADMIN | Estadísticas generales de webhooks. |
+| `/api/webhooks/:id` | GET | JWT + ADMIN | Detalle crudo de un webhook. |
+| `/api/webhooks/:id/mercadopago-details` | GET | JWT + ADMIN | Info real y trazabilidad del pago en MP. |
 
-### 1️⃣ `GET /api/webhooks` - Listar Webhooks
+### 🔐 Autenticación
+- **Recepción de webhooks:** No requiere autenticación (MercadoPago debe poder acceder).
+- **Consultas y administración:** Requiere JWT válido y rol `ADMIN_ROLE` en header `Authorization: Bearer <token>`.
+
+### 1️⃣ `POST /api/payments/webhook` - Recepción de Webhooks
+
+**Propósito:** Recibir notificaciones de MercadoPago (público, sin auth)
+
+**Headers esperados:**
+- `content-type: application/json`
+- `x-signature`, `x-request-id`, `user-agent`, `x-forwarded-for` (MercadoPago)
+
+**Body/Query posibles:**
+```json
+// Query: ?id=12345678901&topic=payment
+// Body: { "type": "payment", "data": { "id": "12345678901" } }
+```
+
+**Respuestas posibles:**
+```json
+{ "message": "Notificación procesada exitosamente", "paymentStatus": "approved", ... }
+{ "message": "Notificación recibida pero ignorada (topic no relevante)" }
+{ "message": "Formato de notificación no reconocido" }
+{ "message": "Pago no encontrado en DB, notificación ignorada." }
+{ "message": "Webhook duplicado - pago ya procesado" }
+{ "status": "error", "message": "Error procesando webhook" }
+```
+**Nota:** Siempre responde 200 OK para evitar reintentos infinitos de MercadoPago.
+
+### 2️⃣ `GET /api/webhooks` - Listar Webhooks
 
 **Propósito:** Ver todos los webhooks capturados con paginación y filtros
 
@@ -64,11 +280,6 @@ eventType=payment   # Filtrar por tipo de evento
 processed=false     # Filtrar por procesados (true/false)
 ```
 
-**Ejemplo:**
-```bash
-GET /api/webhooks?page=1&limit=20&source=mercadopago&processed=false
-```
-
 **Respuesta:**
 ```json
 {
@@ -79,11 +290,11 @@ GET /api/webhooks?page=1&limit=20&source=mercadopago&processed=false
       "source": "mercadopago",
       "eventType": "payment",
       "httpMethod": "POST",
-      "url": "/webhook",
+      "url": "/api/payments/webhook",
       "headers": {...},
       "queryParams": { "topic": "payment", "id": "123456" },
       "body": {
-        "action": "payment.updated",
+        "type": "payment",
         "data": { "id": "123456" }
       },
       "ipAddress": "200.115.53.25",
@@ -174,95 +385,47 @@ GET /api/webhooks?page=1&limit=20&source=mercadopago&processed=false
 
 ## 🔍 Endpoint Estrella
 
+
 ### 4️⃣ `GET /api/webhooks/:id/mercadopago-details` 🚀
 
-**🎯 ESTE ES EL ENDPOINT MÁS IMPORTANTE**
+**🎯 ENDPOINT MÁS IMPORTANTE**
 
-**Propósito:** Obtener información REAL y COMPLETA del pago directamente desde MercadoPago
-
-**Lo que hace internamente:**
-1. Busca el webhook en MongoDB por su ID
-2. Extrae el `payment_id` del webhook
-3. **Consulta directamente** la API de MercadoPago: `GET https://api.mercadopago.com/v1/payments/{payment_id}`
-4. Enriquece la información con análisis de trazabilidad
-5. Detecta duplicados y problemas
+**Propósito:** Obtener información REAL y COMPLETA del pago directamente desde MercadoPago, con análisis de duplicados y trazabilidad.
 
 **Parámetros:**
 - `id`: ID del webhook en MongoDB
 
-**Respuesta COMPLETA:**
+**Respuesta:**
 ```json
 {
-  "webhookInfo": {
-    "_id": "65a1b2c3d4e5f6789012345",
-    "source": "mercadopago",
+  "webhook": {
+    "id": "65a1b2c3d4e5f6789012345",
     "eventType": "payment",
+    "processed": true,
+    "processingResult": { "success": true, ... },
     "createdAt": "2025-01-15T10:30:00Z",
-    "paymentId": "123456789"
+    ...
   },
-  "mercadoPagoPayment": {
+  "mercadoPagoData": {
     "id": 123456789,
     "status": "approved",
-    "status_detail": "accredited",
     "transaction_amount": 2500.00,
-    "currency_id": "ARS",
-    "date_created": "2025-01-15T10:29:45.000-04:00",
-    "date_approved": "2025-01-15T10:29:47.000-04:00",
-    "date_last_updated": "2025-01-15T10:29:47.000-04:00",
     "external_reference": "ORDER_ABC123",
-    "payment_method_id": "visa",
-    "payment_type_id": "credit_card",
-    "installments": 3,
-    "transaction_details": {
-      "net_received_amount": 2375.50,
-      "total_paid_amount": 2500.00,
-      "overpaid_amount": 0,
-      "installment_amount": 833.33
-    },
-    "fee_details": [
-      {
-        "type": "mercadopago_fee",
-        "amount": 124.50
-      }
-    ],
-    "payer": {
-      "id": "456789123",
-      "email": "cliente@email.com",
-      "identification": {
-        "type": "DNI",
-        "number": "12345678"
-      }
-    },
-    "card": {
-      "first_six_digits": "450995",
-      "last_four_digits": "3704",
-      "expiration_month": 12,
-      "expiration_year": 2026,
-      "cardholder": {
-        "name": "JUAN PEREZ",
-        "identification": {
-          "type": "DNI",
-          "number": "12345678"
-        }
-      }
-    },
-    "metadata": {
-      "uuid": "clave-idempotencia-123"
-    }
+    ...
   },
   "analysis": {
-    "idempotencyKey": "clave-idempotencia-123",
-    "duplicates": {
-      "found": false,
-      "count": 0,
-      "webhooks": []
+    "idempotencyKey": "mp_123456789_ORDER_ABC123_2025-01-15",
+    "linkToSale": {
+      "externalReference": "ORDER_ABC123",
+      "buyerInfo": { "email": "cliente@email.com", ... }
     },
-    "traceability": {
-      "canLinkToOrder": true,
-      "orderReference": "ORDER_ABC123",
-      "paymentCompleted": true,
-      "amountMatches": true
-    }
+    "riskLevel": "LOW",
+    "trustScore": 95
+  },
+  "traceability": {
+    "paymentId": "123456789",
+    "possibleDuplicates": 0,
+    ...
   }
 }
 ```
@@ -300,19 +463,16 @@ GET /api/webhooks?page=1&limit=20&source=mercadopago&processed=false
 - **`payer.identification`**: DNI/documento
 - **`card.cardholder.name`**: Nombre en la tarjeta
 
-## 💡 Casos de Uso
+
+## 💡 Casos de Uso y Recomendaciones Frontend
+
 
 ### 🔍 Caso 1: Verificar Pago Después de Webhook
-
-```bash
-# 1. Listar webhooks no procesados
-GET /api/webhooks?processed=false&eventType=payment
-
-# 2. Obtener detalles completos del pago
-GET /api/webhooks/65a1b2c3d4e5f6789012345/mercadopago-details
-
-# 3. Vincular con orden local usando external_reference
-```
+1. Listar webhooks no procesados:
+   `GET /api/webhooks?processed=false&eventType=payment`
+2. Obtener detalles completos del pago:
+   `GET /api/webhooks/{webhook_id}/mercadopago-details`
+3. Vincular con orden local usando `external_reference`.
 
 ### 🕵️ Caso 2: Investigar Discrepancia de Pago
 
@@ -339,26 +499,20 @@ GET /api/webhooks?processed=true&limit=100
 GET /api/webhooks/{webhook_id}/mercadopago-details
 ```
 
+
 ### 🔁 Caso 4: Detectar Duplicados
-
-```bash
-# Usar el endpoint principal que automáticamente detecta duplicados
-GET /api/webhooks/{webhook_id}/mercadopago-details
-
-# El analysis.duplicates mostrará:
+El endpoint `/api/webhooks/{webhook_id}/mercadopago-details` detecta automáticamente duplicados:
+```json
 {
-  "duplicates": {
-    "found": true,
-    "count": 2,
-    "webhooks": [
-      { "_id": "webhook1", "createdAt": "..." },
-      { "_id": "webhook2", "createdAt": "..." }
-    ]
+  "traceability": {
+    "possibleDuplicates": 2,
+    ...
   }
 }
 ```
 
 ## 🔧 Configuración
+
 
 ### Variables de Entorno
 ```env
@@ -369,13 +523,13 @@ MERCADO_PAGO_ACCESS_TOKEN=your_access_token
 MONGO_URL=mongodb://localhost:27017/ecommerce
 
 # Webhook URL (configurar en MercadoPago)
-WEBHOOK_URL=https://tu-dominio.com/webhook
+WEBHOOK_URL=https://tu-dominio.com/api/payments/webhook
 ```
 
 ### Configuración en MercadoPago
 
 1. **Ir al panel de MercadoPago**
-2. **Configurar webhook URL**: `https://tu-dominio.com/webhook`
+2. **Configurar webhook URL**: `https://tu-dominio.com/api/payments/webhook`
 3. **Seleccionar eventos**: payment, refund, etc.
 4. **El sistema capturará automáticamente** todos los webhooks
 
@@ -417,7 +571,8 @@ GET /api/webhooks/stats
 
 Este sistema te permite **capturar TODO** lo que llega de MercadoPago y **obtener información real** consultando directamente su API. Es **transparente** (no rompe nada), **completo** (guarda todo), y te da **trazabilidad total** para vincular cada cobro con tu venta.
 
-**🚀 El endpoint más importante es `/api/webhooks/:id/mercadopago-details` porque es el único que va directo a MercadoPago y te trae toda la información real del pago.**
+
+**🚀 El endpoint más importante es `/api/webhooks/:id/mercadopago-details` porque es el único que va directo a MercadoPago y te trae toda la información real del pago, con análisis de duplicados y trazabilidad.**
 
 Para más información:
 - [💳 Integración MercadoPago](./mercadopago.md)

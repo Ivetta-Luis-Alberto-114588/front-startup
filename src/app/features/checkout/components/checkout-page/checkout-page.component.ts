@@ -564,10 +564,10 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     this.paymentMethodService.getActivePaymentMethods().subscribe({
       next: (allPaymentMethods) => {
         console.log('🔍 Todos los métodos de pago obtenidos:', allPaymentMethods);
-        
+
         // Filtrar métodos según el tipo de entrega
         this.availablePaymentMethods = this.paymentMethodService.filterPaymentMethodsByDelivery(
-          allPaymentMethods, 
+          allPaymentMethods,
           method.code
         );
 
@@ -600,7 +600,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    */
   private setFallbackPaymentMethods(method: IDeliveryMethod): void {
     console.warn('⚠️ Usando métodos de pago de respaldo');
-    
+
     if (method.code === 'PICKUP' || method.code === 'pickup' || method.code === 'local-pickup' || method.name.toLowerCase().includes('retiro')) {
       // Para retiro en local: incluir efectivo como opción temporal
       this.availablePaymentMethods = [

@@ -3,8 +3,10 @@
 ## 📋 Índice
 
 - [🔧 Configuración](#-configuración)
-- [📬 Tipos de Emails](#-tipos-de-emails)
-- [🛠️ API Endpoints](#-api-endpoints)
+- [� Flujo de Notificaciones](#-flujo-de-notificaciones)
+- [�📬 Tipos de Emails](#-tipos-de-emails)
+- [� Sistema de Logging](#-sistema-de-logging)
+- [�🛠️ API Endpoints](#-api-endpoints)
 - [📝 Templates Disponibles](#-templates-disponibles)
 - [📊 Monitoreo y Logs](#-monitoreo-y-logs)
 - [🔧 Troubleshooting](#-troubleshooting)
@@ -16,10 +18,82 @@
 ### Variables de Entorno Requeridas
 
 ```env
-# Nodemailer - Gmail Configuration
-MAILER_SERVICE=gmail
-MAILER_EMAIL=tu-email@gmail.com
-MAILER_SECRET_KEY=tu-app-password
+# Email Configuration (Gmail)
+EMAIL_SERVICE=gmail
+EMAIL_USER=laivetta@gmail.com
+EMAIL_PASS=your-gmail-app-password
+EMAIL_SENDER_NAME=StartUp E-commerce
+```
+
+### 🔑 Configuración de Gmail
+
+1. **Habilitar 2FA** en tu cuenta de Gmail
+2. **Generar App Password:**
+   - Ve a: Configuración de cuenta → Seguridad → Verificación en 2 pasos
+   - Generar contraseña de aplicación
+   - Usar esta contraseña en `EMAIL_PASS`
+
+---
+
+## 🔄 Flujo de Notificaciones Automáticas
+
+### 💰 Email de Pago Aprobado
+
+El sistema envía automáticamente emails cuando un pago es aprobado, **en paralelo con Telegram**:
+
+#### 🔄 Secuencia del Flujo
+
+1. **Webhook de MercadoPago** → `POST /api/payments/webhook`
+2. **Verificación del estado** → `status === 'approved'`
+3. **Búsqueda de la orden** → Por `external_reference`
+4. **Actualización del estado** → Orden a "PENDIENTE PAGADO"
+5. **🚀 ENVÍO PARALELO** → Email + Telegram simultáneamente
+
+#### 📧 Contenido del Email
+
+```html
+Asunto: ✅ Pago Confirmado - Pedido #ORD123456789
+
+Estimado/a Juan Pérez,
+
+Su pago ha sido procesado exitosamente.
+
+📋 Detalles del Pedido:
+• Número: #ORD123456789
+• Total: $25,500.00
+• Estado: Pendiente de Preparación
+
+📦 Productos:
+• Producto A (x2) - $12,000.00
+• Producto B (x1) - $13,500.00
+
+📅 Fecha: 05/07/2025 20:30:15
+
+Pronto nos contactaremos para coordinar la entrega.
+
+Saludos,
+StartUp E-commerce
+```
+
+#### 🔍 Logging Detallado del Email
+
+```typescript
+// Logs específicos del email
+logger.info('📧 [EMAIL] Enviando notificación de pago aprobado', {
+  to: 'customer@email.com',
+  orderId: 'ORD123456789',
+  paymentId: '12345678901',
+  customerName: 'Juan Pérez',
+  totalAmount: 25500
+});
+
+logger.info('📧 [EMAIL] Email enviado exitosamente', {
+  messageId: '<abc123@gmail.com>',
+  to: 'customer@email.com',
+  orderId: 'ORD123456789',
+  duration: '850ms',
+  smtpResponse: '250 2.0.0 OK'
+});
 ```
 
 ### 🔑 Configuración de Gmail
@@ -98,102 +172,88 @@ Content-Type: application/json
 }
 ```
 
-**Respuesta:**
+**Respuesta exitosa (200):**
 ```json
 {
-  "message": "Email de recuperación enviado",
-  "emailSent": true
+  "message": "Se ha enviado un enlace de recuperación a tu email"
 }
 ```
 
-#### 📬 Email de Prueba (Admin)
+#### � Restablecer Contraseña
 
 ```http
-POST /api/admin/send-test-email
-Authorization: Bearer <admin-jwt-token>
+POST /api/auth/reset-password
 Content-Type: application/json
 
 {
-  "to": "test@email.com",
-  "subject": "Email de Prueba",
-  "type": "test"
+  "token": "reset-token-here",
+  "newPassword": "NuevaPassword123"
 }
 ```
 
-#### 📊 Email Personalizado (Admin)
-
-```http
-POST /api/admin/send-custom-email
-Authorization: Bearer <admin-jwt-token>
-Content-Type: application/json
-
+**Respuesta exitosa (200):**
+```json
 {
-  "to": "cliente@email.com",
-  "subject": "Asunto Personalizado",
-  "html": "<h1>Contenido HTML</h1>",
-  "text": "Contenido en texto plano"
+  "message": "Contraseña restablecida correctamente"
 }
 ```
+
+> **Nota:** Ambos endpoints son públicos y **no requieren autenticación**.
+
+#### � Endpoints de administración de emails (NO IMPLEMENTADOS)
+
+Los siguientes endpoints aparecen en la documentación pero **no están implementados actualmente** en el backend. Si el frontend los requiere, deben ser desarrollados:
+
+- `POST /api/admin/send-test-email`
+- `POST /api/admin/send-custom-email`
+- `GET /api/admin/emails`
+- `GET /api/admin/emails/stats`
+
+> **Importante:** Si necesitas estos endpoints, consulta con backend para su desarrollo o elimina su uso en frontend.
 
 ### 📈 Monitoreo de Emails
 
-#### 📋 Historial de Emails
+> **Nota:** Los endpoints `/api/admin/emails` y `/api/admin/emails/stats` **no están implementados** en el backend actual. Si se requieren, deben ser desarrollados.
+## 🗺️ Diagramas de Flujo
 
-```http
-GET /api/admin/emails?page=1&limit=20&status=sent
-Authorization: Bearer <admin-jwt-token>
+### 🔄 Flujo de Recuperación de Contraseña
+
+```mermaid
+sequenceDiagram
+    participant User as Usuario
+    participant Front as Frontend
+    participant API as API Backend
+    participant Email as EmailService
+
+    User->>Front: Solicita recuperación (email)
+    Front->>API: POST /api/auth/forgot-password
+    API->>API: Valida email y genera token
+    API->>Email: Envía email con link de reseteo
+    Email-->>User: Email con link de reseteo
+    User->>Front: Hace click en link y envía nueva contraseña
+    Front->>API: POST /api/auth/reset-password
+    API->>API: Valida token y actualiza contraseña
+    API-->>Front: Respuesta de éxito
 ```
 
-**Respuesta:**
-```json
-{
-  "total": 150,
-  "emails": [
-    {
-      "id": "email_123",
-      "to": "cliente@email.com",
-      "subject": "Confirmación de Pedido #123",
-      "type": "order_confirmation",
-      "status": "sent",
-      "sentAt": "2025-01-15T10:30:00Z",
-      "deliveredAt": "2025-01-15T10:30:15Z"
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "totalPages": 8
-  }
-}
-```
+### � Flujo de Notificación de Pago Aprobado
 
-#### 📊 Estadísticas de Emails
+```mermaid
+sequenceDiagram
+    participant MP as MercadoPago
+    participant API as API Backend
+    participant Email as EmailService
+    participant Telegram as TelegramService
+    participant User as Usuario
 
-```http
-GET /api/admin/emails/stats
-Authorization: Bearer <admin-jwt-token>
-```
-
-**Respuesta:**
-```json
-{
-  "general": {
-    "totalSent": 1250,
-    "delivered": 1200,
-    "failed": 50,
-    "deliveryRate": 96.0
-  },
-  "byType": [
-    { "type": "order_confirmation", "sent": 500, "delivered": 485 },
-    { "type": "password_reset", "sent": 200, "delivered": 195 },
-    { "type": "payment_confirmation", "sent": 300, "delivered": 290 }
-  ],
-  "last24Hours": {
-    "sent": 45,
-    "delivered": 43,
-    "failed": 2
-  }
-}
+    MP->>API: POST /api/payments/webhook
+    API->>API: Verifica status === "approved"
+    API->>API: Busca y actualiza orden
+    API->>par Email y Telegram
+    API->>Email: Envía email de pago aprobado
+    API->>Telegram: Envía mensaje a admin
+    Email-->>User: Email de confirmación de pago
+    Telegram-->>API: Notificación enviada
 ```
 
 ---

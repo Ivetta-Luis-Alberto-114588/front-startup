@@ -43,8 +43,8 @@ export class PaymentMethodService {
       description: publicMethod.description,
       isActive: publicMethod.isActive,
       requiresOnlinePayment: publicMethod.requiresOnlinePayment,
-      defaultOrderStatusId: typeof publicMethod.defaultOrderStatusId === 'object' 
-        ? publicMethod.defaultOrderStatusId._id 
+      defaultOrderStatusId: typeof publicMethod.defaultOrderStatusId === 'object'
+        ? publicMethod.defaultOrderStatusId._id
         : publicMethod.defaultOrderStatusId || '',
       createdAt: new Date(),
       updatedAt: new Date()

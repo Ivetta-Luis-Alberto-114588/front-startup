@@ -1,104 +1,305 @@
-# 🛒 Carrito y Gestión de Pedidos
 
-Sistema completo de carritos de compras y gestión de pedidos con soporte para usuarios registrados e invitados, procesamiento de pagos y seguimiento de estados.
+# 🛒 API de Carrito y Pedidos (Órdenes)
 
-## 📑 Índice
+> Documentación actualizada a julio 2025. Esta referencia describe los endpoints reales del backend, sus parámetros, headers, respuestas y flujos. **Todos los endpoints requieren autenticación JWT** salvo que se indique lo contrario.
 
-- [🎯 Funcionalidades](#-funcionalidades)
-- [🛒 Sistema de Carrito](#-sistema-de-carrito)
-- [📦 Gestión de Pedidos](#-gestión-de-pedidos)
-- [💳 Proceso de Checkout](#-proceso-de-checkout)
-- [📊 Estados de Pedidos](#-estados-de-pedidos)
-- [💡 Ejemplos de Uso](#-ejemplos-de-uso)
-- [🚨 Troubleshooting](#-troubleshooting)
-- [✅ Mejores Prácticas](#-mejores-prácticas)
-- [⚙️ Configuración](#-configuración)
+---
 
-## 🎯 Funcionalidades
+## Índice
 
-### ✅ Sistema de Carrito
-- **Carrito persistente** para usuarios registrados
-- **Carrito temporal** para invitados (session)
-- **Gestión de ítems** (agregar, actualizar, eliminar)
-- **Cálculo automático** de totales y impuestos
-- **Validación de stock** en tiempo real
-- **Aplicación de cupones** de descuento
+- [Carrito de Compras (`/api/cart`)](#carrito-de-compras-apicart)
+- [Órdenes/Pedidos (`/api/orders`)](#órdenespedidos-apiorders)
+- [Estados de Pedido y Flujo](#estados-de-pedido-y-flujo)
+- [Ejemplos de Uso Frontend](#ejemplos-de-uso-frontend)
+- [Troubleshooting](#troubleshooting)
+- [Mejores Prácticas](#mejores-prácticas)
 
-### ✅ Gestión de Pedidos
-- **Checkout completo** con validaciones
-- **Soporte multi-cliente** (registrados/invitados)
-- **Gestión de estados** del pedido
-- **Integración con pagos** (MercadoPago)
-- **Historial completo** de pedidos
-- **Notificaciones automáticas**
+---
 
-### ✅ Procesamiento
-- **Validación de inventario** antes de confirmar
-- **Reserva temporal** de productos
-- **Cálculo dinámico** de envíos
-- **Aplicación de descuentos** y promociones
-- **Generación de facturas** automática
+## Carrito de Compras (`/api/cart`)
 
-## 🛒 Sistema de Carrito
+> **IMPORTANTE:** Todas las rutas requieren header `Authorization: Bearer <token>` (usuario autenticado). No hay soporte para carritos de invitados.
 
-### API Endpoints - Carrito (`/api/cart`)
+### Endpoints
 
-#### `GET /api/cart` - Obtener Carrito Actual
-**Para usuarios registrados:**
+#### `GET /api/cart` — Obtener carrito actual
+**Headers:**
 ```
-Headers: Authorization: Bearer <token>
+Authorization: Bearer <token>
 ```
-
-**Para invitados (temporal):**
-```
-Headers: X-Session-ID: <session_id>
-```
-
 **Respuesta:**
 ```json
 {
-  "cart": {
-    "id": "cart123",
-    "userId": "user123", // null para invitados
-    "sessionId": "session456", // para invitados
-    "items": [
-      {
-        "id": "item1",
-        "product": {
-          "id": "prod123",
-          "name": "Laptop Gaming Pro",
-          "price": 1500.00,
-          "priceWithTax": 1815.00,
-          "taxRate": 21,
-          "stock": 25,
-          "images": ["image_url"],
-          "category": { "id": "cat1", "name": "Electrónicos" }
-        },
-        "quantity": 2,
-        "unitPrice": 1500.00,
-        "unitPriceWithTax": 1815.00,
-        "subtotal": 3000.00,
-        "subtotalWithTax": 3630.00,
-        "taxAmount": 630.00,
-        "taxRate": 21,
-        "addedAt": "2025-01-15T10:30:00Z"
-      }
-    ],
-    "summary": {
-      "itemCount": 2,
-      "subtotal": 3000.00,
-      "taxAmount": 630.00,
-      "subtotalWithTax": 3630.00,
-      "discountAmount": 0,
-      "shippingCost": 500.00,
-      "total": 4130.00
-    },
-    "appliedCoupon": null,
-    "shippingInfo": null,
-    "lastUpdated": "2025-01-15T10:35:00Z"
+  "id": "cartId",
+  "userId": "userId",
+  "items": [
+    {
+      "productId": "prodId",
+      "quantity": 2,
+      "unitPrice": 100,
+      "subtotal": 200
+    }
+  ],
+  "total": 200,
+  "totalItems": 2,
+  "totalTaxAmount": 42,
+  "subtotalWithoutTax": 158,
+  "createdAt": "2025-07-08T10:00:00Z",
+  "updatedAt": "2025-07-08T10:10:00Z"
+}
+```
+
+#### `POST /api/cart/items` — Agregar producto al carrito
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+**Body:**
+```json
+{
+  "productId": "prodId",
+  "quantity": 2
+}
+```
+**Respuesta:**
+```json
+{
+  "id": "cartId",
+  "items": [ ... ],
+  "total": 200,
+  ...otros campos
+}
+```
+
+#### `PUT /api/cart/items/:productId` — Actualizar cantidad de un producto
+**Body:**
+```json
+{
+  "quantity": 3
+}
+```
+**Respuesta:** igual a `GET /api/cart`
+
+#### `DELETE /api/cart/items/:productId` — Eliminar producto del carrito
+**Respuesta:** igual a `GET /api/cart`
+
+#### `DELETE /api/cart` — Vaciar carrito
+**Respuesta:** igual a `GET /api/cart` (carrito vacío)
+
+---
+
+## Órdenes/Pedidos (`/api/orders`)
+
+> **IMPORTANTE:** Todas las rutas requieren header `Authorization: Bearer <token>`. El endpoint de creación soporta tanto usuarios registrados como invitados (ver body).
+
+### Endpoints
+
+#### `POST /api/orders` — Crear pedido (checkout)
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+**Body para usuario registrado:**
+```json
+{
+  "customerId": "<mongoId>",
+  "items": [
+    { "productId": "<mongoId>", "quantity": 2, "unitPrice": 100 }
+  ],
+  "notes": "opcional"
+}
+```
+**Body para invitado:**
+```json
+{
+  "customerData": {
+    "name": "Invitado",
+    "email": "guest@mail.com",
+    "phone": "+123456789",
+    "address": "Calle 123",
+    "neighborhoodId": "<mongoId>"
+  },
+  "shippingAddress": {
+    "street": "Calle 123",
+    "cityId": "<mongoId>",
+    "neighborhoodId": "<mongoId>"
+  },
+  "items": [ ... ],
+  "notes": "opcional"
+}
+```
+**Respuesta exitosa (201):**
+```json
+{
+  "success": true,
+  "message": "Orden creada exitosamente",
+  "data": {
+    "id": "orderId",
+    "customer": { ... },
+    "items": [ ... ],
+    "status": "PENDING",
+    "total": 200,
+    ...otros campos
   }
 }
 ```
+
+#### `GET /api/orders/my-orders` — Listar pedidos del usuario autenticado
+**Query params:** `page`, `limit`
+**Respuesta:**
+```json
+{
+  "sales": [ { ... }, ... ],
+  "total": 100,
+  "page": 1,
+  "limit": 10
+}
+```
+
+#### `GET /api/orders` — Listar todos los pedidos (admin)
+**Query params:** `page`, `limit`
+**Respuesta:** igual a anterior
+
+#### `GET /api/orders/:id` — Obtener pedido por ID
+**Respuesta:**
+```json
+{
+  "id": "orderId",
+  "customer": { ... },
+  "items": [ ... ],
+  "status": "PENDING",
+  ...otros campos
+}
+```
+
+#### `PATCH /api/orders/:id/status` — Cambiar estado del pedido
+**Body:**
+```json
+{
+  "status": "CONFIRMED",
+  "notes": "opcional"
+}
+```
+**Respuesta:** pedido actualizado
+
+#### `GET /api/orders/by-customer/:customerId` — Listar pedidos por cliente
+**Query params:** `page`, `limit`
+
+#### `POST /api/orders/by-date-range` — Listar pedidos por rango de fechas
+**Body:**
+```json
+{
+  "startDate": "2025-07-01",
+  "endDate": "2025-07-08"
+}
+```
+**Query params:** `page`, `limit`
+
+#### `PUT /api/orders/:id` — Actualizar completamente un pedido
+**Body:** igual a creación
+
+#### `PATCH /api/orders/:orderId/payment-method` — Seleccionar método de pago
+**Body:**
+```json
+{
+  "paymentMethodCode": "MERCADOPAGO",
+  "notes": "opcional"
+}
+**Respuesta:**
+{
+  "success": true,
+  "message": "Método de pago seleccionado exitosamente",
+  "data": { ...order }
+}
+```
+
+---
+
+## Estados de Pedido y Flujo
+
+Los estados válidos de un pedido son:
+
+- `PENDING`
+- `CONFIRMED`
+- `PROCESSING`
+- `SHIPPED`
+- `DELIVERED`
+- `CANCELLED`
+- `COMPLETED`
+
+### Diagrama de flujo de estados
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING
+    PENDING --> CONFIRMED: Pago confirmado
+    CONFIRMED --> PROCESSING: Procesando
+    PROCESSING --> SHIPPED: Enviado
+    SHIPPED --> DELIVERED: Entregado
+    DELIVERED --> COMPLETED: Finalizado
+    PENDING --> CANCELLED: Cancelado
+    CONFIRMED --> CANCELLED: Cancelado
+    PROCESSING --> CANCELLED: Cancelado
+```
+
+---
+
+## Ejemplos de Uso Frontend
+
+### Obtener carrito
+```js
+fetch('/api/cart', { headers: { Authorization: `Bearer ${token}` } })
+  .then(res => res.json())
+  .then(cart => { /* ... */ });
+```
+
+### Agregar producto al carrito
+```js
+fetch('/api/cart/items', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ productId, quantity: 1 })
+});
+```
+
+### Crear pedido
+```js
+fetch('/api/orders', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  body: JSON.stringify({ customerId, items: [ ... ] })
+});
+```
+
+---
+
+## Troubleshooting
+
+- **401 Unauthorized:** Verifica que el token JWT sea válido y esté presente en el header.
+- **400 Bad Request:** Revisa los campos requeridos en el body (ver DTOs).
+- **404 Not Found:** El recurso no existe o no pertenece al usuario autenticado.
+- **409 Conflict:** Stock insuficiente o estado inválido para la transición.
+- **500 Internal Server Error:** Error inesperado, revisar logs del backend.
+
+---
+
+## Mejores Prácticas
+
+- Siempre validar el estado del carrito antes de hacer checkout.
+- Usar paginación en listados grandes.
+- Manejar correctamente los estados de pedido en el frontend.
+- Sincronizar el carrito en todos los dispositivos del usuario.
+- Consultar los estados válidos y transitions antes de cambiar el estado de una orden.
+
+---
+
+Para más información sobre otros módulos:
+- [Gestión de Productos](./api-products.md)
+- [Clientes y Direcciones](./api-customers.md)
+- [Integración MercadoPago](./mercadopago.md)
+- [Sistema de Webhooks](./webhooks.md)
 
 #### `POST /api/cart/items` - Agregar Producto al Carrito
 **Body:**
@@ -208,18 +409,21 @@ const addToCartGuest = async (productId, quantity) => {
 
 ## 📦 Gestión de Pedidos
 
-### API Endpoints - Pedidos (`/api/orders` y `/api/sales`)
+### API Endpoints - Ventas/Pedidos (`/api/sales`)
 
-#### `POST /api/orders` - Crear Pedido (Checkout)
+#### `POST /api/sales` - Crear Venta/Pedido (Checkout)
 **El endpoint más importante del sistema**
 
 **Body para Usuario Registrado:**
 ```json
 {
-  "shippingAddressId": "addr123", // Dirección guardada
-  "paymentMethodId": "method123",
-  "couponCode": "DESCUENTO10", // Opcional
-  "observations": "Entregar después de las 18hs"
+  "customerId": "<mongoId>",
+  "items": [
+    { "productId": "<mongoId>", "quantity": 2, "unitPrice": 100 }
+  ],
+  "taxRate": 21,
+  "discountRate": 0,
+  "notes": "opcional"
 }
 ```
 
@@ -227,473 +431,95 @@ const addToCartGuest = async (productId, quantity) => {
 ```json
 {
   "customerData": {
-    "name": "Juan Invitado",
-    "email": "juan@temp.com",
-    "phone": "+54 11 1234-5678",
-    "documentType": "DNI",
-    "documentNumber": "12345678"
+    "name": "Invitado",
+    "email": "guest@mail.com",
+    "phone": "+123456789",
+    "address": "Calle 123",
+    "neighborhoodId": "<mongoId>"
   },
   "shippingAddress": {
-    "street": "Av. Corrientes",
-    "number": "1234",
-    "floor": "2",
-    "apartment": "B",
-    "neighborhoodId": "neigh123",
-    "zipCode": "1043",
-    "observations": "Timbre roto"
+    "street": "Calle 123",
+    "cityId": "<mongoId>",
+    "neighborhoodId": "<mongoId>"
   },
-  "paymentMethodId": "method123",
-  "couponCode": "DESCUENTO10"
+  "items": [
+    { "productId": "<mongoId>", "quantity": 1, "unitPrice": 100 }
+  ],
+  "taxRate": 21,
+  "discountRate": 0,
+  "notes": "opcional"
 }
 ```
 
-**Respuesta:**
+**Respuesta exitosa (201):**
 ```json
 {
-  "order": {
-    "id": "order123",
-    "orderNumber": "ORD-2025-001234",
-    "status": "pending",
-    "customer": {
-      "id": "cust123",
-      "name": "Juan Pérez",
-      "email": "juan@email.com"
-    },
-    "items": [
-      {
-        "id": "orderItem1",
-        "product": {
-          "id": "prod123",
-          "name": "Laptop Gaming Pro"
-        },
-        "quantity": 2,
-        "unitPrice": 1500.00,
-        "unitPriceWithTax": 1815.00,
-        "subtotal": 3630.00
-      }
-    ],
-    "summary": {
-      "subtotal": 3000.00,
-      "taxAmount": 630.00,
-      "discountAmount": 300.00,
-      "shippingCost": 500.00,
-      "total": 3830.00
-    },
-    "shippingDetails": {
-      "address": "Av. Corrientes 1234, Piso 2, Depto B",
-      "neighborhood": "Balvanera",
-      "city": "CABA",
-      "zipCode": "1043",
-      "estimatedDelivery": "2025-01-18T15:00:00Z"
-    },
-    "paymentDetails": {
-      "method": "MercadoPago",
-      "status": "pending",
-      "paymentUrl": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=..."
-    },
-    "appliedCoupon": {
-      "code": "DESCUENTO10",
-      "discount": 300.00
-    },
-    "createdAt": "2025-01-15T10:30:00Z"
-  }
+  "id": "<saleId>",
+  "customer": { ... },
+  "items": [ ... ],
+  "status": "PENDING",
+  "total": 200,
+  "...otros campos"
 }
 ```
 
-#### `GET /api/orders` - Listar Pedidos del Usuario
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
+#### `GET /api/sales` - Listar Ventas (paginado)
 **Query Parameters:**
 ```
 page=1
 limit=10
-status=pending,processing,completed
+status=PENDING,COMPLETED,CANCELLED
 sortBy=createdAt
 sortOrder=desc
 ```
 
-#### `GET /api/orders/:id` - Obtener Pedido Específico
-**Respuesta detallada con historial de estados:**
+Respuesta:
 ```json
 {
-  "order": {
-    "id": "order123",
-    "orderNumber": "ORD-2025-001234",
-    "status": "processing",
-    "customer": {...},
-    "items": [...],
-    "summary": {...},
-    "shippingDetails": {...},
-    "paymentDetails": {
-      "method": "MercadoPago",
-      "status": "approved",
-      "transactionId": "123456789",
-      "paidAt": "2025-01-15T10:45:00Z"
-    },
-    "statusHistory": [
-      {
-        "status": "pending",
-        "timestamp": "2025-01-15T10:30:00Z",
-        "note": "Pedido creado"
-      },
-      {
-        "status": "processing",
-        "timestamp": "2025-01-15T10:45:00Z",
-        "note": "Pago confirmado - Preparando envío"
-      }
-    ],
-    "trackingInfo": {
-      "trackingNumber": "AR123456789",
-      "carrier": "Correo Argentino",
-      "estimatedDelivery": "2025-01-18T15:00:00Z"
-    }
-  }
+  "sales": [ { ... }, ... ],
+  "total": 100,
+  "page": 1,
+  "limit": 10
 }
 ```
 
-### API Endpoints Admin - Ventas (`/api/sales`)
-
-#### `GET /api/sales` - Listar Todas las Ventas (Admin)
-**Query Parameters:**
-```
-page=1
-limit=20
-status=pending,processing,completed,cancelled
-dateFrom=2025-01-01
-dateTo=2025-01-31
-customerId=cust123
-minAmount=1000
-maxAmount=5000
-paymentMethod=mercadopago
-search=ORD-2025  # Buscar por número de orden
-```
-
+#### `GET /api/sales/:id` - Obtener Venta/Pedido por ID
 **Respuesta:**
 ```json
 {
-  "total": 1250,
-  "sales": [
-    {
-      "id": "order123",
-      "orderNumber": "ORD-2025-001234",
-      "status": "completed",
-      "customer": {
-        "name": "Juan Pérez",
-        "email": "juan@email.com",
-        "isGuest": false
-      },
-      "summary": {
-        "itemCount": 3,
-        "total": 3830.00,
-        "profit": 1200.00
-      },
-      "paymentDetails": {
-        "method": "MercadoPago",
-        "status": "approved"
-      },
-      "shippingCity": "CABA",
-      "createdAt": "2025-01-15T10:30:00Z",
-      "completedAt": "2025-01-17T14:20:00Z"
-    }
-  ],
-  "statistics": {
-    "totalSales": 1250,
-    "totalRevenue": 2450000.00,
-    "avgOrderValue": 1960.00,
-    "pendingOrders": 45,
-    "completedToday": 23
-  }
+  "id": "<saleId>",
+  "customer": { ... },
+  "items": [ ... ],
+  "status": "PENDING",
+  "...otros campos"
 }
 ```
 
-#### `PUT /api/sales/:id/status` - Cambiar Estado del Pedido (Admin)
+#### `PATCH /api/sales/:id/status` - Cambiar Estado de la Venta
 **Body:**
 ```json
 {
-  "status": "processing",
-  "note": "Pago confirmado - Preparando envío"
+  "status": "PENDING" | "PENDIENTE PAGADO" | "CONFIRMED" | "AWAITING_PAYMENT" | "COMPLETED" | "CANCELLED",
+  "notes": "opcional"
 }
 ```
 
-#### `POST /api/sales/:id/tracking` - Agregar Info de Seguimiento (Admin)
-**Body:**
-```json
-{
-  "trackingNumber": "AR123456789",
-  "carrier": "Correo Argentino",
-  "estimatedDelivery": "2025-01-18T15:00:00Z"
-}
-```
-
-## 💳 Proceso de Checkout
-
-### Flujo Completo de Checkout
-
-#### 1. Preparación del Carrito
-```javascript
-// Validar carrito antes del checkout
-const validateCart = async () => {
-  const cartResponse = await fetch('/api/cart');
-  const { cart } = await cartResponse.json();
-  
-  // Verificar que hay items
-  if (cart.items.length === 0) {
-    throw new Error('El carrito está vacío');
-  }
-  
-  // Verificar stock disponible
-  const stockValidation = await fetch('/api/cart/validate-stock');
-  if (!stockValidation.ok) {
-    throw new Error('Algunos productos no tienen stock suficiente');
-  }
-  
-  return cart;
-};
-```
-
-#### 2. Selección de Dirección de Envío
-```javascript
-// Usuario registrado: seleccionar dirección guardada
-const selectShippingAddress = async (addressId) => {
-  const response = await fetch(`/api/addresses/${addressId}`);
-  const address = await response.json();
-  
-  // Calcular costo de envío
-  const shippingCost = await calculateShipping(address.neighborhoodId);
-  
-  return { address, shippingCost };
-};
-
-// Usuario invitado: validar nueva dirección
-const validateNewAddress = async (addressData) => {
-  const response = await fetch('/api/addresses/validate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(addressData)
-  });
-  
-  if (!response.ok) {
-    const errors = await response.json();
-    throw new Error(errors.message);
-  }
-  
-  return addressData;
-};
-```
-
-#### 3. Aplicar Cupón (Opcional)
-```javascript
-const applyCoupon = async (couponCode) => {
-  const response = await fetch('/api/cart/apply-coupon', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ couponCode })
-  });
-  
-  if (response.ok) {
-    const data = await response.json();
-    return data.discount;
-  }
-  
-  throw new Error('Cupón inválido o expirado');
-};
-```
-
-#### 4. Crear Pedido
-```javascript
-const createOrder = async (orderData) => {
-  const response = await fetch('/api/orders', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`, // Si es usuario registrado
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(orderData)
-  });
-  
-  if (response.ok) {
-    const { order } = await response.json();
-    
-    // Redirigir a pago si es necesario
-    if (order.paymentDetails.paymentUrl) {
-      window.location.href = order.paymentDetails.paymentUrl;
-    }
-    
-    return order;
-  }
-  
-  throw new Error('Error al crear el pedido');
-};
-```
-
-#### 5. Checkout Completo - Usuario Registrado
-```javascript
-const checkoutRegisteredUser = async () => {
-  try {
-    // 1. Validar carrito
-    const cart = await validateCart();
-    
-    // 2. Seleccionar dirección
-    const selectedAddress = await selectShippingAddress(addressId);
-    
-    // 3. Aplicar cupón si existe
-    let discount = null;
-    if (couponCode) {
-      discount = await applyCoupon(couponCode);
-    }
-    
-    // 4. Crear pedido
-    const orderData = {
-      shippingAddressId: selectedAddress.address.id,
-      paymentMethodId: paymentMethodId,
-      couponCode: couponCode,
-      observations: observations
-    };
-    
-    const order = await createOrder(orderData);
-    
-    // 5. Limpiar carrito
-    await fetch('/api/cart', { method: 'DELETE' });
-    
-    return order;
-    
-  } catch (error) {
-    console.error('Error en checkout:', error);
-    throw error;
-  }
-};
-```
-
-#### 6. Checkout Completo - Usuario Invitado
-```javascript
-const checkoutGuestUser = async (customerData, shippingAddress) => {
-  try {
-    // 1. Validar datos del cliente
-    if (!customerData.name || !customerData.email || !customerData.phone) {
-      throw new Error('Datos del cliente incompletos');
-    }
-    
-    // 2. Validar dirección
-    await validateNewAddress(shippingAddress);
-    
-    // 3. Crear pedido
-    const orderData = {
-      customerData: {
-        ...customerData,
-        isGuest: true
-      },
-      shippingAddress,
-      paymentMethodId,
-      couponCode
-    };
-    
-    const order = await createOrder(orderData);
-    
-    // 4. Limpiar carrito temporal
-    await fetch('/api/cart', {
-      method: 'DELETE',
-      headers: { 'X-Session-ID': sessionId }
-    });
-    
-    return order;
-    
-  } catch (error) {
-    console.error('Error en checkout invitado:', error);
-    throw error;
-  }
-};
-```
+<!-- El endpoint de tracking no está implementado en el backend actual -->
 
 ## 📊 Estados de Pedidos
 
-### Ciclo de Vida del Pedido
+El ciclo de vida de una venta/pedido sigue los estados definidos en el backend:
 
-```
-pending → processing → shipped → delivered
-   ↓
-cancelled (solo desde pending)
-   ↓
-refunded (desde cancelled o delivered)
-```
+- `PENDING`
+- `PENDIENTE PAGADO`
+- `CONFIRMED`
+- `AWAITING_PAYMENT`
+- `COMPLETED`
+- `CANCELLED`
 
-### Estados Disponibles
+Para una explicación completa, consulta el documento maestro:
+**➡️ [Ver Documento: Flujo de Estados de una Orden](./order-status-flow.md)**
 
-#### `pending` - Pendiente
-- **Descripción**: Pedido creado, esperando confirmación de pago
-- **Acciones**: Puede ser cancelado por el cliente
-- **Duración típica**: 15-30 minutos
-
-#### `processing` - Procesando
-- **Descripción**: Pago confirmado, preparando envío
-- **Acciones**: Admin puede cancelar o marcar como enviado
-- **Duración típica**: 1-2 días hábiles
-
-#### `shipped` - Enviado
-- **Descripción**: Pedido despachado, en camino al cliente
-- **Acciones**: Actualizar tracking, marcar como entregado
-- **Duración típica**: 2-7 días según ubicación
-
-#### `delivered` - Entregado
-- **Descripción**: Pedido recibido por el cliente
-- **Acciones**: Cliente puede solicitar devolución (según política)
-- **Estado final**: Sí (exitoso)
-
-#### `cancelled` - Cancelado
-- **Descripción**: Pedido cancelado antes del envío
-- **Acciones**: Restock automático, proceso de reembolso
-- **Estado final**: Sí (no exitoso)
-
-#### `refunded` - Reembolsado
-- **Descripción**: Dinero devuelto al cliente
-- **Acciones**: Solo seguimiento
-- **Estado final**: Sí (reembolso)
-
-### Cambios de Estado Automáticos
-
-#### Por Webhooks de MercadoPago
-```javascript
-// Webhook handler automático
-const handlePaymentWebhook = async (paymentData) => {
-  const order = await findOrderByExternalReference(paymentData.external_reference);
-  
-  if (paymentData.status === 'approved') {
-    await updateOrderStatus(order.id, 'processing', 'Pago confirmado automáticamente');
-    await sendOrderConfirmationEmail(order);
-    // 🚀 IMPORTANTE: Las notificaciones de Telegram se envían SOLO cuando el pago es aprobado
-    await sendTelegramNotification(`✅ Pago confirmado para pedido ${order.orderNumber}`);
-  } else if (paymentData.status === 'rejected') {
-    await updateOrderStatus(order.id, 'cancelled', 'Pago rechazado');
-    // ❌ NO se envía notificación de Telegram para pagos rechazados
-  }
-};
-```
-
-**📝 Nota Importante:** 
-- ✅ **Las notificaciones de Telegram se envían ÚNICAMENTE cuando el pago es aprobado** por MercadoPago vía webhook
-- ❌ **NO se envían notificaciones al crear la orden** (solo se crea la orden sin notificar)
-- 🎯 **Esto garantiza que solo se notifique cuando hay un pago real confirmado**
-
-#### Por Timeouts
-```javascript
-// Cancelar pedidos pendientes después de 30 minutos
-const cancelExpiredOrders = async () => {
-  const expiredOrders = await Order.find({
-    status: 'pending',
-    createdAt: { $lt: new Date(Date.now() - 30 * 60 * 1000) }
-  });
-  
-  for (const order of expiredOrders) {
-    await updateOrderStatus(order.id, 'cancelled', 'Timeout - Pago no confirmado');
-    await restoreStock(order.items);
-  }
-};
-
-// Ejecutar cada 5 minutos
-setInterval(cancelExpiredOrders, 5 * 60 * 1000);
-```
 
 ## 💡 Ejemplos de Uso
 

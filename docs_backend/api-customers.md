@@ -44,13 +44,18 @@ Sistema completo de gestión de clientes con soporte para usuarios registrados e
 **Query Parameters:**
 ```
 page=1                    # Página (default: 1)
-limit=10                 # Elementos por página (default: 10)
-search=juan              # Búsqueda por nombre/email/teléfono
-isGuest=false           # Filtrar por tipo (true=invitados, false=registrados)
-cityId=city123          # Filtrar por ciudad
-neighborhoodId=neigh123 # Filtrar por barrio
-sortBy=name             # Campo para ordenar
-sortOrder=asc           # Orden (asc/desc)
+limit=10                  # Elementos por página (default: 10)
+search=juan               # Búsqueda por nombre/email/teléfono
+isGuest=false             # Filtrar por tipo (true=invitados, false=registrados)
+cityId=city123            # Filtrar por ciudad
+neighborhoodId=neigh123   # Filtrar por barrio
+sortBy=name               # Campo para ordenar
+sortOrder=asc             # Orden (asc/desc)
+```
+
+**Headers:**
+```
+Authorization: Bearer <admin_token>
 ```
 
 **Ejemplo:**
@@ -121,6 +126,10 @@ GET /api/customers?search=juan&isGuest=false&cityId=city123&page=1&limit=20
 ```
 
 #### `GET /api/customers/:id` - Obtener Cliente Específico
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
 **Respuesta:**
 ```json
 {
@@ -196,21 +205,53 @@ GET /api/customers?search=juan&isGuest=false&cityId=city123&page=1&limit=20
 ```
 
 #### `PUT /api/customers/:id` - Actualizar Cliente
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
 **Body:** Similar al POST, todos los campos opcionales
 
 #### `DELETE /api/customers/:id` - Eliminar Cliente (Admin)
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
+
+#### `GET /api/customers/by-neighborhood/:neighborhoodId` - Listar clientes por barrio
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
+**Query Parameters:**
+```
+page=1
+limit=10
+```
+
+#### `GET /api/customers/by-email/:email` - Buscar cliente por email
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
+
+---
+
+#### `DELETE /api/customers/:id` - Eliminar Cliente (Admin)
+
 
 ### 🏠 Direcciones (`/api/addresses`)
 
-#### `GET /api/addresses` - Listar Direcciones del Cliente
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+> **Todas las rutas requieren autenticación:**
+> 
+> `Authorization: Bearer <token>`
+
+#### `GET /api/addresses` - Listar Direcciones del Usuario Autenticado
+Devuelve solo las direcciones del usuario autenticado. No soporta customerId como query param.
 
 **Query Parameters:**
 ```
-customerId=cust123  # Para admin: ver direcciones de cualquier cliente
+page=1
+limit=10
 ```
 
 **Respuesta:**
@@ -246,11 +287,6 @@ customerId=cust123  # Para admin: ver direcciones de cualquier cliente
 ```
 
 #### `POST /api/addresses` - Agregar Dirección
-**Headers:**
-```
-Authorization: Bearer <token>
-```
-
 **Body:**
 ```json
 {
@@ -267,25 +303,39 @@ Authorization: Bearer <token>
 ```
 
 #### `PUT /api/addresses/:id` - Actualizar Dirección
-#### `DELETE /api/addresses/:id` - Eliminar Dirección
+**Body:** igual que POST, todos los campos opcionales.
 
-#### `PUT /api/addresses/:id/set-default` - Establecer como Predeterminada
+#### `DELETE /api/addresses/:id` - Eliminar Dirección
+**Respuesta:**
+```json
+{
+  "message": "Dirección eliminada",
+  "address": { ... }
+}
+```
+
+#### `PATCH /api/addresses/:id/default` - Establecer como Predeterminada
 **Respuesta:**
 ```json
 {
   "message": "Dirección establecida como predeterminada",
-  "address": {...}
+  "address": { ... }
 }
 ```
+
+---
+
 
 ### 🌍 Ciudades (`/api/cities`)
 
 #### `GET /api/cities` - Listar Ciudades
 **Query Parameters:**
 ```
+page=1
+limit=10
 search=buenos           # Búsqueda por nombre
-state=CABA             # Filtrar por provincia/estado
-country=Argentina      # Filtrar por país
+state=CABA              # Filtrar por provincia/estado
+country=Argentina       # Filtrar por país
 includeNeighborhoods=true # Incluir barrios
 ```
 
@@ -311,7 +361,20 @@ includeNeighborhoods=true # Incluir barrios
 }
 ```
 
+#### `GET /api/cities/:id` - Obtener Ciudad por ID
+
+#### `GET /api/cities/by-name/:name` - Buscar ciudad por nombre
+**Query Parameters:**
+```
+page=1
+limit=10
+```
+
 #### `POST /api/cities` - Crear Ciudad (Admin)
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
 **Body:**
 ```json
 {
@@ -322,13 +385,30 @@ includeNeighborhoods=true # Incluir barrios
 }
 ```
 
+#### `PUT /api/cities/:id` - Actualizar Ciudad (Admin)
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
+
+#### `DELETE /api/cities/:id` - Eliminar Ciudad (Admin)
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
+
+---
+
+
 ### 🏘️ Barrios (`/api/neighborhoods`)
 
 #### `GET /api/neighborhoods` - Listar Barrios
 **Query Parameters:**
 ```
-cityId=city123         # Filtrar por ciudad (requerido)
-search=balva          # Búsqueda por nombre
+page=1
+limit=10
+cityId=city123         # Filtrar por ciudad (opcional, usar /by-city/:cityId para filtrado estricto)
+search=balva           # Búsqueda por nombre
 ```
 
 **Respuesta:**
@@ -350,7 +430,20 @@ search=balva          # Búsqueda por nombre
 }
 ```
 
+#### `GET /api/neighborhoods/:id` - Obtener Barrio por ID
+
+#### `GET /api/neighborhoods/by-city/:cityId` - Listar barrios por ciudad
+**Query Parameters:**
+```
+page=1
+limit=10
+```
+
 #### `POST /api/neighborhoods` - Crear Barrio (Admin)
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
 **Body:**
 ```json
 {
@@ -359,6 +452,52 @@ search=balva          # Búsqueda por nombre
   "deliveryZone": "ZONE_B",
   "shippingCost": 750.00
 }
+```
+
+#### `PUT /api/neighborhoods/:id` - Actualizar Barrio (Admin)
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
+
+#### `DELETE /api/neighborhoods/:id` - Eliminar Barrio (Admin)
+**Headers:**
+```
+Authorization: Bearer <admin_token>
+```
+
+---
+# 👥 Gestión de Clientes y Direcciones
+
+## 🗺️ Diagramas de Flujo
+
+### Gestión de Direcciones (Usuario Registrado)
+
+```mermaid
+flowchart TD
+    A[Usuario autenticado] -->|GET /api/addresses| B[Listar direcciones]
+    A -->|POST /api/addresses| C[Agregar dirección]
+    B -->|PATCH /api/addresses/:id/default| D[Marcar como predeterminada]
+    B -->|PUT /api/addresses/:id| E[Editar dirección]
+    B -->|DELETE /api/addresses/:id| F[Eliminar dirección]
+```
+
+### Flujo de Checkout (Invitado)
+
+```mermaid
+flowchart TD
+    A[Checkout como invitado] --> B[POST /api/customers (isGuest: true)]
+    B --> C[POST /api/orders con shippingAddress]
+    C --> D[Pedido creado]
+```
+
+### Conversión Invitado → Registrado
+
+```mermaid
+flowchart TD
+    A[Cliente invitado con pedidos previos] --> B[POST /api/auth/register]
+    B --> C[Usuario creado]
+    C --> D[Datos y pedidos migrados]
 ```
 
 ## 🏠 Sistema de Direcciones

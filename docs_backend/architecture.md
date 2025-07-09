@@ -53,6 +53,7 @@ src/
 │           ├── auth/          # Modelos de autenticación
 │           ├── products/      # Modelos de productos
 │           ├── orders/        # Modelos de pedidos
+│           ├── delivery-methods/ # Modelos de métodos de entrega
 │           └── ...
 │
 ├── domain/                    # Capa de dominio (Business Logic)
@@ -60,24 +61,29 @@ src/
 │   │   ├── auth/
 │   │   ├── products/
 │   │   ├── orders/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── entities/              # Entidades de dominio
 │   │   ├── auth/
 │   │   ├── products/
 │   │   ├── orders/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── datasources/           # Interfaces de datasources
 │   │   ├── auth/
 │   │   ├── products/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── repositories/          # Interfaces de repositories
 │   │   ├── auth/
 │   │   ├── products/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── use-cases/             # Cases de uso
 │   │   ├── auth/
 │   │   ├── products/
 │   │   ├── orders/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── errors/                # Errores personalizados
 │   │   └── custom.error.ts
@@ -90,14 +96,17 @@ src/
 │   ├── datasources/           # Implementaciones de datasources
 │   │   ├── auth/
 │   │   ├── products/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── repositories/          # Implementaciones de repositories
 │   │   ├── auth/
 │   │   ├── products/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── mappers/               # Mappers objeto-entidad
 │   │   ├── auth/
 │   │   ├── products/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── adapters/              # Adaptadores a servicios externos
 │   │   ├── cloudinary.adapter.ts
@@ -114,11 +123,13 @@ src/
 │   │   ├── auth/
 │   │   ├── products/
 │   │   ├── orders/
+│   │   ├── delivery-methods/
 │   │   └── ...
 │   ├── routes/                # Definición de rutas
 │   │   ├── auth.routes.ts
 │   │   ├── products.routes.ts
 │   │   ├── orders.routes.ts
+│   │   ├── delivery-methods.routes.ts
 │   │   └── ...
 │   ├── middlewares/           # Middlewares HTTP
 │   │   ├── auth.middleware.ts
@@ -130,6 +141,7 @@ src/
 ├── seeders/                   # Scripts de población de datos
 │   ├── categories.seeder.ts
 │   ├── products.seeder.ts
+│   ├── delivery-methods.seeder.ts
 │   └── ...
 │
 └── app.ts                     # Punto de entrada de la aplicación
@@ -1071,6 +1083,115 @@ describe('CreateOrderUseCase', () => {
 });
 ```
 
+## 🚚 Métodos de Entrega (Delivery Methods)
+
+### Nueva Funcionalidad Implementada
+
+Los métodos de entrega definen cómo el cliente recibirá su pedido. Esta funcionalidad se implementó siguiendo completamente los principios de Clean Architecture.
+
+### Estructura Implementada
+
+```typescript
+// Domain Entity
+export class DeliveryMethodEntity {
+  public readonly id: string;
+  public readonly code: string;
+  public readonly name: string;
+  public readonly description: string;
+  public readonly requiresAddress: boolean;
+  public readonly isActive: boolean;
+
+  constructor(
+    id: string,
+    code: string,
+    name: string,
+    description: string,
+    requiresAddress: boolean,
+    isActive: boolean = true
+  ) {
+    this.id = id;
+    this.code = code;
+    this.name = name;
+    this.description = description;
+    this.requiresAddress = requiresAddress;
+    this.isActive = isActive;
+  }
+}
+
+// DTO Example
+export class CreateDeliveryMethodDto {
+  private constructor(
+    public readonly code: string,
+    public readonly name: string,
+    public readonly description: string,
+    public readonly requiresAddress: boolean,
+    public readonly isActive: boolean = true
+  ) {}
+
+  static create(object: {[key: string]: any}): [string?, CreateDeliveryMethodDto?] {
+    const { code, name, description, requiresAddress, isActive = true } = object;
+
+    if (!code) return ['Code is required'];
+    if (!name) return ['Name is required'];
+    if (!description) return ['Description is required'];
+    if (typeof requiresAddress !== 'boolean') return ['RequiresAddress must be boolean'];
+
+    return [undefined, new CreateDeliveryMethodDto(code, name, description, requiresAddress, isActive)];
+  }
+}
+```
+
+### Integración con Orders
+
+```typescript
+// Modificación en Order Entity
+export class OrderEntity {
+  // ...existing properties
+  public readonly deliveryMethod: DeliveryMethodEntity; // Nueva propiedad requerida
+  
+  constructor(
+    // ...existing parameters
+    deliveryMethod: DeliveryMethodEntity,
+    // ...other parameters
+  ) {
+    // ...existing assignments
+    this.deliveryMethod = deliveryMethod;
+  }
+}
+```
+
+### Endpoints Disponibles
+
+1. **Público (sin autenticación):**
+   - `GET /api/delivery-methods` - Lista métodos activos
+
+2. **Administrativos (requieren ADMIN):**
+   - `GET /api/admin/delivery-methods` - Lista todos
+   - `POST /api/admin/delivery-methods` - Crear nuevo
+   - `PUT /api/admin/delivery-methods/:id` - Actualizar
+   - `DELETE /api/admin/delivery-methods/:id` - Eliminar
+
+### Datos por Defecto
+
+El sistema incluye 2 métodos de entrega iniciales:
+- **SHIPPING**: Envío a Domicilio (requiere dirección)
+- **PICKUP**: Retiro en Local (no requiere dirección)
+
+### Casos de Uso Implementados
+
+```typescript
+// Use Case Example
+export class GetActiveDeliveryMethodsUseCase {
+  constructor(
+    private readonly deliveryMethodRepository: DeliveryMethodRepository
+  ) {}
+
+  async execute(): Promise<DeliveryMethodEntity[]> {
+    return await this.deliveryMethodRepository.findActive();
+  }
+}
+```
+
 ---
 
 ## 🔗 Enlaces Relacionados
@@ -1081,6 +1202,7 @@ describe('CreateOrderUseCase', () => {
 - [🔐 Autenticación y Usuarios](./api-auth.md)
 - [📦 Gestión de Productos](./api-products.md)
 - [🛒 Carrito y Pedidos](./api-orders.md)
+- [🚚 Métodos de Entrega](./api-delivery-methods.md)
 
 ---
 

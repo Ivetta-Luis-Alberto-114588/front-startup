@@ -1,131 +1,399 @@
-# 💰 Pagos y Gestión de Descuentos
 
-Sistema completo de procesamiento de pagos con integración a MercadoPago, gestión de cupones y múltiples métodos de pago.
+# 💰 API de Pagos y Cupones
 
-## 📑 Índice
+> Documentación actualizada a julio 2025. Esta referencia describe los endpoints reales del backend, sus parámetros, headers, respuestas y flujos. **Todos los endpoints requieren autenticación JWT** salvo que se indique lo contrario.
 
-- [🎯 Funcionalidades](#-funcionalidades)
-- [📋 API Endpoints](#-api-endpoints)
-- [💳 Integración MercadoPago](#-integración-mercadopago)
-- [🎫 Sistema de Cupones](#-sistema-de-cupones)
-- [💡 Ejemplos de Uso](#-ejemplos-de-uso)
-- [⚙️ Configuración](#-configuración)
+---
 
-## 🎯 Funcionalidades
+## Índice
 
-### ✅ Procesamiento de Pagos
-- **Integración con MercadoPago** para pagos online
-- **Pagos en efectivo** y otros métodos locales
-- **Tracking completo** de transacciones
-- **Webhooks** para actualizaciones automáticas
-- **Reembolsos** y cancelaciones
-- **Historial detallado** de pagos
+- [Pagos (`/api/payments`)](#pagos-apipayments)
+- [Cupones (`/api/coupons`)](#cupones-apicoupons)
+- [Flujo de Pagos y Webhooks](#flujo-de-pagos-y-webhooks)
+- [Ejemplos de Uso Frontend](#ejemplos-de-uso-frontend)
+- [Troubleshooting](#troubleshooting)
+- [Mejores Prácticas](#mejores-prácticas)
 
-### ✅ Sistema de Cupones
-- **CRUD completo** para cupones
-- **Descuentos porcentuales** y montos fijos
-- **Fechas de validez** configurables
-- **Límites de uso** por cupón y por usuario
-- **Categorías específicas** de aplicación
-- **Códigos únicos** generados automáticamente
+---
 
-### ✅ Métodos de Pago
-- **Gestión flexible** de métodos de pago
-- **Activación/desactivación** dinámica
-- **Configuración** por región
-- **Comisiones** configurables
+## Pagos (`/api/payments`)
 
-## 📋 API Endpoints
+> **IMPORTANTE:** Todas las rutas requieren header `Authorization: Bearer <token>` salvo webhooks y callbacks.
 
-### Gestión de Pagos
+### Endpoints
 
-#### Crear Preferencia de Pago (MercadoPago)
-```http
-POST /api/payments/create-preference
-Authorization: Bearer <jwt-token>
-Content-Type: application/json
-
+#### `POST /api/payments/sale/:saleId` — Crear preferencia de pago MercadoPago
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+**Respuesta:**
+```json
 {
-  "orderId": "64a7f8c9b123456789abcdef",
-  "items": [
-    {
-      "title": "Producto 1",
-      "quantity": 2,
-      "currency_id": "ARS",
-      "unit_price": 1500.00
-    }
-  ],
-  "payer": {
-    "email": "cliente@email.com",
-    "name": "Juan Pérez",
-    "phone": "+54 11 1234-5678"
+  "payment": {
+    "id": "string",
+    "saleId": "string",
+    "customerId": "string",
+    "amount": 3000.00,
+    "provider": "mercado_pago",
+    "status": "pending",
+    "externalReference": "sale-...",
+    "providerPaymentId": "",
+    "preferenceId": "...",
+    "paymentMethod": "other",
+    "createdAt": "2025-07-09T10:25:00.000Z",
+    "updatedAt": "2025-07-09T10:25:00.000Z"
   },
-  "back_urls": {
-    "success": "https://tu-sitio.com/payment/success",
-    "failure": "https://tu-sitio.com/payment/failure",
-    "pending": "https://tu-sitio.com/payment/pending"
+  "preference": {
+    "id": "string",
+    "init_point": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=...",
+    "sandbox_init_point": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=..."
   }
 }
 ```
 
-**Respuesta Exitosa (201):**
+#### `POST /api/payments/prueba/sale/:saleId` — Crear preferencia de pago (modo prueba)
+**Headers:** igual a anterior
+**Respuesta:** igual a anterior
+
+#### `GET /api/payments/:id` — Obtener pago por ID
+**Headers:** igual a anterior
+**Respuesta:** objeto PaymentEntity
+
+#### `GET /api/payments/by-sale/:saleId` — Obtener pagos por venta
+**Headers:** igual a anterior
+**Query params:** `page`, `limit`
+**Respuesta:**
 ```json
 {
-  "preferenceId": "123456789-abcd-efgh-1234-567890abcdef",
-  "initPoint": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789-abcd-efgh-1234-567890abcdef",
-  "sandboxInitPoint": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789-abcd-efgh-1234-567890abcdef"
+  "total": 1,
+  "items": [ { ... } ],
+  "page": 1,
+  "limit": 10
 }
 ```
 
-#### Registrar Pago Manual
-```http
-POST /api/payments/manual
-Authorization: Bearer <jwt-token>
+#### `GET /api/payments` — Listar historial de pagos
+**Headers:** igual a anterior
+**Query params:** `page`, `limit`, `status`, `saleId`
+**Respuesta:** igual a anterior
+
+#### `POST /api/payments/verify` — Verificar pago
+**Headers:** igual a anterior
+**Body:**
+```json
+{
+  "paymentId": "...",
+  "providerPaymentId": "..."
+}
+```
+**Respuesta:** objeto PaymentEntity actualizado
+
+#### `GET /api/payments/preference/:preferenceId` — Estado de preferencia
+**Headers:** igual a anterior
+**Respuesta:**
+```json
+{
+  "success": true,
+  "payment": { ... },
+  "preferenceInfo": { ... }
+}
+```
+
+#### `GET /api/payments/status/sale/:saleId` — Estado de pago por venta
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+**Respuesta:**
+```json
+{
+  "success": true,
+  "payment": { ... }
+}
+```
+
+#### `POST /api/payments/manual-verify/:orderId` — Verificación manual de pagos
+**Headers:** igual a anterior
+**Respuesta:** objeto PaymentEntity actualizado
+
+#### `POST /api/payments/webhook` — Webhook MercadoPago
+**Headers:**
+```
 Content-Type: application/json
-
+```
+**Body:**
+```json
 {
-  "orderId": "64a7f8c9b123456789abcdef",
-  "customerId": "64a7f8c9b123456789abcde0",
-  "paymentMethodId": "64a7f8c9b123456789abcde1",
-  "amount": 3000.00,
-  "description": "Pago en efectivo",
-  "reference": "CASH-001-2024"
+  "id": 12345678901,
+  "live_mode": false,
+  "type": "payment",
+  "date_created": "2025-07-09T10:30:00.000Z",
+  "user_id": "123456789",
+  "api_version": "v1",
+  "action": "payment.updated",
+  "data": { "id": "12345678901" }
+}
+```
+**Respuesta:**
+```json
+{
+  "message": "Notificación procesada exitosamente",
+  "paymentStatus": "approved",
+  "orderUpdated": true,
+  "timestamp": "2025-07-09T10:31:00.000Z"
 }
 ```
 
-#### Obtener Historial de Pagos
-```http
-GET /api/payments?page=1&limit=10&status=approved&orderId=64a7f8c9b123456789abcdef
-Authorization: Bearer <jwt-token>
-```
+#### `GET /api/payments/mercadopago/payments` — Pagos hechos en MercadoPago (último año)
+#### `GET /api/payments/mercadopago/charges` — Cobros hechos en MercadoPago (último año)
 
-**Respuesta Exitosa (200):**
+---
+
+## Cupones (`/api/coupons`)
+
+> **IMPORTANTE:** Todas las rutas requieren header `Authorization: Bearer <token>`. Se recomienda rol admin para crear, actualizar o eliminar cupones.
+
+### Endpoints
+
+#### `POST /api/coupons` — Crear cupón
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+**Body:**
 ```json
 {
-  "payments": [
+  "name": "Descuento Julio 2025",
+  "code": "JULIO2025",
+  "description": "Descuento especial para julio",
+  "type": "PERCENTAGE",
+  "value": 15,
+  "minPurchaseAmount": 1000,
+  "maxUsageCount": 100,
+  "maxUsagePerUser": 1,
+  "validFrom": "2025-07-01T00:00:00.000Z",
+  "validUntil": "2025-07-31T23:59:59.999Z",
+  "applicableCategories": ["catId1"],
+  "isActive": true
+}
+```
+**Respuesta:** objeto cupón creado
+
+#### `GET /api/coupons` — Listar cupones
+**Query params:** `page`, `limit`
+**Respuesta:**
+```json
+{
+  "total": 1,
+  "items": [ { ... } ],
+  "page": 1,
+  "limit": 10
+}
+```
+
+#### `GET /api/coupons/:id` — Obtener cupón por ID
+**Respuesta:** objeto cupón
+
+#### `PUT /api/coupons/:id` — Actualizar cupón
+**Body:** igual a creación
+**Respuesta:** objeto cupón actualizado
+
+#### `DELETE /api/coupons/:id` — Eliminar/desactivar cupón
+**Respuesta:**
+```json
+{
+  "message": "Cupón eliminado (o desactivado)",
+  "coupon": { ... }
+}
+```
+
+---
+
+## Flujo de Pagos y Webhooks
+
+### Diagrama de flujo de pago con MercadoPago
+
+```mermaid
+sequenceDiagram
+    participant Frontend
+    participant Backend
+    participant MercadoPago
+    participant Webhook
+    Frontend->>Backend: POST /api/payments/sale/:saleId
+    Backend->>MercadoPago: Crear preferencia
+    MercadoPago-->>Backend: preferenceId, init_point
+    Backend-->>Frontend: payment, preference
+    Frontend->>MercadoPago: Redirige a init_point
+    MercadoPago-->>Frontend: Resultado pago
+    MercadoPago-->>Webhook: POST /api/payments/webhook
+    Webhook->>Backend: Procesa pago, actualiza orden
+    Backend-->>Frontend: (opcional) notificación/estado actualizado
+```
+
+---
+
+## Ejemplos de Uso Frontend
+
+### Crear preferencia de pago
+```js
+fetch('/api/payments/sale/123', {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${token}` }
+})
+  .then(res => res.json())
+  .then(data => window.location.href = data.preference.init_point);
+```
+
+### Consultar estado de pago por venta
+```js
+fetch('/api/payments/status/sale/123', {
+  headers: { Authorization: `Bearer ${token}` }
+})
+  .then(res => res.json())
+  .then(data => {
+    if (data.payment.status === 'approved') {
+      // mostrar éxito
+    }
+  });
+```
+
+---
+
+## Troubleshooting
+
+- **401 Unauthorized:** Verifica que el token JWT sea válido y esté presente en el header.
+- **400 Bad Request:** Revisa los campos requeridos en el body (ver DTOs).
+- **404 Not Found:** El recurso no existe o no pertenece al usuario autenticado.
+- **409 Conflict:** Ya existe un pago pendiente para la venta.
+- **500 Internal Server Error:** Error inesperado, revisar logs del backend.
+
+---
+
+## Mejores Prácticas
+
+- Siempre validar el estado del pago antes de actualizar la UI.
+- Usar paginación en listados grandes.
+- Manejar correctamente los estados de pago en el frontend.
+- Consultar el estado de la preferencia y del pago antes de mostrar éxito/fallo.
+- Consultar los estados válidos y transitions antes de cambiar el estado de una orden.
+
+---
+
+Para más información sobre otros módulos:
+- [Gestión de Pedidos](./api-orders.md)
+- [Gestión de Productos](./api-products.md)
+- [Clientes y Direcciones](./api-customers.md)
+- [Sistema de Webhooks](./webhooks.md)
+
+#### Verificación manual de pagos
+```http
+POST /api/payments/manual-verify/:orderId
+Authorization: Bearer <jwt-token>
+```
+No se envía body, solo el parámetro `orderId` en la URL.
+Devuelve el resultado de la verificación y actualización de pagos asociados a la orden.
+
+
+#### Obtener historial de pagos
+```http
+GET /api/payments?page=1&limit=10&status=approved&saleId=64a7f8c9b123456789abcdef
+Authorization: Bearer <jwt-token>
+```
+Respuesta:
+```json
+{
+  "total": 1,
+  "items": [
     {
       "id": "64a7f8c9b123456789abcdef",
-      "orderId": "64a7f8c9b123456789abcde0",
+      "saleId": "64a7f8c9b123456789abcde0",
       "customerId": "64a7f8c9b123456789abcde1",
-      "paymentMethod": {
-        "id": "64a7f8c9b123456789abcde2",
-        "name": "MercadoPago",
-        "type": "online"
-      },
       "amount": 3000.00,
+      "provider": "mercado_pago",
       "status": "approved",
-      "mpPaymentId": "12345678901",
-      "description": "Pago de orden #ORD-001",
-      "transactionDate": "2024-01-15T10:30:00.000Z",
-      "createdAt": "2024-01-15T10:25:00.000Z"
+      "providerPaymentId": "12345678901",
+      "externalReference": "sale-...",
+      "preferenceId": "...",
+      "paymentMethod": "other",
+      "createdAt": "2024-01-15T10:25:00.000Z",
+      "updatedAt": "2024-01-15T10:25:00.000Z"
     }
   ],
-  "total": 1,
   "page": 1,
-  "limit": 10,
-  "totalPages": 1
+  "limit": 10
 }
 ```
+
+#### Obtener pagos por venta
+```http
+GET /api/payments/by-sale/:saleId
+Authorization: Bearer <jwt-token>
+```
+Respuesta igual al historial, pero filtrado por venta.
+
+#### Obtener pago por ID
+```http
+GET /api/payments/:id
+Authorization: Bearer <jwt-token>
+```
+Respuesta: objeto PaymentEntity.
+
+#### Verificar estado de preferencia
+```http
+GET /api/payments/preference/:preferenceId
+Authorization: Bearer <jwt-token>
+```
+Respuesta:
+```json
+{
+  "success": true,
+  "payment": {
+    "id": "...",
+    "status": "pending",
+    "externalReference": "...",
+    "providerPaymentId": "...",
+    "amount": 3000.00,
+    "createdAt": "...",
+    "updatedAt": "..."
+  },
+  "preferenceInfo": {
+    "id": "...",
+    "status": "approved",
+    "isPaid": true,
+    "paymentMethod": "...",
+    "paymentDate": "..."
+  }
+}
+```
+
+#### Verificar estado de pago por venta
+```http
+GET /api/payments/status/sale/:saleId
+Authorization: Bearer <jwt-token>
+```
+Respuesta:
+```json
+{
+  "success": true,
+  "payment": {
+    "id": "...",
+    "status": "approved",
+    "amount": 3000.00,
+    "providerPaymentId": "...",
+    "lastVerified": "2024-01-15T10:30:00.000Z",
+    "saleId": "..."
+  }
+}
+```
+
+#### Verificar pago manualmente
+```http
+POST /api/payments/manual-verify/:orderId
+Authorization: Bearer <jwt-token>
+```
+Respuesta: verificación y actualización de pagos asociados a la orden.
 
 #### Procesar Webhook de MercadoPago
 ```http
@@ -256,37 +524,26 @@ Authorization: Bearer <jwt-token>
 
 ### Métodos de Pago
 
-#### Listar Métodos de Pago Activos
+
+#### Listar métodos de pago activos
 ```http
 GET /api/payment-methods/active
 ```
-
-**Respuesta Exitosa (200):**
+Respuesta:
 ```json
 {
   "paymentMethods": [
     {
       "id": "64a7f8c9b123456789abcdef",
-      "name": "MercadoPago",
-      "description": "Pago online con tarjetas y transferencias",
-      "type": "online",
+      "code": "MERCADO_PAGO",
+      "name": "Mercado Pago",
+      "description": "Pago online",
       "isActive": true,
-      "commission": 0,
-      "config": {
-        "allowsInstallments": true,
-        "maxInstallments": 12
-      }
-    },
-    {
-      "id": "64a7f8c9b123456789abcde0",
-      "name": "Efectivo",
-      "description": "Pago en efectivo al recibir",
-      "type": "cash",
-      "isActive": true,
-      "commission": 0,
-      "config": {
-        "requiresConfirmation": true
-      }
+      "defaultOrderStatusId": "id",
+      "requiresOnlinePayment": true,
+      "allowsManualConfirmation": false,
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
     }
   ]
 }

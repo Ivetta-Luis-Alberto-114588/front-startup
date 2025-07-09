@@ -65,70 +65,82 @@ const nodemailerAdapter = NodemailerAdapter.getInstance();
 - Integración con servicios de email marketing
 - Analytics de apertura y clicks
 
-## 📋 API Endpoints
 
-### Envío de Emails
+## 📋 ¿Cuándo se envía un email?
 
-#### `POST /api/notifications/email/send`
-Enviar email personalizado (solo admins).
-
-**Headers:**
+```mermaid
+flowchart TD
+    A[Usuario realiza acción en el frontend] -->|POST /api/orders| B[Backend crea orden]
+    B -->|Dispara email de confirmación de pedido| C[Cliente recibe email]
+    A2[Usuario realiza pago] -->|POST /api/payments| D[Backend registra pago]
+    D -->|Dispara email de confirmación de pago| E[Cliente recibe email]
+    A3[Usuario solicita reset] -->|POST /api/auth/request-reset| F[Backend genera token]
+    F -->|Dispara email de recuperación| G[Cliente recibe email]
 ```
-Authorization: Bearer <admin_token>
-Content-Type: application/json
-```
 
-**Body:**
+### 🚫 Endpoints de email directos
+
+> **No existen endpoints públicos para enviar emails personalizados.**  
+> Los emails se envían automáticamente como parte de los siguientes flujos:
+
+- **Registro de usuario:** Email de bienvenida tras POST `/api/auth/register`
+- **Recuperación de contraseña:** Email tras POST `/api/auth/request-reset`
+- **Confirmación de pedido:** Email tras POST `/api/orders`
+- **Confirmación de pago:** Email tras POST `/api/payments`
+
+### ✅ Ejemplo de flujo real
+
+1. **Crear orden**
+   - **Request:** `POST /api/orders` con datos de la orden.
+   - **Respuesta:** Orden creada.
+   - **Efecto:** El backend envía automáticamente un email de confirmación al cliente.
+
+2. **Confirmar pago**
+   - **Request:** `POST /api/payments` con datos del pago.
+   - **Respuesta:** Pago registrado.
+   - **Efecto:** El backend envía automáticamente un email de confirmación de pago.
+
+### 📦 Ejemplo de payload relevante
+
+El frontend **no debe enviar HTML ni templates**. Solo los datos de la orden/pago/usuario.
+
 ```json
+// Crear orden
+POST /api/orders
 {
-  "to": "cliente@email.com",
-  "subject": "Asunto del email",
-  "html": "<h1>Contenido HTML</h1>",
-  "text": "Contenido en texto plano (opcional)"
+  "customerId": "cus_123",
+  "items": [ ... ],
+  "shippingAddress": "...",
+  ...
 }
 ```
 
-**Respuesta:**
-```json
-{
-  "success": true,
-  "messageId": "email-message-id",
-  "timestamp": "2025-01-15T10:30:00Z"
-}
-```
+---
 
-#### `POST /api/notifications/email/order-confirmation`
-Email de confirmación de pedido.
+### 📧 Tipos de emails y triggers
 
-**Body:**
-```json
-{
-  "orderId": "ORDER_123",
-  "customerEmail": "cliente@email.com",
-  "customerName": "Juan Pérez",
-  "orderDetails": {
-    "items": [...],
-    "total": 2500.00,
-    "shippingAddress": "..."
-  }
-}
-```
+| Tipo de Email                | Trigger (endpoint)           | Destinatario         |
+|------------------------------|------------------------------|----------------------|
+| Bienvenida                   | POST `/api/auth/register`    | Usuario              |
+| Recuperación de contraseña   | POST `/api/auth/request-reset`| Usuario              |
+| Confirmación de pedido       | POST `/api/orders`           | Cliente              |
+| Confirmación de pago         | POST `/api/payments`         | Cliente              |
+| Cambio de estado de pedido   | PATCH `/api/orders/:id/status`| Cliente              |
 
-#### `POST /api/notifications/email/payment-confirmation`
-Email de confirmación de pago.
+---
 
-**Body:**
-```json
-{
-  "paymentId": "PAY_123",
-  "orderId": "ORDER_123",
-  "customerEmail": "cliente@email.com",
-  "amount": 2500.00,
-  "method": "MercadoPago"
-}
-```
+### 🔒 Autorización
 
-## 📧 Tipos de Emails
+- Los endpoints de órdenes y pagos requieren JWT en el header `Authorization: Bearer <token>`.
+- No se requiere autorización especial para emails, ya que son automáticos.
+
+---
+
+### � Resumen
+
+- **No existen endpoints directos para emails.**
+- **Los emails se envían automáticamente tras las acciones principales.**
+- **El frontend solo debe preocuparse por los endpoints de negocio.**
 
 ### 🎉 Bienvenida (Registro)
 

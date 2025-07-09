@@ -1,107 +1,189 @@
-# ⚙️ Panel de Administración
 
-Panel completo de administración con gestión avanzada de productos, pedidos, usuarios, estadísticas y configuraciones del sistema.
+# ⚙️ Panel de Administración (Actualizado)
+
+Panel de administración para gestión avanzada de productos, pedidos, usuarios, clientes, cupones, categorías, unidades, tags y más.
 
 ## 📑 Índice
 
-- [🎯 Funcionalidades](#-funcionalidades)
-- [📋 API Endpoints](#-api-endpoints)
-- [📊 Dashboard y Estadísticas](#-dashboard-y-estadísticas)
-- [👥 Gestión de Usuarios](#-gestión-de-usuarios)
-- [📦 Gestión Avanzada de Productos](#-gestión-avanzada-de-productos)
-- [🛒 Administración de Pedidos](#-administración-de-pedidos)
-- [💡 Ejemplos de Uso](#-ejemplos-de-uso)
-- [⚙️ Configuración](#-configuración)
+- [Endpoints y Estructura Real](#endpoints-y-estructura-real)
+- [Autorización y Roles](#autorización-y-roles)
+- [Flujo de Autorización (Mermaid)](#flujo-de-autorización-mermaid)
+- [Ejemplo de Rutas y Códigos de Respuesta](#ejemplo-de-rutas-y-códigos-de-respuesta)
+- [Notas y Discrepancias Detectadas](#notas-y-discrepancias-detectadas)
 
-## 🎯 Funcionalidades
+---
 
-### ✅ Dashboard Administrativo
-- **Métricas en tiempo real** de ventas y pedidos
-- **Gráficos interactivos** de rendimiento
-- **Alertas automáticas** de stock bajo
-- **Resúmenes financieros** por período
-- **Actividad reciente** del sistema
+## Endpoints y Estructura Real
 
-### ✅ Gestión Avanzada
-- **Usuarios y roles** con permisos granulares
-- **Productos en lote** (importación/exportación)
-- **Inventario y stock** con alertas automáticas
-- **Cupones y promociones** programables
-- **Configuraciones del sistema** centralizadas
+### Prefijo de todas las rutas de administración
 
-### ✅ Reportes y Analytics
-- **Reportes de ventas** detallados
-- **Análisis de productos** más vendidos
-- **Estadísticas de clientes** y comportamiento
-- **Informes financieros** con filtros avanzados
-- **Exportación** en múltiples formatos (PDF, Excel, CSV)
+```
+/api/admin/*
+```
 
-## 📋 API Endpoints
+**Todas las rutas están protegidas por:**
+- `AuthMiddleware.validateJwt`
+- `AuthMiddleware.checkRole(['ADMIN_ROLE'])`
 
-### Dashboard y Estadísticas
+### Subrutas disponibles (según código real):
 
-#### Obtener Métricas del Dashboard
+- `/products` → Gestión de productos (CRUD, búsqueda, por categoría)
+- `/categories` → Gestión de categorías
+- `/units` → Gestión de unidades
+- `/tags` → Gestión de tags
+- `/orders` → Gestión de pedidos (ventas)
+- `/customers` → Gestión de clientes
+- `/users` → Gestión de usuarios administrativos
+- `/coupons` → Gestión de cupones
+- `/cities` → Gestión de ciudades
+- `/neighborhoods` → Gestión de barrios
+- `/telegram` → Integración Telegram (notificaciones)
+
+#### Ejemplo de endpoints reales para productos
+
+| Método | Endpoint | Descripción | Body/Query | Respuesta |
+|--------|----------|-------------|------------|-----------|
+| GET    | `/api/admin/products` | Listar productos | `?page,limit,search` | `{ items: Product[], total: number }` |
+| GET    | `/api/admin/products/search` | Buscar productos | `?q=texto` | `{ items: Product[], total: number }` |
+| GET    | `/api/admin/products/by-category/:categoryId` | Productos por categoría |  | `{ items: Product[], total: number }` |
+| GET    | `/api/admin/products/:id` | Obtener producto por ID |  | `Product` |
+| POST   | `/api/admin/products` | Crear producto | `multipart/form-data` (campos + imagen opcional) | `Product` |
+| PUT    | `/api/admin/products/:id` | Actualizar producto | `multipart/form-data` (campos + imagen opcional) | `Product` |
+| DELETE | `/api/admin/products/:id` | Eliminar producto |  | `{ message: string }` |
+
+#### Ejemplo de endpoints reales para usuarios
+
+| Método | Endpoint | Descripción | Body/Query | Respuesta |
+|--------|----------|-------------|------------|-----------|
+| GET    | `/api/admin/users` | Listar usuarios | `?page,limit,role,search,isActive` | `{ users: User[], total, page, limit, totalPages }` |
+| GET    | `/api/admin/users/:id` | Obtener usuario por ID |  | `User` |
+| PUT    | `/api/admin/users/:id` | Actualizar usuario (roles, datos) | `{ name, email, roles, ... }` | `User` |
+| DELETE | `/api/admin/users/:id` | Eliminar usuario |  | `{ message: string }` |
+
+#### Ejemplo de endpoints reales para pedidos
+
+| Método | Endpoint | Descripción | Body/Query | Respuesta |
+|--------|----------|-------------|------------|-----------|
+| GET    | `/api/admin/orders` | Listar ventas/pedidos | `?page,limit,status,dateFrom,dateTo` | `{ items: Order[], total }` |
+| GET    | `/api/admin/orders/:id` | Obtener pedido por ID |  | `Order` |
+| PATCH  | `/api/admin/orders/:id/status` | Actualizar estado de pedido | `{ statusId, notes, notifyCustomer, trackingNumber }` | `Order` |
+| PUT    | `/api/admin/orders/:id` | Actualización completa de pedido | `{ ... }` | `Order` |
+
+> **Nota:** No existen endpoints `/dashboard/metrics`, `/dashboard/charts`, `/dashboard/activity`, `/settings`, `/reports`, `/analytics` en el código real. Si el frontend los requiere, deben implementarse.
+
+---
+
+## Autorización y Roles
+
+- **Header requerido en todas las rutas admin:**
+  ```
+  Authorization: Bearer <jwt-token>
+  ```
+- **Roles válidos:** `ADMIN_ROLE`, `SUPER_ADMIN_ROLE` (consultar backend para más granularidad)
+- **Campo de roles en usuario:** `roles: string[]`
+
+### Ejemplo de error 403
+
+```json
+{
+  "error": "Acceso denegado. Requiere rol: ADMIN_ROLE o SUPER_ADMIN_ROLE"
+}
+```
+
+---
+
+## Flujo de Autorización (Mermaid)
+
+```mermaid
+flowchart TD
+    A[Request a endpoint /api/admin/*] --> B{JWT válido?}
+    B -- No --> E[401 Unauthorized]
+    B -- Sí --> C{Rol ADMIN_ROLE?}
+    C -- No --> F[403 Forbidden]
+    C -- Sí --> D[Acceso concedido]
+```
+
+---
+
+## Ejemplo de Rutas y Códigos de Respuesta
+
+### Crear producto (con imagen opcional)
+
 ```http
-GET /api/admin/dashboard/metrics?period=7d
+POST /api/admin/products
+Authorization: Bearer <admin-jwt-token>
+Content-Type: multipart/form-data
+
+Body:
+- name: string
+- price: number
+- categoryId: string
+- image: file (opcional)
+```
+
+**Respuesta 201:**
+```json
+{
+  "id": "64a7f8c9b123456789abcdef",
+  "name": "Producto X",
+  "price": 100,
+  "category": { ... },
+  "imageUrl": "https://cloudinary.com/...",
+  ...
+}
+```
+
+### Listar usuarios
+
+```http
+GET /api/admin/users?page=1&limit=20&role=USER_ROLE&search=juan&isActive=true
 Authorization: Bearer <admin-jwt-token>
 ```
 
-**Respuesta Exitosa (200):**
+**Respuesta 200:**
 ```json
 {
-  "metrics": {
-    "sales": {
-      "total": 125450.75,
-      "count": 89,
-      "average": 1409.56,
-      "growth": 15.3,
-      "currency": "ARS"
-    },
-    "orders": {
-      "total": 89,
-      "pending": 12,
-      "completed": 71,
-      "cancelled": 6,
-      "growth": 8.2
-    },
-    "customers": {
-      "total": 456,
-      "new": 23,
-      "active": 78,
-      "growth": 12.1
-    },
-    "products": {
-      "total": 234,
-      "lowStock": 8,
-      "outOfStock": 3,
-      "mostSold": [
-        {
-          "id": "64a7f8c9b123456789abcdef",
-          "name": "iPhone 15 Pro",
-          "sales": 15,
-          "revenue": 19499.25
-        }
-      ]
-    }
-  },
-  "alerts": [
+  "users": [
     {
-      "type": "low_stock",
-      "severity": "warning",
-      "message": "8 productos con stock bajo",
-      "count": 8
-    },
-    {
-      "type": "payment_pending",
-      "severity": "info",
-      "message": "12 pagos pendientes de confirmación",
-      "count": 12
+      "id": "64a7f8c9b123456789abcdef",
+      "name": "Juan Pérez",
+      "email": "juan@email.com",
+      "roles": ["USER_ROLE"],
+      "isActive": true,
+      ...
     }
   ],
-  "period": "7d",
-  "generatedAt": "2024-01-15T10:30:00.000Z"
+  "total": 456,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 23
 }
 ```
+
+---
+
+## Notas y Discrepancias Detectadas
+
+- **No existen endpoints de dashboard, settings, analytics ni reportes en el backend actual.** Si el frontend los necesita, deben implementarse.
+- **No existen endpoints de importación/exportación de productos ni de stock batch/alerts.** Solo CRUD básico y búsqueda.
+- **No hay endpoints de actividad reciente ni gráficos.**
+- **La estructura de rutas y controladores es modular y separada por entidad.**
+- **Todos los endpoints admin están bajo `/api/admin` y requieren JWT + rol.**
+- **El campo de roles es siempre `roles: string[]`.**
+- **Las rutas de productos usan `multipart/form-data` para imagen.**
+- **No hay endpoints para cambiar estado de usuario vía PATCH, solo PUT para actualizar.**
+
+---
+
+## Recomendaciones
+
+- Si el frontend requiere endpoints de dashboard, reportes, import/export, stock batch, etc., deben ser desarrollados en el backend.
+- Mantener la documentación sincronizada con el código fuente real.
+- Usar los nombres y estructuras de endpoints, parámetros y respuestas exactamente como están en el backend para evitar errores de integración.
+
+---
+
+¿Deseas que se agreguen ejemplos específicos de alguna entidad o que se amplíe la documentación técnica?
 
 #### Obtener Datos para Gráficos
 ```http
@@ -152,6 +234,13 @@ GET /api/admin/users?page=1&limit=20&role=USER_ROLE&search=juan&isActive=true
 Authorization: Bearer <admin-jwt-token>
 ```
 
+**Roles permitidos:** `ADMIN_ROLE`, `SUPER_ADMIN_ROLE`
+
+**Header requerido:**
+```
+Authorization: Bearer <jwt-token>
+```
+
 **Respuesta Exitosa (200):**
 ```json
 {
@@ -160,7 +249,7 @@ Authorization: Bearer <admin-jwt-token>
       "id": "64a7f8c9b123456789abcdef",
       "name": "Juan Pérez",
       "email": "juan@email.com",
-      "role": "USER_ROLE",
+      "roles": ["USER_ROLE"],
       "isActive": true,
       "lastLogin": "2024-01-15T09:30:00.000Z",
       "customer": {
@@ -178,6 +267,13 @@ Authorization: Bearer <admin-jwt-token>
 }
 ```
 
+**Ejemplo de error 403:**
+```json
+{
+  "error": "Acceso denegado. Requiere rol: ADMIN_ROLE o SUPER_ADMIN_ROLE"
+}
+```
+
 #### Crear Usuario Administrativo
 ```http
 POST /api/admin/users
@@ -188,10 +284,12 @@ Content-Type: application/json
   "name": "Admin Usuario",
   "email": "admin@empresa.com",
   "password": "AdminPass123",
-  "role": "ADMIN_ROLE",
+  "roles": ["ADMIN_ROLE"],
   "permissions": ["manage_products", "manage_orders", "view_reports"]
 }
 ```
+
+**Nota:** El campo correcto es `roles: string[]` (array), no `role` (string).
 
 #### Actualizar Estado de Usuario
 ```http
@@ -205,11 +303,15 @@ Content-Type: application/json
 }
 ```
 
+**Roles permitidos:** `ADMIN_ROLE`, `SUPER_ADMIN_ROLE`
+
 #### Obtener Estadísticas de Usuario
 ```http
 GET /api/admin/users/:id/stats
 Authorization: Bearer <admin-jwt-token>
 ```
+
+**Roles permitidos:** `ADMIN_ROLE`, `SUPER_ADMIN_ROLE`
 
 ### Gestión Avanzada de Productos
 
@@ -321,6 +423,8 @@ GET /api/admin/orders?page=1&limit=20&status=PENDING&dateFrom=2024-01-01&dateTo=
 Authorization: Bearer <admin-jwt-token>
 ```
 
+**Roles permitidos:** `ADMIN_ROLE`, `SUPER_ADMIN_ROLE`
+
 #### Actualizar Estado de Pedido
 ```http
 PATCH /api/admin/orders/:id/status
@@ -334,6 +438,8 @@ Content-Type: application/json
   "trackingNumber": "TR123456789"
 }
 ```
+
+**Roles permitidos:** `ADMIN_ROLE`, `SUPER_ADMIN_ROLE`
 
 #### Procesar Pedidos en Lote
 ```http
@@ -350,6 +456,8 @@ Content-Type: application/json
   }
 }
 ```
+
+**Roles permitidos:** `ADMIN_ROLE`, `SUPER_ADMIN_ROLE`
 
 ### Reportes y Analytics
 
@@ -1139,8 +1247,6 @@ STOCK_LOW_THRESHOLD=10
 STOCK_CRITICAL_THRESHOLD=5
 ALERT_EMAIL_ENABLED=true
 ALERT_TELEGRAM_ENABLED=true
-```
-
 ### Permisos y Roles
 
 ```typescript
@@ -1151,7 +1257,6 @@ export const ADMIN_PERMISSIONS = {
     VIEW_CHARTS: 'dashboard:view_charts',
     VIEW_ALERTS: 'dashboard:view_alerts'
   },
-  
   PRODUCTS: {
     VIEW: 'products:view',
     CREATE: 'products:create',
@@ -1161,7 +1266,6 @@ export const ADMIN_PERMISSIONS = {
     EXPORT: 'products:export',
     MANAGE_STOCK: 'products:manage_stock'
   },
-  
   ORDERS: {
     VIEW: 'orders:view',
     UPDATE_STATUS: 'orders:update_status',
@@ -1169,7 +1273,6 @@ export const ADMIN_PERMISSIONS = {
     REFUND: 'orders:refund',
     MANAGE_SHIPPING: 'orders:manage_shipping'
   },
-  
   USERS: {
     VIEW: 'users:view',
     CREATE: 'users:create',
@@ -1177,14 +1280,12 @@ export const ADMIN_PERMISSIONS = {
     DELETE: 'users:delete',
     MANAGE_ROLES: 'users:manage_roles'
   },
-  
   REPORTS: {
     VIEW: 'reports:view',
     GENERATE: 'reports:generate',
     EXPORT: 'reports:export',
     VIEW_ANALYTICS: 'reports:view_analytics'
   },
-  
   SETTINGS: {
     VIEW: 'settings:view',
     UPDATE: 'settings:update',
@@ -1197,7 +1298,6 @@ export const ADMIN_ROLES = {
     name: 'Super Administrador',
     permissions: Object.values(ADMIN_PERMISSIONS).flatMap(p => Object.values(p))
   },
-  
   ADMIN: {
     name: 'Administrador',
     permissions: [
@@ -1208,7 +1308,6 @@ export const ADMIN_ROLES = {
       ...Object.values(ADMIN_PERMISSIONS.REPORTS)
     ]
   },
-  
   MANAGER: {
     name: 'Gerente',
     permissions: [
@@ -1220,7 +1319,6 @@ export const ADMIN_ROLES = {
       ADMIN_PERMISSIONS.REPORTS.GENERATE
     ]
   },
-  
   OPERATOR: {
     name: 'Operador',
     permissions: [
@@ -1229,6 +1327,9 @@ export const ADMIN_ROLES = {
       ADMIN_PERMISSIONS.ORDERS.VIEW,
       ADMIN_PERMISSIONS.ORDERS.UPDATE_STATUS
     ]
+  }
+};
+```
   }
 };
 ```
@@ -1246,4 +1347,31 @@ export const ADMIN_ROLES = {
 
 ---
 
-*Última actualización: Enero 2024*
+---
+
+## Autorización y Roles: Resumen para Frontend
+
+- Todos los endpoints protegidos requieren el header:
+  ```
+  Authorization: Bearer <jwt-token>
+  ```
+- El campo de roles en usuario es SIEMPRE `roles: string[]`.
+- Los roles válidos y sus permisos están definidos en el backend (`src/configs/roles.ts`).
+- Ejemplo de error 403:
+  ```json
+  {
+    "error": "Acceso denegado. Requiere rol: ADMIN_ROLE o SUPER_ADMIN_ROLE"
+  }
+  ```
+- Consultar la documentación de roles para mantener consistencia.
+
+```mermaid
+flowchart TD
+    A[Request a endpoint protegido] --> B{JWT válido?}
+    B -- No --> E[401 Unauthorized]
+    B -- Sí --> C{Rol permitido?}
+    C -- No --> F[403 Forbidden]
+    C -- Sí --> D[Acceso concedido]
+```
+
+*Última actualización: Julio 2025*

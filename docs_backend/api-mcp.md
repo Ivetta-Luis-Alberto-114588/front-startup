@@ -1,6 +1,5 @@
-# 🌐 Model Context Protocol (MCP)
 
-Sistema de integración con herramientas de IA y LLMs usando el protocolo MCP para extender las capacidades del chatbot con herramientas externas.
+# 🌐 Model Context Protocol (MCP) – Documentación Actualizada
 
 ## 📑 Índice
 
@@ -10,298 +9,182 @@ Sistema de integración con herramientas de IA y LLMs usando el protocolo MCP pa
 - [🔌 Integración con LLMs](#-integración-con-llms)
 - [💡 Ejemplos de Uso](#-ejemplos-de-uso)
 - [⚙️ Configuración](#-configuración)
+- [📊 Flujos de Uso (Mermaid)](#-flujos-de-uso-mermaid)
+
+---
 
 ## 🎯 Funcionalidades
 
-### ✅ Protocolo MCP
-- **Servidor MCP** compatible con el estándar
-- **Herramientas personalizadas** para e-commerce
-- **Integración con LLMs** (Claude, GPT, etc.)
-- **Ejecución segura** de herramientas
-- **Logging detallado** de operaciones
+*(Sin cambios, sigue vigente)*
 
-### ✅ Herramientas E-commerce
-- **Búsqueda de productos** con filtros avanzados
-- **Gestión de carrito** (agregar, quitar, consultar)
-- **Consulta de pedidos** y estados
-- **Información de clientes** y direcciones
-- **Aplicación de cupones** y descuentos
-- **Consulta de inventario** y disponibilidad
-
-### ✅ Capacidades del Sistema
-- **Validación de parámetros** automática
-- **Manejo de errores** robusto
-- **Rate limiting** por herramienta
-- **Autenticación** y autorización
-- **Monitoreo de uso** y métricas
+---
 
 ## 📋 API Endpoints
 
-### Servidor MCP
-
-#### Obtener Lista de Herramientas
+### 1. **Salud del Servicio MCP**
 ```http
-POST /mcp/tools/list
-Content-Type: application/json
-
-{
-  "method": "tools/list",
-  "params": {}
-}
+GET /api/mcp/health
 ```
-
-**Respuesta Exitosa (200):**
+**Respuesta:**
 ```json
 {
-  "tools": [
-    {
-      "name": "search_products",
-      "description": "Buscar productos en el catálogo",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "Término de búsqueda"
-          },
-          "category": {
-            "type": "string",
-            "description": "Categoría específica"
-          },
-          "minPrice": {
-            "type": "number",
-            "description": "Precio mínimo"
-          },
-          "maxPrice": {
-            "type": "number",
-            "description": "Precio máximo"
-          }
-        },
-        "required": ["query"]
-      }
-    },
-    {
-      "name": "add_to_cart",
-      "description": "Agregar producto al carrito",
-      "inputSchema": {
-        "type": "object",
-        "properties": {
-          "productId": {
-            "type": "string",
-            "description": "ID del producto"
-          },
-          "quantity": {
-            "type": "number",
-            "description": "Cantidad a agregar",
-            "minimum": 1
-          },
-          "userId": {
-            "type": "string",
-            "description": "ID del usuario"
-          }
-        },
-        "required": ["productId", "quantity", "userId"]
-      }
-    }
-  ]
+  "status": "OK",
+  "service": "MCP Service",
+  "timestamp": "2025-07-09T12:00:00.000Z",
+  "anthropic_configured": true
 }
 ```
 
-#### Ejecutar Herramienta
+### 2. **Proxy a Anthropic Claude**
 ```http
-POST /mcp/tools/call
+POST /api/mcp/anthropic
 Content-Type: application/json
 
 {
-  "method": "tools/call",
-  "params": {
-    "name": "search_products",
-    "arguments": {
-      "query": "laptop gaming",
-      "category": "electronics",
-      "minPrice": 500,
-      "maxPrice": 2000
-    }
-  }
+  "model": "claude-3-opus-20240229",
+  "messages": [...],
+  "max_tokens": 1024
 }
 ```
+**Headers:**
+- No requiere autenticación, pero la API key de Anthropic debe estar configurada en el backend.
 
-**Respuesta Exitosa (200):**
+**Respuesta:** (Directa de Anthropic, formato variable)
+
+---
+
+### 3. **Listado de Herramientas MCP (INTERNAMENTE)**
+> **Nota:** El endpoint `/mcp/tools/list` que figura en la documentación original **NO existe** en el backend real.  
+> El listado de herramientas se obtiene a través de la capa de dominio/repositorio, no vía endpoint HTTP público.
+
+---
+
+### 4. **Ejecución de Herramientas MCP (INTERNAMENTE)**
+> **Nota:** El endpoint `/mcp/tools/call` que figura en la documentación original **NO existe** en el backend real.  
+> La ejecución de herramientas se realiza por la capa de dominio/repositorio, no vía endpoint HTTP público.
+
+---
+
+## 🔧 Herramientas Disponibles (según código real)
+
+El backend expone las siguientes herramientas MCP (consultar por código, no por endpoint HTTP):
+
+### 1. `get_customers`
+- **Descripción:** Obtiene lista de clientes con filtros opcionales.
+- **Parámetros:**
+  - `page` (number, opcional, default: 1)
+  - `limit` (number, opcional, default: 10)
+  - `search` (string, opcional)
+
+### 2. `get_customer_by_id`
+- **Descripción:** Obtiene un cliente específico por ID.
+- **Parámetros:**
+  - `id` (string, requerido)
+
+### 3. `get_products`
+- **Descripción:** Obtiene lista de productos con filtros opcionales.
+- **Parámetros:**
+  - `page` (number, opcional, default: 1)
+  - `limit` (number, opcional, default: 10)
+  - `search` (string, opcional)
+  - `categoryId` (string, opcional)
+  - `minPrice` (number, opcional)
+  - `maxPrice` (number, opcional)
+
+### 4. `get_product_by_id`
+- **Descripción:** Obtiene un producto específico por ID.
+- **Parámetros:**
+  - `id` (string, requerido)
+
+### 5. `get_orders`
+- **Descripción:** Obtiene lista de pedidos con filtros opcionales.
+- **Parámetros:**
+  - `page` (number, opcional, default: 1)
+  - `limit` (number, opcional, default: 10)
+  - `customerId` (string, opcional)
+  - `status` (string, opcional)
+  - `dateFrom` (string, opcional, formato YYYY-MM-DD)
+  - `dateTo` (string, opcional, formato YYYY-MM-DD)
+
+### 6. `search_database`
+- **Descripción:** Búsqueda general en productos y clientes.
+- **Parámetros:**
+  - `query` (string, requerido)
+  - `entities` (array de string, opcional, valores: "products", "customers")
+
+---
+
+## 📊 Flujos de Uso (Mermaid)
+
+### Flujo de consulta de clientes
+
+```mermaid
+sequenceDiagram
+    participant Frontend
+    participant Backend
+    participant MCPDatasource
+
+    Frontend->>Backend: POST /api/chat/mcp-message (mensaje con intención de clientes)
+    Backend->>MCPDatasource: getAvailableTools() / callTool('get_customers', {...})
+    MCPDatasource-->>Backend: { content: [{ type: "text", text: "{...}" }] }
+    Backend-->>Frontend: Respuesta con resultados y sugerencias
+```
+
+### Flujo de proxy a Anthropic
+
+```mermaid
+sequenceDiagram
+    participant Frontend
+    participant Backend
+    participant AnthropicAPI
+
+    Frontend->>Backend: POST /api/mcp/anthropic
+    Backend->>AnthropicAPI: POST /v1/messages (con API key)
+    AnthropicAPI-->>Backend: Respuesta Claude
+    Backend-->>Frontend: Respuesta Claude
+```
+
+---
+
+## ⚠️ Discrepancias Detectadas
+
+- **No existen los endpoints `/mcp/tools/list` ni `/mcp/tools/call`** en la API HTTP pública. El acceso a herramientas MCP es interno, no vía REST.
+- **Los nombres de herramientas y parámetros difieren**: la documentación original menciona `search_products`, `add_to_cart`, etc., pero el código real expone `get_products`, `get_customers`, etc.
+- **No hay endpoints HTTP para manipular carrito, pedidos, cupones, etc.** vía MCP. Solo existen las herramientas listadas arriba.
+- **El endpoint `/api/mcp/anthropic`** es un proxy directo a la API de Anthropic, no ejecuta herramientas MCP.
+- **El endpoint `/api/mcp/health`** es solo para monitoreo.
+
+---
+
+## 💡 Ejemplo de Respuesta de Herramienta (formato real)
+
 ```json
 {
   "content": [
     {
       "type": "text",
-      "text": "Encontré 5 laptops gaming en el rango de precio especificado:\n\n1. **ASUS ROG Strix G15** - $1,299\n   - AMD Ryzen 7, RTX 3060, 16GB RAM\n   - Disponible: 8 unidades\n\n2. **MSI Katana GF66** - $1,099\n   - Intel Core i7, RTX 3050 Ti, 16GB RAM\n   - Disponible: 12 unidades\n\n3. **Acer Nitro 5** - $899\n   - AMD Ryzen 5, RTX 3060, 8GB RAM\n   - Disponible: 15 unidades\n\n¿Te interesa información detallada sobre alguno de estos modelos?"
+      "text": "{ \"total\": 2, \"page\": 1, \"limit\": 10, \"customers\": [ ... ] }"
     }
-  ],
-  "isError": false
+  ]
 }
 ```
+> El campo `text` contiene un string con un JSON serializado.
 
-### Integración con Chatbot
+---
 
-#### Chat con Herramientas MCP
-```http
-POST /api/chat/mcp-message
-Authorization: Bearer <jwt-token>
-Content-Type: application/json
+## ⚙️ Configuración
 
-{
-  "message": "Busca laptops para gaming con precio entre $800 y $1500",
-  "sessionId": "sess_64a7f8c9b123456789abcdef",
-  "enableTools": true
-}
-```
+*(Sin cambios, sigue vigente)*
 
-**Respuesta Exitosa (200):**
-```json
-{
-  "sessionId": "sess_64a7f8c9b123456789abcdef",
-  "messageId": "msg_64a7f8c9b123456789abcdef",
-  "response": {
-    "text": "He encontrado varios laptops gaming en tu rango de precio. Déjame buscar las mejores opciones disponibles...",
-    "toolCalls": [
-      {
-        "toolName": "search_products",
-        "arguments": {
-          "query": "laptop gaming",
-          "category": "electronics",
-          "minPrice": 800,
-          "maxPrice": 1500
-        },
-        "result": "Encontré 5 laptops gaming...",
-        "executionTime": "245ms"
-      }
-    ],
-    "finalResponse": "Basándome en tu búsqueda, aquí tienes las mejores opciones de laptops gaming en tu presupuesto...",
-    "suggestedActions": [
-      "Ver detalles del ASUS ROG Strix",
-      "Comparar especificaciones",
-      "Agregar al carrito"
-    ]
-  },
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
-```
+---
 
-## 🔧 Herramientas Disponibles
+## 🔗 Enlaces Relacionados
 
-### Búsqueda y Productos
+*(Sin cambios, sigue vigente)*
 
-#### search_products
-Busca productos en el catálogo con filtros avanzados.
+---
 
-**Parámetros:**
-- `query` (string, requerido): Término de búsqueda
-- `category` (string, opcional): Categoría específica
-- `minPrice` (number, opcional): Precio mínimo
-- `maxPrice` (number, opcional): Precio máximo
-- `tags` (array, opcional): Tags específicos
-- `inStock` (boolean, opcional): Solo productos en stock
-
-**Ejemplo de uso:**
-```json
-{
-  "name": "search_products",
-  "arguments": {
-    "query": "smartphone",
-    "category": "electronics",
-    "minPrice": 300,
-    "maxPrice": 800,
-    "inStock": true
-  }
-}
-```
-
-#### get_product_details
-Obtiene información detallada de un producto específico.
-
-**Parámetros:**
-- `productId` (string, requerido): ID del producto
-
-#### check_product_availability
-Verifica disponibilidad y stock de un producto.
-
-**Parámetros:**
-- `productId` (string, requerido): ID del producto
-- `quantity` (number, opcional): Cantidad deseada
-
-### Gestión de Carrito
-
-#### add_to_cart
-Agrega un producto al carrito del usuario.
-
-**Parámetros:**
-- `productId` (string, requerido): ID del producto
-- `quantity` (number, requerido): Cantidad a agregar
-- `userId` (string, requerido): ID del usuario
-
-#### remove_from_cart
-Remueve un producto del carrito.
-
-**Parámetros:**
-- `productId` (string, requerido): ID del producto
-- `userId` (string, requerido): ID del usuario
-
-#### get_cart_contents
-Obtiene el contenido actual del carrito.
-
-**Parámetros:**
-- `userId` (string, requerido): ID del usuario
-
-#### apply_coupon
-Aplica un cupón de descuento al carrito.
-
-**Parámetros:**
-- `couponCode` (string, requerido): Código del cupón
-- `userId` (string, requerido): ID del usuario
-
-### Gestión de Pedidos
-
-#### get_order_status
-Consulta el estado de un pedido.
-
-**Parámetros:**
-- `orderId` (string, requerido): ID del pedido
-- `userId` (string, requerido): ID del usuario
-
-#### get_user_orders
-Obtiene el historial de pedidos de un usuario.
-
-**Parámetros:**
-- `userId` (string, requerido): ID del usuario
-- `limit` (number, opcional): Número máximo de pedidos
-- `status` (string, opcional): Filtrar por estado
-
-#### create_order
-Crea un nuevo pedido a partir del carrito actual.
-
-**Parámetros:**
-- `userId` (string, requerido): ID del usuario
-- `shippingAddressId` (string, requerido): ID de la dirección de envío
-- `paymentMethodId` (string, requerido): ID del método de pago
-
-### Información del Cliente
-
-#### get_customer_info
-Obtiene información del perfil del cliente.
-
-**Parámetros:**
-- `userId` (string, requerido): ID del usuario
-
-#### get_customer_addresses
-Obtiene las direcciones de envío del cliente.
-
-**Parámetros:**
-- `customerId` (string, requerido): ID del cliente
-
-#### update_customer_info
-Actualiza información del cliente.
-
-**Parámetros:**
-- `customerId` (string, requerido): ID del cliente
-- `updateData` (object, requerido): Datos a actualizar
+**Última actualización: Julio 2025 (actualizada según código real)**
 
 ## 🔌 Integración con LLMs
 

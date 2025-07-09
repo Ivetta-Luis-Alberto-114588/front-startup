@@ -1,11 +1,13 @@
-# 📧 Sistema de Notificaciones
+# 📧 Sistema de Notificaciones Multicanal
 
-Sistema completo de notificaciones multicanal que incluye email (Nodemailer) y Telegram para mantener informados a clientes y administradores.
+Sistema completo de notificaciones que incluye email (Nodemailer) y Telegram para mantener informados a clientes y administradores, **con activación automática cuando los pagos son aprobados**.
 
 ## 📑 Índice
 
 - [🎯 Funcionalidades](#-funcionalidades)
-- [📋 API Endpoints](#-api-endpoints)
+- [� Flujo Automático de Pagos Aprobados](#-flujo-automático-de-pagos-aprobados)
+- [🔍 Sistema de Logging Detallado](#-sistema-de-logging-detallado)
+- [�📋 API Endpoints](#-api-endpoints)
 - [📧 Notificaciones por Email](#-notificaciones-por-email)
 - [📱 Notificaciones por Telegram](#-notificaciones-por-telegram)
 - [🔔 Tipos de Notificaciones](#-tipos-de-notificaciones)
@@ -17,26 +19,206 @@ Sistema completo de notificaciones multicanal que incluye email (Nodemailer) y T
 ### ✅ Sistema de Email
 - **Nodemailer** para envío de correos
 - **Templates HTML** personalizables
-- **Autenticación SMTP** segura
+- **Autenticación SMTP** segura (Gmail)
 - **Adjuntos** y contenido rico
-- **Tracking** de emails enviados
-- **Cola de envío** para optimizar rendimiento
+- **Tracking** de emails enviados con logs detallados
+- **Activación automática** en pagos aprobados
 
 ### ✅ Sistema de Telegram
 - **Bot de Telegram** integrado
 - **Notificaciones push** instantáneas
-- **Mensajes a grupos** y canales
-- **Botones interactivos** (inline keyboards)
-- **Archivos y multimedia**
+- **Mensajes a grupos** y canales de administración
 - **Rate limiting** automático
+- **Activación automática** en pagos aprobados
 
 ### ✅ Gestión de Notificaciones
-- **Preferencias por usuario** (email, telegram, ambos)
-- **Categorías de notificaciones** configurables
-- **Horarios de envío** personalizables
-- **Plantillas dinámicas** con variables
-- **Logs detallados** de envíos
+- **Envío simultáneo** Email + Telegram
+- **Logs estructurados** con trace IDs únicos
 - **Retry automático** en caso de fallo
+- **Validación de datos** antes del envío
+
+---
+
+## 🚀 Flujo Automático de Pagos Aprobados
+
+### 💰 Activación Automática
+
+**Cuando MercadoPago notifica `status: 'approved'`:**
+
+1. **Webhook recibido** → `POST /api/payments/webhook`
+2. **Estado verificado** → `paymentInfo.status === 'approved'`
+3. **Orden actualizada** → Estado: "PENDIENTE PAGADO"
+4. **🔥 NOTIFICACIONES DISPARADAS** → Email + Telegram simultáneamente
+
+### 📋 Datos Enviados
+
+```typescript
+const notificationData = {
+  orderId: "ORD123456789",
+  customerName: "Juan Pérez",
+  total: 25500,
+  items: [
+    {
+      name: "Producto A",
+      quantity: 2,
+      price: 12000
+    },
+    {
+      name: "Producto B", 
+      quantity: 1,
+      price: 13500
+    }
+  ]
+};
+```
+
+### 📧 Email Automático Enviado
+
+```
+Para: customer@email.com
+Asunto: ✅ Pago Confirmado - Pedido #ORD123456789
+
+Estimado/a Juan Pérez,
+
+Su pago ha sido procesado exitosamente.
+
+📋 Detalles del Pedido:
+• Número: #ORD123456789
+• Total: $25,500.00
+• Estado: Pendiente de Preparación
+
+📦 Productos:
+• Producto A (x2) - $12,000.00
+• Producto B (x1) - $13,500.00
+
+Pronto nos contactaremos para coordinar la entrega.
+
+Saludos,
+StartUp E-commerce
+```
+
+### 📱 Telegram Automático Enviado
+
+```
+✅ Nuevo Pedido Pagado
+
+📋 Orden: #ORD123456789
+👤 Cliente: Juan Pérez  
+💰 Total: $25,500.00
+
+📦 Productos:
+• Producto A x2 - $12,000.00
+• Producto B x1 - $13,500.00
+
+⏰ 05/07/2025 20:30:15
+🔗 Sistema E-commerce
+```
+
+---
+
+## 🔍 Sistema de Logging Detallado
+
+### 📝 Logs de Inicio del Flujo
+
+```json
+{
+  "timestamp": "2025-07-05T20:30:15.123Z",
+  "level": "info", 
+  "message": "🎉 === PAGO APROBADO DETECTADO - INICIO FLUJO ===",
+  "webhookTraceId": "webhook-1720223845123-k7m9p2x",
+  "paymentId": "12345678901",
+  "orderId": "ORD123456789",
+  "status": "approved",
+  "amount": 25500
+}
+```
+
+### 📝 Logs de Validación de Datos
+
+```json
+{
+  "level": "info",
+  "message": "📤 [NOTIFICATION] === LLAMANDO sendOrderNotification ===",
+  "notificationData": {
+    "orderId": "ORD123456789",
+    "customerName": "Juan Pérez",
+    "total": 25500,
+    "items": [...]
+  },
+  "dataValidation": {
+    "orderIdValid": true,
+    "customerNameValid": true,
+    "totalValid": true,
+    "itemsValid": true,
+    "itemsCount": 2
+  }
+}
+```
+
+### 📝 Logs del Canal Email
+
+```json
+{
+  "level": "info",
+  "message": "📧 [EMAIL] Enviando notificación de pago aprobado",
+  "to": "customer@email.com",
+  "orderId": "ORD123456789",
+  "paymentId": "12345678901",
+  "customerName": "Juan Pérez",
+  "totalAmount": 25500
+}
+```
+
+### 📝 Logs del Canal Telegram
+
+```json
+{
+  "level": "info",
+  "message": "🔧 [TelegramAdapter] Enviando mensaje",
+  "chatId": "736207422",
+  "messageLength": 245,
+  "payloadSize": "1.2KB",
+  "orderId": "ORD123456789"
+}
+```
+
+### 📝 Logs de Finalización
+
+```json
+{
+  "level": "info",
+  "message": "✅ [NOTIFICATION] === NOTIFICACIÓN COMPLETADA ===",
+  "orderId": "ORD123456789",
+  "duration": "1250ms",
+  "channelsNotified": ["email", "telegram"],
+  "success": true
+}
+```
+
+---
+
+## ⚙️ Configuración
+
+### Variables de Entorno Completas
+
+```env
+# Email Configuration
+EMAIL_SERVICE=gmail
+EMAIL_USER=laivetta@gmail.com
+EMAIL_PASS=your-gmail-app-password
+EMAIL_SENDER_NAME=StartUp E-commerce
+
+# Telegram Configuration  
+TELEGRAM_BOT_TOKEN=7905392744:AAHVobZq3mQtSOW41xd8js7RJSg2aOOl9Tk
+TELEGRAM_CHAT_ID=736207422
+
+# MercadoPago (para webhooks)
+MERCADO_PAGO_ACCESS_TOKEN=APP_USR-1234567890123456-070512-abcdef1234567890abcdef1234567890-123456789
+URL_RESPONSE_WEBHOOK_NGROK=https://sistema-mongo.onrender.com/
+
+# Frontend (para emails)
+FRONTEND_URL=https://front-startup.pages.dev
+```
 
 ## 📋 API Endpoints
 

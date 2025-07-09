@@ -1,72 +1,54 @@
-# 📦 Gestión de Productos y Catálogo
 
-Sistema completo de gestión de productos con búsqueda avanzada, categorización y etiquetado inteligente.
+# 📦 API de Productos y Catálogo
 
-## 📑 Índice
+Gestión de productos, búsqueda avanzada, categorías, unidades y etiquetas. Documentación actualizada según la implementación real.
 
-- [🎯 Funcionalidades](#-funcionalidades)
-- [📋 API Endpoints](#-api-endpoints)
-- [🔍 Búsqueda Avanzada](#-búsqueda-avanzada)
-- [🏷️ Sistema de Tags](#-sistema-de-tags)
-- [📁 Categorías y Unidades](#-categorías-y-unidades)
-- [💡 Ejemplos de Uso](#-ejemplos-de-uso)
-- [🚨 Troubleshooting](#-troubleshooting)
-- [✅ Mejores Prácticas](#-mejores-prácticas)
-- [⚙️ Configuración](#-configuración)
+---
 
-## 🎯 Funcionalidades
+## Índice
 
-### ✅ Productos
-- **CRUD completo** con validaciones
-- **Búsqueda por texto** (nombre, descripción)
-- **Filtrado avanzado** por categoría, tags, precio
-- **Ordenamiento** configurable
-- **Gestión de stock** básica
-- **Cálculo automático** de precios con IVA
-- **Subida de imágenes** con Cloudinary
-- **Paginación** optimizada
+- [Flujo de Autorización y Uso](#flujo-de-autorización-y-uso)
+- [Endpoints Públicos `/api/products`](#endpoints-públicos-apiproducts)
+- [Endpoints de Administración `/api/admin/products`](#endpoints-de-administración-apiadminproducts)
+- [Parámetros de Búsqueda y Paginación](#parámetros-de-búsqueda-y-paginación)
+- [Ejemplos de Uso Frontend](#ejemplos-de-uso-frontend)
+- [Troubleshooting y Buenas Prácticas](#troubleshooting-y-buenas-prácticas)
 
-### ✅ Categorías
-- **CRUD completo** para categorías
-- **Jerarquía** de categorías (padre-hijo)
-- **Conteo automático** de productos por categoría
-- **Validación** de nombres únicos
+---
 
-### ✅ Tags (Etiquetas)
-- **Sistema flexible** de etiquetado
-- **Asignación múltiple** a productos
-- **Filtrado** por combinaciones de tags
-- **Gestión centralizada** de etiquetas
+## Flujo de Autorización y Uso
 
-### ✅ Unidades de Medida
-- **Definición** de unidades (kg, lt, unidad, etc.)
-- **Asociación** con productos
-- **Validación** de tipos
-
-## 📋 API Endpoints
-
-### 🛍️ Productos (`/api/products`)
-
-#### `GET /api/products` - Listar con Búsqueda Avanzada
-**El endpoint más potente del sistema de productos**
-
-**Query Parameters:**
-```
-page=1                    # Página (default: 1)
-limit=10                 # Elementos por página (default: 10)
-search=termo             # Búsqueda por nombre/descripción
-category=cat1,cat2       # Filtrar por categorías (IDs separados por coma)
-tags=tag1,tag2          # Filtrar por tags (IDs separados por coma)
-minPrice=100            # Precio mínimo
-maxPrice=1000           # Precio máximo
-sortBy=name             # Campo para ordenar
-sortOrder=asc           # Orden (asc/desc)
-inStock=true            # Solo productos en stock
+```mermaid
+flowchart TD
+    A[Usuario o Frontend] -->|GET, búsqueda, detalle| B[/api/products]
+    A -->|GET categorías/tags| C[/api/categories, /api/tags]
+    A -.->|POST, PUT, DELETE| D[/api/admin/products]
+    D-->|Requiere JWT + ADMIN_ROLE|E[AuthMiddleware]
+    E-->|Si OK|F[Controlador Admin]
+    E-->|Si falla|G[401/403]
 ```
 
-**Ejemplo de búsqueda completa:**
+---
+
+## Endpoints Públicos `/api/products`
+
+### `GET /api/products` - Listar productos (paginado y búsqueda)
+**Query params:**
 ```
-GET /api/products?search=laptop&category=electronics&tags=popular,offer&minPrice=500&maxPrice=2000&sortBy=price&sortOrder=asc&page=1&limit=20
+q=termo                # Búsqueda por nombre/descripción (opcional)
+categories=cat1,cat2   # Filtrar por categorías (IDs, opcional)
+tags=tag1,tag2         # Filtrar por tags (IDs, opcional)
+minPrice=100           # Precio mínimo (opcional)
+maxPrice=1000          # Precio máximo (opcional)
+sortBy=price           # Campo para ordenar: price, createdAt, name, relevance
+sortOrder=asc          # asc/desc
+page=1                 # Página (default: 1)
+limit=10               # Elementos por página (default: 10)
+```
+
+**Ejemplo:**
+```
+GET /api/products?q=laptop&categories=cat1&tags=popular,offer&minPrice=500&maxPrice=2000&sortBy=price&sortOrder=asc&page=1&limit=20
 ```
 
 **Respuesta:**
@@ -82,122 +64,145 @@ GET /api/products?search=laptop&category=electronics&tags=popular,offer&minPrice
       "priceWithTax": 1815.00,
       "taxRate": 21,
       "stock": 25,
-      "category": {
-        "id": "cat1",
-        "name": "Electrónicos",
-        "description": "Productos electrónicos"
-      },
-      "unit": {
-        "id": "unit1",
-        "name": "Unidad",
-        "abbreviation": "ud"
-      },
-      "tags": [
-        {
-          "id": "tag1",
-          "name": "Popular",
-          "color": "#ff5722"
-        },
-        {
-          "id": "tag2",
-          "name": "Oferta",
-          "color": "#4caf50"
-        }
-      ],
-      "images": [
-        "https://res.cloudinary.com/startup/image/upload/v1/products/laptop1.jpg"
-      ],
-      "createdAt": "2025-01-15T10:30:00Z",
-      "updatedAt": "2025-01-15T10:30:00Z"
+      "category": { "id": "cat1", "name": "Electrónicos" },
+      "unit": { "id": "unit1", "name": "Unidad", "abbreviation": "ud" },
+      "tags": [ { "id": "tag1", "name": "Popular" } ],
+      "imgUrl": "https://res.cloudinary.com/startup/image/upload/v1/products/laptop1.jpg",
+      "createdAt": "2025-01-15T10:30:00Z"
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "totalPages": 8,
-    "hasNext": true,
-    "hasPrev": false
-  },
-  "filters": {
-    "appliedFilters": {
-      "search": "laptop",
-      "categories": ["electronics"],
-      "tags": ["popular", "offer"],
-      "priceRange": { "min": 500, "max": 2000 }
-    },
-    "availableFilters": {
-      "categories": [
-        { "id": "cat1", "name": "Electrónicos", "count": 45 },
-        { "id": "cat2", "name": "Ropa", "count": 23 }
-      ],
-      "tags": [
-        { "id": "tag1", "name": "Popular", "count": 67 },
-        { "id": "tag2", "name": "Oferta", "count": 34 }
-      ],
-      "priceRange": { "min": 10, "max": 5000 }
-    }
-  }
+  ]
 }
 ```
 
-#### `GET /api/products/:id` - Obtener Producto
+### `GET /api/products/:id` - Detalle de producto
 **Respuesta:**
 ```json
 {
-  "product": {
-    "id": "prod123",
-    "name": "Laptop Gaming Pro",
-    "description": "Descripción completa del producto...",
-    "price": 1500.00,
-    "priceWithTax": 1815.00,
-    "taxRate": 21,
-    "stock": 25,
-    "category": {...},
-    "unit": {...},
-    "tags": [...],
-    "images": [...],
-    "specifications": {
-      "processor": "Intel i7",
-      "ram": "16GB",
-      "storage": "512GB SSD"
-    },
-    "createdAt": "2025-01-15T10:30:00Z"
-  }
+  "id": "prod123",
+  "name": "Laptop Gaming Pro",
+  "description": "Descripción completa...",
+  "price": 1500.00,
+  "priceWithTax": 1815.00,
+  "taxRate": 21,
+  "stock": 25,
+  "category": { "id": "cat1", "name": "Electrónicos" },
+  "unit": { "id": "unit1", "name": "Unidad" },
+  "tags": [ { "id": "tag1", "name": "Popular" } ],
+  "imgUrl": "https://res.cloudinary.com/startup/image/upload/v1/products/laptop1.jpg",
+  "createdAt": "2025-01-15T10:30:00Z"
 }
 ```
 
-#### `POST /api/products` - Crear Producto (Admin)
+### `GET /api/products/search` - Búsqueda avanzada (alias de `/api/products`)
+**Query params:** Igual a `/api/products`.
+
+### `GET /api/products/by-category/:categoryId` - Productos por categoría
+**Query params:** `page`, `limit` (paginado)
+
+---
+
+## Endpoints de Administración `/api/admin/products`
+
+> **Todos requieren:**
+> - Header: `Authorization: Bearer <token>`
+> - Usuario con rol `ADMIN_ROLE`
+
+### `POST /api/admin/products` - Crear producto
 **Headers:**
 ```
 Authorization: Bearer <admin_token>
 Content-Type: multipart/form-data
 ```
-
 **Body (FormData):**
-```javascript
-{
-  name: "Nuevo Producto",
-  description: "Descripción del producto",
-  price: 999.99,
-  taxRate: 21,
-  stock: 100,
-  categoryId: "cat123",
-  unitId: "unit123",
-  tags: ["tag1", "tag2"],
-  specifications: JSON.stringify({
-    color: "Negro",
-    size: "XL"
-  }),
-  images: [File1, File2] // Archivos de imagen
-}
+| Campo        | Tipo                | Requerido | Descripción                       |
+|--------------|---------------------|-----------|-----------------------------------|
+| name         | string              | sí        | Nombre del producto               |
+| description  | string              | sí        | Descripción                       |
+| price        | number              | sí        | Precio sin IVA                    |
+| stock        | number              | sí        | Stock inicial                     |
+| category     | string (ObjectId)   | sí        | ID de categoría                   |
+| unit         | string (ObjectId)   | sí        | ID de unidad                      |
+| taxRate      | number              | no        | Tasa de IVA (default: 21)         |
+| tags         | string[]/CSV        | no        | Array o string CSV de tags        |
+| image        | archivo (opcional)  | no        | Imagen principal                  |
+| isActive     | boolean             | no        | Activo (default: true)            |
+
+**Ejemplo JS:**
+```js
+const formData = new FormData();
+formData.append('name', 'Nuevo Producto');
+formData.append('description', 'Descripción');
+formData.append('price', 999.99);
+formData.append('stock', 100);
+formData.append('category', 'cat123');
+formData.append('unit', 'unit123');
+formData.append('tags', 'tag1,tag2');
+formData.append('image', fileInput.files[0]);
 ```
 
-#### `PUT /api/products/:id` - Actualizar Producto (Admin)
-**Body:** Similar al POST, todos los campos opcionales
+### `PUT /api/admin/products/:id` - Actualizar producto
+**Headers:** Igual a POST
+**Body:** Todos los campos opcionales. Para borrar imagen, enviar `imgUrl: ''`.
 
-#### `DELETE /api/products/:id` - Eliminar Producto (Admin)
+### `DELETE /api/admin/products/:id` - Eliminar producto
 
-### 📁 Categorías (`/api/categories`)
+---
+
+## Parámetros de Búsqueda y Paginación
+
+| Parámetro   | Tipo     | Descripción                                      |
+|-------------|----------|--------------------------------------------------|
+| q           | string   | Búsqueda por nombre/descripción                  |
+| categories  | string   | IDs de categorías, separados por coma            |
+| tags        | string   | IDs de tags, separados por coma                  |
+| minPrice    | number   | Precio mínimo                                    |
+| maxPrice    | number   | Precio máximo                                    |
+| sortBy      | string   | price, createdAt, name, relevance                |
+| sortOrder   | string   | asc, desc                                        |
+| page        | number   | Página (default: 1)                              |
+| limit       | number   | Elementos por página (default: 10)               |
+
+---
+
+## Ejemplos de Uso Frontend
+
+```js
+// Buscar productos
+fetch('/api/products?q=laptop&categories=cat1&tags=popular,offer&page=1&limit=10')
+  .then(r => r.json())
+  .then(data => console.log(data));
+
+// Crear producto (admin)
+const formData = new FormData();
+formData.append('name', 'Nuevo Producto');
+formData.append('description', 'Desc...');
+formData.append('price', 100);
+formData.append('stock', 10);
+formData.append('category', 'cat1');
+formData.append('unit', 'unit1');
+formData.append('tags', 'tag1,tag2');
+formData.append('image', fileInput.files[0]);
+fetch('/api/admin/products', {
+  method: 'POST',
+  headers: { 'Authorization': 'Bearer ...' },
+  body: formData
+});
+```
+
+---
+
+## Troubleshooting y Buenas Prácticas
+
+- Validar siempre los datos enviados (ver errores 400 en DTOs)
+- Los endpoints de admin requieren JWT y rol admin
+- El campo `image` es opcional, pero si se envía debe ser imagen válida (jpg/png/webp/gif, máx 5MB)
+- Para borrar la imagen de un producto, enviar `imgUrl: ''` en el update
+- Los tags pueden enviarse como array o string CSV
+- El campo `specifications` no está implementado actualmente
+
+---
+
+Para más información sobre categorías, unidades y tags, ver la documentación específica de cada módulo.
 
 #### `GET /api/categories` - Listar Categorías
 **Query Parameters:**

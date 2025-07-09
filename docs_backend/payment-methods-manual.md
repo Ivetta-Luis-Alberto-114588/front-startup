@@ -1,2420 +1,287 @@
 # 💳 Manual de Implementación - Métodos de Pago y Entrega
 
-## 📋 Índice
-
-- [Resumen General](#-resumen-general)
-- [Métodos de Pago](#-métodos-de-pago)
-- [Métodos de Entrega](#-métodos-de-entrega)
-- [Flujos de Checkout](#-flujos-de-checkout)
-- [API Endpoints](#-api-endpoints)
-- [Implementación Frontend](#-implementación-frontend)
-- [Estados de Orden](#-estados-de-orden)
-- [Validaciones Condicionales](#-validaciones-condicionales)
-- [Casos de Uso](#-casos-de-uso)
-- [Troubleshooting](#-troubleshooting)
-
----
+> **IMPORTANTE:** Esta documentación está alineada con el backend real. Los nombres de endpoints, campos, headers y flujos son exactos y deben usarse como referencia para el frontend y la integración.
 
 ## 🎯 Resumen General
 
-El backend soporta un sistema completo de **Métodos de Pago** y **Métodos de Entrega** integrados, con validaciones condicionales inteligentes.
+El backend soporta un sistema integrado de **Métodos de Pago** y **Métodos de Entrega**. La lógica está centralizada para asegurar que el frontend pueda construir un flujo de checkout coherente y con validaciones automáticas.
 
-### 🔗 **Integración Clave:**
-- Los métodos de entrega determinan si se requieren campos de envío
-- Los métodos de pago determinan el flujo de procesamiento
-- La validación es automática y condicional
+> **Fuente de Verdad:** Para entender el ciclo de vida completo de una orden y sus estados, consulta el documento maestro: **[📄 Flujo de Estados de una Orden](./order-status-flow.md)**.
 
 ---
 
-## 💳 Métodos de Pago
 
-Tu backend soporta **4 métodos de pago** configurados:
+## 💳 Métodos de Pago Soportados
 
-| Código | Método | Tipo | Confirmación | Estado Inicial |
-|--------|--------|------|--------------|----------------|
-| `CASH` | Efectivo | Manual | Requerida | `PENDIENTE PAGADO` |
-| `CREDIT_CARD` | Tarjeta de Crédito | Automático | Automática | `PENDIENTE_SIN_PAGAR` |
-| `DEBIT_CARD` | Tarjeta de Débito | Automático | Automática | `PENDIENTE PAGADO` |
-| `BANK_TRANSFER` | Transferencia Bancaria | Manual | Requerida | `PENDIENTE_SIN_PAGAR` |
+El sistema soporta múltiples métodos de pago, todos gestionados desde `/api/payment-methods`.
 
----
+| code            | name         | description                                                      | requiresOnlinePayment | allowsManualConfirmation | isActive |
+|-----------------|--------------|------------------------------------------------------------------|----------------------|-------------------------|----------|
+| MERCADO_PAGO    | Mercado Pago | Pago online con tarjeta, débito o dinero en cuenta (MercadoPago) | true                 | false                   | true     |
+| CASH            | Efectivo     | Pago en efectivo al retirar o recibir                            | false                | true                    | true     |
 
-## 🚚 Métodos de Entrega
+### 🔎 **Consulta dinámica de métodos de pago (Frontend):**
 
-El backend incluye **3 métodos de entrega** configurados:
+**GET** `/api/payment-methods/active`
 
-| Código | Método | Requiere Dirección | Costo | Descripción |
-|--------|--------|--------------------|-------|-------------|
-| `PICKUP` | Retiro en Local | ❌ **NO** | $0 | Cliente retira en el local |
-| `DELIVERY` | Entrega a Domicilio | ✅ **SÍ** | Variable | Envío a dirección del cliente |
-| `EXPRESS` | Entrega Express | ✅ **SÍ** | Premium | Envío rápido mismo día |
-
-### 🎯 **Punto Clave para Frontend:**
-
-```javascript
-// ⚡ VALIDACIÓN AUTOMÁTICA CONDICIONAL
-if (deliveryMethod.requiresAddress) {
-  // Mostrar y validar campos de envío
-  showShippingFields = true;
-  validateShippingFields = true;
-} else {
-  // Ocultar campos de envío (ej: PICKUP)
-  showShippingFields = false;
-  validateShippingFields = false;
-}
-```
-
----
-
-## ✅ **Métodos Disponibles para Frontend:**
-
-### **Métodos de Pago:**
+**Respuesta:**
 ```json
-{
-  "cash": {
+[
+  {
+    "id": "<mongoId>",
+    "code": "MERCADO_PAGO",
+    "name": "Mercado Pago",
+    "description": "Pago online con tarjeta, débito o dinero en cuenta.",
+    "requiresOnlinePayment": true,
+    "allowsManualConfirmation": false,
+    "isActive": true
+  },
+  {
+    "id": "<mongoId>",
     "code": "CASH",
     "name": "Efectivo",
-    "description": "Pago en efectivo al momento de la entrega",
+    "description": "Pago en efectivo al momento de la entrega o retiro en el local.",
     "requiresOnlinePayment": false,
     "allowsManualConfirmation": true,
-    "flow": "manual"
-  },
-  "creditCard": {
-    "code": "CREDIT_CARD", 
-    "name": "Tarjeta de Crédito Visa/MasterCard",
-    "description": "Pago con tarjeta de crédito Visa o MasterCard procesada online de forma segura",
-    "requiresOnlinePayment": true,
-    "allowsManualConfirmation": true,
-    "flow": "automatic"
-  },
-  "debitCard": {
-    "code": "DEBIT_CARD",
-    "name": "Tarjeta de Débito", 
-    "description": "Pago con tarjeta de débito procesada online",
-    "requiresOnlinePayment": true,
-    "allowsManualConfirmation": true,
-    "flow": "automatic"
-  },
-  "bankTransfer": {
-    "code": "BANK_TRANSFER",
-    "name": "Transferencia Bancaria",
-    "description": "Pago mediante transferencia bancaria",
-    "requiresOnlinePayment": false,
-    "allowsManualConfirmation": true,
-    "flow": "manual"
+    "isActive": true
   }
-}
+]
 ```
 
-### **Métodos de Entrega:**
-```json
-{
-  "pickup": {
-    "code": "PICKUP",
-    "name": "Retiro en Local",
-    "description": "Retiro en nuestro local",
-    "requiresAddress": false,
-    "cost": 0,
-    "estimatedTime": "Inmediato"
-  },
-  "delivery": {
-    "code": "DELIVERY",
-    "name": "Entrega a Domicilio", 
-    "description": "Envío a tu domicilio",
-    "requiresAddress": true,
-    "cost": "Variable según zona",
-    "estimatedTime": "24-48 horas"
-  },
-  "express": {
-    "code": "EXPRESS",
-    "name": "Entrega Express",
-    "description": "Envío express mismo día",
-    "requiresAddress": true,
-    "cost": "Premium",
-    "estimatedTime": "2-6 horas"
-  }
-}
-```
+> **Nota:** El frontend debe consumir este endpoint para mostrar los métodos activos y sus propiedades.
 
 ---
 
-## 🏗️ Arquitectura General
-
-### 📊 **Flujo General de Checkout Integrado:**
-
-```
-� Carrito → 🚚 Método Entrega → 💳 Método Pago → 📝 Crear Orden → �💰 Procesar Pago → ✅ Confirmación
-```
-
-### 🔄 **Estados de Orden por Método de Pago:**
-
-| Método | Estado Inicial | Pago Exitoso | Pago Fallido |
-|--------|----------------|---------------|--------------|
-| **Efectivo** | `PENDIENTE PAGADO` | `PENDIENTE PAGADO` → `COMPLETED` | - |
-| **Tarjeta de Crédito** | `PENDIENTE_SIN_PAGAR` | `PENDIENTE PAGADO` → `COMPLETED` | `CANCELLED` |
-| **Tarjeta de Débito** | `PENDIENTE PAGADO` | `PENDIENTE PAGADO` → `COMPLETED` | `CANCELLED` |
-| **Transferencia** | `PENDIENTE_SIN_PAGAR` | `PENDIENTE PAGADO` → `COMPLETED` | - |
-
----
-
-## ⚡ Validaciones Condicionales
-
-### 🎯 **Validación Automática de Campos de Envío**
-
-El backend valida automáticamente los campos de envío basándose en el método de entrega seleccionado mediante la propiedad `requiresAddress`. Esta validación es **robusta y confiable**, respaldada por tests de integración completos.
-
-```javascript
-// ✅ LÓGICA FRONTEND RECOMENDADA:
-
-// 1. Obtener métodos de entrega activos
-const deliveryMethods = await fetch('/api/delivery-methods/active');
-
-// 2. Al seleccionar método de entrega
-const handleDeliveryMethodChange = (deliveryMethodId) => {
-  const selectedMethod = deliveryMethods.find(m => m.id === deliveryMethodId);
-  
-  if (selectedMethod.requiresAddress) {
-    // Mostrar y validar campos de envío
-    setShowShippingFields(true);
-    setShippingFieldsRequired(true);
-  } else {
-    // Ocultar campos de envío (ej: PICKUP)
-    setShowShippingFields(false);
-    setShippingFieldsRequired(false);
-    clearShippingFields(); // Limpiar formulario
-  }
-};
-
-// 3. Al crear la orden - SOPORTE DUAL DE IDENTIFICADORES
-const createOrder = async (orderData) => {
-  const payload = {
-    items: orderData.items,
-    paymentMethodId: orderData.paymentMethodId,
-    
-    // ⚡ NUEVO: Soporte para ID o código de método de entrega
-    deliveryMethodId: orderData.deliveryMethodId,        // Opción 1: Por ID
-    // O alternativamente:
-    // deliveryMethodCode: orderData.deliveryMethodCode,  // Opción 2: Por código ('PICKUP', 'DELIVERY', 'EXPRESS')
-    
-    // Campos de envío solo si el método los requiere
-    ...(selectedDeliveryMethod.requiresAddress && {
-      shippingRecipientName: orderData.shippingRecipientName,
-      shippingPhone: orderData.shippingPhone,
-      shippingStreetAddress: orderData.shippingStreetAddress,
-      shippingNeighborhoodId: orderData.shippingNeighborhoodId,
-      // ... otros campos de envío
-    }),
-    
-    // Datos del cliente (para invitados)
-    ...(isGuest && {
-      customerName: orderData.customerName,
-      customerEmail: orderData.customerEmail
-    })
-  };
-  
-  return await fetch('/api/sales', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-};
-```
-
-### 🔧 **Identificadores de Métodos de Entrega - Flexibilidad Mejorada**
-
-El backend ahora soporta **dos formas** de identificar métodos de entrega:
-
-| Método | Campo | Ejemplo | Ventaja |
-|--------|-------|---------|---------|
-| **Por ID** | `deliveryMethodId` | `"64a7f8c9b123456789abcdeh"` | Precisión garantizada |
-| **Por Código** | `deliveryMethodCode` | `"PICKUP"`, `"DELIVERY"`, `"EXPRESS"` | Más legible y mantenible |
-
-```javascript
-// ✅ Ambas opciones son válidas:
-
-// Opción 1: Por ID (tradicional)
-const orderPayload1 = {
-  deliveryMethodId: "64a7f8c9b123456789abcdeh",
-  // ... resto de campos
-};
-
-// Opción 2: Por código (nuevo - más legible)
-const orderPayload2 = {
-  deliveryMethodCode: "PICKUP",
-  // ... resto de campos
-};
-```
-
-### 🔑 **Reglas de Validación por Método de Entrega:**
-
-| Método | requiresAddress | Campos de Envío | Comportamiento Frontend |
-|--------|-----------------|-----------------|------------------------|
-| **PICKUP** | `false` | ❌ NO requeridos | Ocultar formulario de envío |
-| **DELIVERY** | `true` | ✅ SÍ requeridos | Mostrar y validar formulario |
-| **EXPRESS** | `true` | ✅ SÍ requeridos | Mostrar y validar formulario |
-
-### 🛡️ **Robustez y Confiabilidad del Sistema**
-
-El sistema de métodos de entrega y validación condicional está completamente validado y es confiable:
-
-#### ✅ **Tests de Integración Completos**
-- Validación de métodos de entrega con `requiresAddress: true/false`
-- Tests de creación de órdenes con y sin campos de dirección
-- Verificación de que la validación condicional funciona correctamente
-- Coverage completo de todos los escenarios de checkout
-
-#### 🔄 **Seeding Robusto**
-- **Script de seeding:** `npm run seed:delivery-methods`
-- **Prevención de duplicados:** Usa upsert para evitar errores de clave duplicada
-- **Consistencia:** Garantiza que siempre existan los 3 métodos estándar (`PICKUP`, `DELIVERY`, `EXPRESS`)
-- **Idempotencia:** Se puede ejecutar múltiples veces sin problemas
-
-#### 🎯 **Garantías del Backend**
-- ✅ La validación condicional está **implementada y funciona**
-- ✅ Los tests pasan al 100% (3 métodos de entrega activos esperados)
-- ✅ El seeding previene problemas de datos inconsistentes
-- ✅ Soporte dual de identificadores (`ID` y `código`) con resolución automática
-
-```bash
-# Para verificar/actualizar métodos de entrega:
-npm run seed:delivery-methods
-
-# Para ejecutar tests de integración:
-npm test -- --testPathPattern=delivery-methods
-```
-
----
 
 ## 🚀 Flujos de Checkout Detallados
 
-### 💰 **1. Flujo con Retiro en Local (PICKUP + CASH)**
+### 💰 **1. Flujo Online (Entrega + Mercado Pago)**
 
-#### **Características:**
-- ✅ **Sin campos de envío**
-- ✅ **Pago en efectivo**
-- ✅ **Estado inmediato CONFIRMED**
-
-#### **Flujo Paso a Paso:**
+**Características:**
+- Requiere dirección de envío.
+- El pago se procesa automáticamente online.
+- La orden no se prepara hasta que el pago es confirmado por el webhook de Mercado Pago.
 
 ```mermaid
 sequenceDiagram
     participant C as Cliente
     participant F as Frontend
     participant B as Backend
-    participant A as Admin
-    
+    participant MP as Mercado Pago
+    C->>F: Selecciona "Entrega a Domicilio"
+    F->>F: Muestra y valida campos de envío
+    C->>F: Selecciona "Mercado Pago"
+    F->>B: POST /api/orders (ver body más abajo)
+    B->>B: Crea orden con estado `AWAITING_PAYMENT`
+    B-->>F: Retorna URL de pago de Mercado Pago
+    F->>C: Redirige al cliente a Mercado Pago
+    C->>MP: Completa el pago
+    MP-->>B: POST /api/payments/webhook (Notificación de pago)
+    B->>B: Valida y cambia estado a `CONFIRMED` (o `PENDIENTE PAGADO`)
+    B-->>F: (Opcional) Notifica al frontend (WebSocket)
+```
+
+#### **POST /api/orders** _(autenticación opcional)_
+**Headers:**
+`Authorization: Bearer <token>` _(opcional)_
+
+**Body ejemplo:**
+```json
+{
+  "items": [
+    { "productId": "<mongoId>", "quantity": 2, "unitPrice": 100 }
+  ],
+  "selectedAddressId": "<mongoId>",
+  "paymentMethodCode": "MERCADO_PAGO",
+  "notes": "opcional"
+}
+```
+
+**Respuesta exitosa:**
+```json
+{
+  "success": true,
+  "message": "Orden creada exitosamente",
+  "data": {
+    "id": "<orderId>",
+    ...otros campos,
+    "payment": {
+      "preference": {
+        "id": "<mp_preference_id>",
+        "init_point": "<url_pago>",
+        "sandbox_init_point": "<url_sandbox>"
+      }
+    }
+  }
+}
+```
+
+---
+
+### 💵 **2. Flujo Manual (Retiro + Efectivo)**
+
+**Características:**
+- No requiere dirección de envío.
+- El pago se realiza en persona.
+- La orden no se prepara hasta que el dueño confirma manualmente el pago.
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant F as Frontend
+    participant B as Backend
+    participant Admin as Dueño del Negocio
     C->>F: Selecciona "Retiro en Local"
     F->>F: Oculta campos de envío
     C->>F: Selecciona "Efectivo"
-    F->>B: POST /api/sales {deliveryMethodCode: "PICKUP", paymentMethodId: "cash"}
-    B->>B: Valida sin campos shipping (requiresAddress: false)
-    B->>B: Crea orden con estado "CONFIRMED"
-    B->>F: Retorna orden creada
-    F->>C: Muestra "Orden confirmada - Retirar en local y pagar"
-    
-    Note over C,A: Cliente retira y paga en local
-    C->>A: Retira y paga en efectivo
-    A->>B: PUT /api/admin/orders/:id/status (COMPLETED)
-    B->>B: Actualiza estado a completado
+    F->>B: POST /api/orders (ver body más abajo)
+    B->>B: Crea orden con estado `AWAITING_PAYMENT`
+    B-->>F: Retorna confirmación de la orden
+    F->>C: Muestra "Tu orden fue recibida. Paga al retirar."
+    Note over C,Admin: Tiempo después, el cliente va al local...
+    C->>Admin: Paga el pedido en efectivo
+    Admin->>B: Busca la orden y la actualiza manualmente
+    B->>B: Cambia estado a `CONFIRMED`
 ```
 
-### 💳 **2. Flujo con Entrega a Domicilio (DELIVERY + CREDIT_CARD)**
-
-#### **Características:**
-- ✅ **Con campos de envío requeridos**
-- ✅ **Pago online automático**
-- ✅ **Validación de dirección**
-
-#### **Flujo Paso a Paso:**
-
-```mermaid
-sequenceDiagram
-    participant C as Cliente
-    participant F as Frontend
-    participant B as Backend
-    participant PG as Payment Gateway
-    
-    C->>F: Selecciona "Entrega a Domicilio"
-    F->>F: Muestra campos de envío
-    C->>F: Completa dirección de envío
-    C->>F: Selecciona "Tarjeta de Crédito"
-    F->>B: POST /api/sales {deliveryMethodCode: "DELIVERY", shippingFields...}
-    B->>B: Valida campos shipping requeridos
-    B->>B: Crea orden con estado "AWAITING_PAYMENT"
-    B->>F: Retorna orden con ID
-    
-    F->>B: POST /api/payments/sale/:saleId
-    B->>MP: Crea preferencia de pago
-    MP->>B: Retorna preference ID y URL
-    B->>F: Retorna initPoint
-    F->>C: Redirige a Mercado Pago
-    
-    C->>MP: Completa pago
-    MP->>B: POST /api/payments/webhook
-    B->>B: Actualiza orden a "PENDIENTE PAGADO"
-    MP->>C: Redirige a success page
-```
-
-### 💳 **3. Flujo Híbrido (EXPRESS + BANK_TRANSFER)**
-
-#### **Características:**
-- ✅ **Entrega express con dirección**
-- ✅ **Pago manual por transferencia**
-- ✅ **Confirmación admin requerida**
-
-```mermaid
-sequenceDiagram
-    participant C as Cliente
-    participant F as Frontend
-    participant B as Backend
-    participant Bank as Banco
-    participant A as Admin
-    
-    C->>F: Selecciona "Entrega Express"
-    F->>F: Muestra campos de envío (requeridos)
-    C->>F: Completa dirección de envío
-    C->>F: Selecciona "Transferencia Bancaria"
-    F->>B: POST /api/sales {deliveryMethodCode: "EXPRESS", shippingFields...}
-    B->>B: Valida campos shipping requeridos
-    B->>B: Crea orden con estado "CONFIRMED"
-    B->>F: Retorna orden con datos bancarios
-    F->>C: Muestra datos para transferencia
-    
-    C->>Bank: Realiza transferencia bancaria
-    C->>F: Sube comprobante (opcional)
-    
-    A->>B: Verifica transferencia recibida
-    A->>B: PUT /api/admin/orders/:id/status (COMPLETED)
-    B->>B: Actualiza estado a completado
-    B->>C: Envía confirmación de entrega express
-```
-
----
-
-## 🛠️ API Endpoints
-
-### 📋 **Endpoints Principales:**
-
-#### **1. Obtener Métodos de Pago Disponibles**
-
-```http
-GET /api/payment-methods/active
-```
-
-**Autenticación:** No requerida  
-**Descripción:** Obtiene métodos de pago activos para mostrar en el checkout
-
-**Respuesta (200):**
-```json
-[
-  {
-    "id": "683f4c5a448d70effea1b242",
-    "code": "CASH",
-    "name": "Efectivo",
-    "description": "Pago en efectivo al momento de la entrega",
-    "isActive": true,
-    "requiresOnlinePayment": false,
-    "allowsManualConfirmation": true,
-    "defaultOrderStatusId": {
-      "_id": "675a1a39dd398aae92ab05f8",
-      "code": "PENDIENTE PAGADO",
-      "name": "Pendiente pagado"
-    }
-  },
-  {
-    "id": "683f4dbd448d70effea1b25e",
-    "code": "CREDIT_CARD",
-    "name": "Tarjeta de Crédito Visa/MasterCard",
-    "description": "Pago con tarjeta de crédito Visa o MasterCard procesada online de forma segura",
-    "isActive": true,
-    "requiresOnlinePayment": true,
-    "allowsManualConfirmation": true,
-    "defaultOrderStatusId": {
-      "_id": "683f3ba29ca44b0f790855df",
-      "code": "PENDIENTE_SIN_PAGAR",
-      "name": "pendiente sin pagar"
-    }
-  },
-  {
-    "id": "683f4dc6448d70effea1b262",
-    "code": "DEBIT_CARD",
-    "name": "Tarjeta de Débito",
-    "description": "Pago con tarjeta de débito procesada online",
-    "isActive": true,
-    "requiresOnlinePayment": true,
-    "allowsManualConfirmation": true
-  },
-  {
-    "id": "683f4dcf448d70effea1b266",
-    "code": "BANK_TRANSFER",
-    "name": "Transferencia Bancaria",
-    "description": "Pago mediante transferencia bancaria",
-    "isActive": true,
-    "requiresOnlinePayment": false,
-    "allowsManualConfirmation": true,
-    "defaultOrderStatusId": {
-      "_id": "683f3ba29ca44b0f790855df",
-      "code": "PENDIENTE_SIN_PAGAR",
-      "name": "pendiente sin pagar"
-    }
-  }
-]
-```
-
-#### **2. Obtener Métodos de Entrega Activos**
-
-```http
-GET /api/delivery-methods
-```
-
-**Autenticación:** No requerida  
-**Descripción:** Obtiene métodos de entrega activos para mostrar en el checkout
-
-**Respuesta (200):**
-```json
-[
-  {
-    "id": "686b18f09808aab4814098cb",
-    "code": "PICKUP",
-    "name": "Retiro en Local",
-    "description": "Acércate a nuestra tienda a retirar tu pedido.",
-    "requiresAddress": false,
-    "isActive": true
-  },
-  {
-    "id": "686b18f09808aab4814098cc",
-    "code": "DELIVERY",
-    "name": "Entrega a Domicilio",
-    "description": "Recibe tu pedido en la puerta de tu casa.",
-    "requiresAddress": true,
-    "isActive": true
-  },
-  {
-    "id": "686b18f09808aab4814098cd",
-    "code": "EXPRESS",
-    "name": "Entrega Express",
-    "description": "Entrega el mismo día (servicio premium).",
-    "requiresAddress": true,
-    "isActive": true
-  }
-]
-```
-
-#### **3. Crear Orden (Integrado) - Soporte Dual de Identificadores**
-
-```http
-POST /api/sales
-```
-
-**Autenticación:** Opcional (Usuario registrado o invitado)  
+#### **POST /api/orders** _(autenticación opcional)_
 **Headers:**
-```
-Authorization: Bearer <token>  // Solo para usuarios registrados
-Content-Type: application/json
-```
+`Authorization: Bearer <token>` _(opcional)_
 
-**Body para Usuario Registrado + Retiro (Opción 1 - Por ID):**
+**Body ejemplo:**
 ```json
 {
   "items": [
-    {
-      "productId": "64a7f8c9b123456789abcdef",
-      "quantity": 2,
-      "unitPrice": 15000
-    }
+    { "productId": "<mongoId>", "quantity": 1, "unitPrice": 100 }
   ],
-  "paymentMethodId": "64a7f8c9b123456789abcdef",
-  "deliveryMethodId": "64a7f8c9b123456789abcdeh", // PICKUP por ID
-  "notes": "Sin cebolla por favor"
-  // ❌ NO incluir campos de shipping para PICKUP
+  "paymentMethodCode": "CASH",
+  "notes": "opcional"
 }
 ```
 
-**Body para Usuario Registrado + Retiro (Opción 2 - Por Código):**
-```json
-{
-  "items": [
-    {
-      "productId": "64a7f8c9b123456789abcdef",
-      "quantity": 2,
-      "unitPrice": 15000
-    }
-  ],
-  "paymentMethodId": "64a7f8c9b123456789abcdef",
-  "deliveryMethodCode": "PICKUP", // ⚡ NUEVO: Por código (más legible)
-  "notes": "Sin cebolla por favor"
-  // ❌ NO incluir campos de shipping para PICKUP
-}
-```
-
-**Body para Usuario Registrado + Entrega (Flexible):**
-```json
-{
-  "items": [
-    {
-      "productId": "64a7f8c9b123456789abcdef",
-      "quantity": 2,
-      "unitPrice": 15000
-    }
-  ],
-  "paymentMethodId": "64a7f8c9b123456789abcdef",
-  
-  // ⚡ Usar cualquiera de estas opciones:
-  "deliveryMethodId": "64a7f8c9b123456789abcdei", // Por ID
-  // O:
-  // "deliveryMethodCode": "DELIVERY", // Por código
-  
-  // ✅ Campos de shipping requeridos para DELIVERY/EXPRESS
-  "selectedAddressId": "64a7f8c9b123456789abcdef", // Dirección guardada
-  // O proporcionar nueva dirección:
-  "shippingRecipientName": "Juan Pérez",
-  "shippingPhone": "+54911234567",
-  "shippingStreetAddress": "Av. Corrientes 1234",
-  "shippingNeighborhoodId": "64a7f8c9b123456789abcdef",
-  "shippingPostalCode": "1043",
-  "shippingAdditionalInfo": "Depto 5B"
-}
-```
-
-**Body para Invitado + Entrega:**
-```json
-{
-  "items": [
-    {
-      "productId": "64a7f8c9b123456789abcdef",
-      "quantity": 2,
-      "unitPrice": 15000
-    }
-  ],
-  "paymentMethodId": "64a7f8c9b123456789abcdef",
-  "deliveryMethodId": "64a7f8c9b123456789abcdei", // DELIVERY
-  
-  // ✅ Datos del cliente invitado (requeridos)
-  "customerName": "María García",
-  "customerEmail": "maria@email.com",
-  
-  // ✅ Campos de shipping requeridos para DELIVERY
-  "shippingRecipientName": "María García",
-  "shippingPhone": "+54911234567",
-  "shippingStreetAddress": "Av. Santa Fe 2345",
-  "shippingNeighborhoodId": "64a7f8c9b123456789abcdef",
-  "shippingPostalCode": "1123"
-**Respuesta Exitosa (201):**
-```json
-{
-  "id": "64a7f8c9b123456789abcdef",
-  "orderNumber": "ORD-20250106-001", 
-  "status": {
-    "code": "CONFIRMED", // o "AWAITING_PAYMENT" para Mercado Pago
-    "name": "Confirmado"
-  },
-  "paymentMethod": {
-    "id": "64a7f8c9b123456789abcdef",
-    "code": "CASH",
-    "name": "Efectivo"
-  },
-  "deliveryMethod": {
-    "id": "64a7f8c9b123456789abcdeh", 
-    "name": "Retiro en Local",
-    "requiresAddress": false
-  },
-  "customer": {
-    "id": "64a7f8c9b123456789abcdef",
-    "name": "Juan Pérez",
-    "email": "juan@email.com"
-  },
-  "shippingDetails": {
-    // Solo presente si deliveryMethod.requiresAddress = true
-    "recipientName": "Juan Pérez",
-    "phone": "+54911234567",
-    "streetAddress": "Av. Corrientes 123",
-    "neighborhood": {
-      "id": "64a7f8c9b123456789abcdef",
-      "name": "Microcentro"
-    }
-  },
-  "items": [
-    {
-      "id": "64a7f8c9b123456789abcdef",
-      "product": {
-        "id": "64a7f8c9b123456789abcdef",
-        "name": "Pizza Mozzarella",
-        "image": "https://...",
-        "unit": "unidad"
-      },
-      "quantity": 2,
-      "unitPrice": 15000,
-      "totalPrice": 30000
-    }
-  ],
-  "summary": {
-    "subtotal": 30000,
-    "tax": 3150,
-    "discount": 0,
-    "deliveryCost": 0, // Para PICKUP = 0
-    "total": 33150
-  },
-  "createdAt": "2025-01-06T10:30:00Z",
-  "estimatedDelivery": "2025-01-06T12:00:00Z"
-}
-```
-
-#### **4. Procesar Pago con Mercado Pago**
-
-```http
-POST /api/payments/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Respuesta (200):**
+**Respuesta exitosa:**
 ```json
 {
   "success": true,
-  "preference": {
-    "id": "123456789-abcd-1234-efgh-987654321",
-    "init_point": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789-abcd-1234-efgh-987654321",
-    "sandbox_init_point": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789-abcd-1234-efgh-987654321"
-  },
-  "order": {
-    "id": "64a7f8c9b123456789abcdef",
-    "status": "AWAITING_PAYMENT",
-    "total": 33150
-  }
-}
-```
-
----
-
-## 🎨 Implementación Frontend
-
-### 📱 **Flujo de Checkout Recomendado:**
-
-```javascript
-// 1. Componente principal de Checkout
-const CheckoutPage = () => {
-  const [deliveryMethods, setDeliveryMethods] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [showShippingForm, setShowShippingForm] = useState(false);
-
-  // Cargar métodos disponibles al inicializar
-  useEffect(() => {
-    loadAvailableMethods();
-  }, []);
-
-  const loadAvailableMethods = async () => {
-    try {
-      const [deliveryRes, paymentRes] = await Promise.all([
-        fetch('/api/delivery-methods/active'),
-        fetch('/api/payment-methods')
-      ]);
-      
-      setDeliveryMethods(await deliveryRes.json());
-      setPaymentMethods(await paymentRes.json());
-    } catch (error) {
-      console.error('Error cargando métodos:', error);
-    }
-  };
-
-  // Manejar selección de método de entrega
-  const handleDeliveryChange = (deliveryMethodId) => {
-    const method = deliveryMethods.find(m => m.id === deliveryMethodId);
-    setSelectedDelivery(method);
-    
-    // ⚡ LÓGICA CLAVE: Mostrar/ocultar campos de envío
-    setShowShippingForm(method?.requiresAddress || false);
-    
-    if (!method?.requiresAddress) {
-      // Limpiar campos de envío si no son necesarios
-      clearShippingFields();
-    }
-  };
-
-  // Crear orden final
-  const createOrder = async (formData) => {
-    const payload = {
-      items: cartItems,
-      paymentMethodId: selectedPayment.id,
-      deliveryMethodId: selectedDelivery.id,
-      
-      // Incluir campos de envío solo si el método los requiere
-      ...(selectedDelivery.requiresAddress && {
-        shippingRecipientName: formData.recipientName,
-        shippingPhone: formData.phone,
-        shippingStreetAddress: formData.address,
-        shippingNeighborhoodId: formData.neighborhoodId,
-        shippingPostalCode: formData.postalCode,
-        shippingAdditionalInfo: formData.additionalInfo
-      }),
-      
-      // Para usuarios invitados
-      ...(isGuest && {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail
-      })
-    };
-
-    try {
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isLoggedIn && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const order = await response.json();
-      
-      if (selectedPayment.code === 'MERCADO_PAGO') {
-        // Procesar pago online
-        return processOnlinePayment(order.id);
-      } else {
-        // Pago manual (efectivo, transferencia)
-        return showOrderConfirmation(order);
-      }
-    } catch (error) {
-      handleOrderError(error);
-    }
-  };
-
-  return (
-    <div className="checkout-container">
-      {/* Selector de método de entrega */}
-      <DeliveryMethodSelector 
-        methods={deliveryMethods}
-        selected={selectedDelivery}
-        onChange={handleDeliveryChange}
-      />
-      
-      {/* Formulario de envío condicional */}
-      {showShippingForm && (
-        <ShippingForm 
-          required={selectedDelivery?.requiresAddress}
-          onSubmit={(data) => setShippingData(data)}
-        />
-      )}
-      
-      {/* Selector de método de pago */}
-      <PaymentMethodSelector
-        methods={paymentMethods}
-        selected={selectedPayment}
-        onChange={setSelectedPayment}
-      />
-      
-      {/* Botón de finalizar compra */}
-      <CheckoutButton 
-        onClick={createOrder}
-        disabled={!selectedDelivery || !selectedPayment}
-      />
-    </div>
-  );
-};
-```
-
-### 🔍 **Validaciones Frontend:**
-
-```javascript
-// Función de validación condicional
-const validateCheckoutForm = (formData, deliveryMethod, paymentMethod) => {
-  const errors = {};
-
-  // Validar método de entrega seleccionado
-  if (!deliveryMethod) {
-    errors.delivery = 'Selecciona un método de entrega';
-  }
-
-  // Validar método de pago seleccionado
-  if (!paymentMethod) {
-    errors.payment = 'Selecciona un método de pago';
-  }
-
-  // Validar campos de envío solo si son requeridos
-  if (deliveryMethod?.requiresAddress) {
-    if (!formData.recipientName) {
-      errors.recipientName = 'Nombre del destinatario requerido';
-    }
-    if (!formData.phone) {
-      errors.phone = 'Teléfono requerido';
-    }
-    if (!formData.address) {
-      errors.address = 'Dirección requerida';
-    }
-    if (!formData.neighborhoodId) {
-      errors.neighborhood = 'Barrio requerido';
-    }
-  }
-
-  // Validar datos del cliente invitado
-  if (isGuest) {
-    if (!formData.customerName) {
-      errors.customerName = 'Nombre requerido';
-    }
-    if (!formData.customerEmail) {
-      errors.customerEmail = 'Email requerido';
-    }
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-```
-```
-
-#### **3. Crear Preferencia de Mercado Pago**
-
-```http
-POST /api/payments/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Parámetros:**
-- `saleId`: ID de la orden creada
-
-**Respuesta (200):**
-```json
-{
-  "preferenceId": "123456789-abcd-efgh-1234-567890abcdef",
-  "initPoint": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789",
-  "sandboxInitPoint": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789"
-}
-```
-
-#### **4. Verificar Estado de Pago**
-
-```http
-GET /api/payments/status/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "payment": {
-    "id": "payment_id",
-    "status": "approved", // approved, pending, rejected
-    "amount": 3015.00,
-    "lastVerified": "2025-01-06T10:35:00Z",
-    "saleId": "64a7f8c9b123456789abcdef"
-  }
-}
-```
-
-#### **5. Webhook Mercado Pago (Automático)**
-
-```http
-POST /api/payments/webhook
-Content-Type: application/json
-```
-
-**Body (MP envía):**
-```json
-{
-  "id": 12345,
-  "live_mode": true,
-  "type": "payment",
-  "date_created": "2025-01-06T10:35:00.000-04:00",
-  "application_id": 123456789,
-  "user_id": 44444444,
-  "version": 1,
-  "api_version": "v1",
-  "action": "payment.created",
+  "message": "Orden creada exitosamente",
   "data": {
-    "id": "123456789" // payment_id
+    "id": "<orderId>",
+    ...otros campos
   }
 }
 ```
 
 ---
 
-## 🎨 Implementación Frontend
+## 📡 Endpoints Clave para Métodos de Pago
 
-### 📱 **Flujo de Checkout Recomendado:**
+### Listar métodos de pago activos (para frontend)
+**GET** `/api/payment-methods/active`
 
-```javascript
-// 1. Componente principal de Checkout
-const CheckoutPage = () => {
-  const [deliveryMethods, setDeliveryMethods] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [showShippingForm, setShowShippingForm] = useState(false);
-
-  // Cargar métodos disponibles al inicializar
-  useEffect(() => {
-    loadAvailableMethods();
-  }, []);
-
-  const loadAvailableMethods = async () => {
-    try {
-      const [deliveryRes, paymentRes] = await Promise.all([
-        fetch('/api/delivery-methods/active'),
-        fetch('/api/payment-methods')
-      ]);
-      
-      setDeliveryMethods(await deliveryRes.json());
-      setPaymentMethods(await paymentRes.json());
-    } catch (error) {
-      console.error('Error cargando métodos:', error);
-    }
-  };
-
-  // Manejar selección de método de entrega
-  const handleDeliveryChange = (deliveryMethodId) => {
-    const method = deliveryMethods.find(m => m.id === deliveryMethodId);
-    setSelectedDelivery(method);
-    
-    // ⚡ LÓGICA CLAVE: Mostrar/ocultar campos de envío
-    setShowShippingForm(method?.requiresAddress || false);
-    
-    if (!method?.requiresAddress) {
-      // Limpiar campos de envío si no son necesarios
-      clearShippingFields();
-    }
-  };
-
-  // Crear orden final
-  const createOrder = async (formData) => {
-    const payload = {
-      items: cartItems,
-      paymentMethodId: selectedPayment.id,
-      deliveryMethodId: selectedDelivery.id,
-      
-      // Incluir campos de envío solo si el método los requiere
-      ...(selectedDelivery.requiresAddress && {
-        shippingRecipientName: formData.recipientName,
-        shippingPhone: formData.phone,
-        shippingStreetAddress: formData.address,
-        shippingNeighborhoodId: formData.neighborhoodId,
-        shippingPostalCode: formData.postalCode,
-        shippingAdditionalInfo: formData.additionalInfo
-      }),
-      
-      // Para usuarios invitados
-      ...(isGuest && {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail
-      })
-    };
-
-    try {
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isLoggedIn && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const order = await response.json();
-      
-      if (selectedPayment.code === 'MERCADO_PAGO') {
-        // Procesar pago online
-        return processOnlinePayment(order.id);
-      } else {
-        // Pago manual (efectivo, transferencia)
-        return showOrderConfirmation(order);
-      }
-    } catch (error) {
-      handleOrderError(error);
-    }
-  };
-
-  return (
-    <div className="checkout-container">
-      {/* Selector de método de entrega */}
-      <DeliveryMethodSelector 
-        methods={deliveryMethods}
-        selected={selectedDelivery}
-        onChange={handleDeliveryChange}
-      />
-      
-      {/* Formulario de envío condicional */}
-      {showShippingForm && (
-        <ShippingForm 
-          required={selectedDelivery?.requiresAddress}
-          onSubmit={(data) => setShippingData(data)}
-        />
-      )}
-      
-      {/* Selector de método de pago */}
-      <PaymentMethodSelector
-        methods={paymentMethods}
-        selected={selectedPayment}
-        onChange={setSelectedPayment}
-      />
-      
-      {/* Botón de finalizar compra */}
-      <CheckoutButton 
-        onClick={createOrder}
-        disabled={!selectedDelivery || !selectedPayment}
-      />
-    </div>
-  );
-};
+**Respuesta:**
+```json
+[
+  {
+    "id": "<mongoId>",
+    "code": "MERCADO_PAGO",
+    "name": "Mercado Pago",
+    "description": "Pago online con tarjeta, débito o dinero en cuenta.",
+    "requiresOnlinePayment": true,
+    "allowsManualConfirmation": false,
+    "isActive": true
+  },
+  ...
+]
 ```
 
-### 🔍 **Validaciones Frontend:**
+### Seleccionar método de pago para una orden existente
+**PATCH** `/api/orders/:orderId/payment-method`
 
-```javascript
-// Función de validación condicional
-const validateCheckoutForm = (formData, deliveryMethod, paymentMethod) => {
-  const errors = {};
+**Headers:**
+`Authorization: Bearer <token>` _(requerido)_
 
-  // Validar método de entrega seleccionado
-  if (!deliveryMethod) {
-    errors.delivery = 'Selecciona un método de entrega';
-  }
-
-  // Validar método de pago seleccionado
-  if (!paymentMethod) {
-    errors.payment = 'Selecciona un método de pago';
-  }
-
-  // Validar campos de envío solo si son requeridos
-  if (deliveryMethod?.requiresAddress) {
-    if (!formData.recipientName) {
-      errors.recipientName = 'Nombre del destinatario requerido';
-    }
-    if (!formData.phone) {
-      errors.phone = 'Teléfono requerido';
-    }
-    if (!formData.address) {
-      errors.address = 'Dirección requerida';
-    }
-    if (!formData.neighborhoodId) {
-      errors.neighborhood = 'Barrio requerido';
-    }
-  }
-
-  // Validar datos del cliente invitado
-  if (isGuest) {
-    if (!formData.customerName) {
-      errors.customerName = 'Nombre requerido';
-    }
-    if (!formData.customerEmail) {
-      errors.customerEmail = 'Email requerido';
-    }
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-```
-```
-
-#### **3. Crear Preferencia de Mercado Pago**
-
-```http
-POST /api/payments/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Parámetros:**
-- `saleId`: ID de la orden creada
-
-**Respuesta (200):**
+**Body:**
 ```json
 {
-  "preferenceId": "123456789-abcd-efgh-1234-567890abcdef",
-  "initPoint": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789",
-  "sandboxInitPoint": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789"
+  "paymentMethodCode": "MERCADO_PAGO" | "CASH",
+  "notes": "opcional"
 }
 ```
 
-#### **4. Verificar Estado de Pago**
-
-```http
-GET /api/payments/status/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Respuesta (200):**
+**Respuesta:**
 ```json
 {
   "success": true,
-  "payment": {
-    "id": "payment_id",
-    "status": "approved", // approved, pending, rejected
-    "amount": 3015.00,
-    "lastVerified": "2025-01-06T10:35:00Z",
-    "saleId": "64a7f8c9b123456789abcdef"
-  }
-}
-```
-
-#### **5. Webhook Mercado Pago (Automático)**
-
-```http
-POST /api/payments/webhook
-Content-Type: application/json
-```
-
-**Body (MP envía):**
-```json
-{
-  "id": 12345,
-  "live_mode": true,
-  "type": "payment",
-  "date_created": "2025-01-06T10:35:00.000-04:00",
-  "application_id": 123456789,
-  "user_id": 44444444,
-  "version": 1,
-  "api_version": "v1",
-  "action": "payment.created",
-  "data": {
-    "id": "123456789" // payment_id
-  }
+  "message": "Método de pago seleccionado exitosamente",
+  "data": { ...orden actualizada... }
 }
 ```
 
 ---
 
-## 🎨 Implementación Frontend
+## 🔄 Webhook de Mercado Pago
 
-### 📱 **Flujo de Checkout Recomendado:**
+**POST** `/api/payments/webhook`
 
-```javascript
-// 1. Componente principal de Checkout
-const CheckoutPage = () => {
-  const [deliveryMethods, setDeliveryMethods] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [showShippingForm, setShowShippingForm] = useState(false);
+**Headers:**
+`x-signature`, `content-type: application/json`, ...otros de MercadoPago
 
-  // Cargar métodos disponibles al inicializar
-  useEffect(() => {
-    loadAvailableMethods();
-  }, []);
+**Body:**
+Ver documentación oficial de MercadoPago (el backend soporta ambos formatos: query y body)
 
-  const loadAvailableMethods = async () => {
-    try {
-      const [deliveryRes, paymentRes] = await Promise.all([
-        fetch('/api/delivery-methods/active'),
-        fetch('/api/payment-methods')
-      ]);
-      
-      setDeliveryMethods(await deliveryRes.json());
-      setPaymentMethods(await paymentRes.json());
-    } catch (error) {
-      console.error('Error cargando métodos:', error);
-    }
-  };
-
-  // Manejar selección de método de entrega
-  const handleDeliveryChange = (deliveryMethodId) => {
-    const method = deliveryMethods.find(m => m.id === deliveryMethodId);
-    setSelectedDelivery(method);
-    
-    // ⚡ LÓGICA CLAVE: Mostrar/ocultar campos de envío
-    setShowShippingForm(method?.requiresAddress || false);
-    
-    if (!method?.requiresAddress) {
-      // Limpiar campos de envío si no son necesarios
-      clearShippingFields();
-    }
-  };
-
-  // Crear orden final
-  const createOrder = async (formData) => {
-    const payload = {
-      items: cartItems,
-      paymentMethodId: selectedPayment.id,
-      deliveryMethodId: selectedDelivery.id,
-      
-      // Incluir campos de envío solo si el método los requiere
-      ...(selectedDelivery.requiresAddress && {
-        shippingRecipientName: formData.recipientName,
-        shippingPhone: formData.phone,
-        shippingStreetAddress: formData.address,
-        shippingNeighborhoodId: formData.neighborhoodId,
-        shippingPostalCode: formData.postalCode,
-        shippingAdditionalInfo: formData.additionalInfo
-      }),
-      
-      // Para usuarios invitados
-      ...(isGuest && {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail
-      })
-    };
-
-    try {
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isLoggedIn && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const order = await response.json();
-      
-      if (selectedPayment.code === 'MERCADO_PAGO') {
-        // Procesar pago online
-        return processOnlinePayment(order.id);
-      } else {
-        // Pago manual (efectivo, transferencia)
-        return showOrderConfirmation(order);
-      }
-    } catch (error) {
-      handleOrderError(error);
-    }
-  };
-
-  return (
-    <div className="checkout-container">
-      {/* Selector de método de entrega */}
-      <DeliveryMethodSelector 
-        methods={deliveryMethods}
-        selected={selectedDelivery}
-        onChange={handleDeliveryChange}
-      />
-      
-      {/* Formulario de envío condicional */}
-      {showShippingForm && (
-        <ShippingForm 
-          required={selectedDelivery?.requiresAddress}
-          onSubmit={(data) => setShippingData(data)}
-        />
-      )}
-      
-      {/* Selector de método de pago */}
-      <PaymentMethodSelector
-        methods={paymentMethods}
-        selected={selectedPayment}
-        onChange={setSelectedPayment}
-      />
-      
-      {/* Botón de finalizar compra */}
-      <CheckoutButton 
-        onClick={createOrder}
-        disabled={!selectedDelivery || !selectedPayment}
-      />
-    </div>
-  );
-};
-```
-
-### 🔍 **Validaciones Frontend:**
-
-```javascript
-// Función de validación condicional
-const validateCheckoutForm = (formData, deliveryMethod, paymentMethod) => {
-  const errors = {};
-
-  // Validar método de entrega seleccionado
-  if (!deliveryMethod) {
-    errors.delivery = 'Selecciona un método de entrega';
-  }
-
-  // Validar método de pago seleccionado
-  if (!paymentMethod) {
-    errors.payment = 'Selecciona un método de pago';
-  }
-
-  // Validar campos de envío solo si son requeridos
-  if (deliveryMethod?.requiresAddress) {
-    if (!formData.recipientName) {
-      errors.recipientName = 'Nombre del destinatario requerido';
-    }
-    if (!formData.phone) {
-      errors.phone = 'Teléfono requerido';
-    }
-    if (!formData.address) {
-      errors.address = 'Dirección requerida';
-    }
-    if (!formData.neighborhoodId) {
-      errors.neighborhood = 'Barrio requerido';
-    }
-  }
-
-  // Validar datos del cliente invitado
-  if (isGuest) {
-    if (!formData.customerName) {
-      errors.customerName = 'Nombre requerido';
-    }
-    if (!formData.customerEmail) {
-      errors.customerEmail = 'Email requerido';
-    }
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-```
-```
-
-#### **3. Crear Preferencia de Mercado Pago**
-
-```http
-POST /api/payments/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Parámetros:**
-- `saleId`: ID de la orden creada
-
-**Respuesta (200):**
+**Respuesta:**
 ```json
 {
-  "preferenceId": "123456789-abcd-efgh-1234-567890abcdef",
-  "initPoint": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789",
-  "sandboxInitPoint": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789"
-}
-```
-
-#### **4. Verificar Estado de Pago**
-
-```http
-GET /api/payments/status/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "payment": {
-    "id": "payment_id",
-    "status": "approved", // approved, pending, rejected
-    "amount": 3015.00,
-    "lastVerified": "2025-01-06T10:35:00Z",
-    "saleId": "64a7f8c9b123456789abcdef"
-  }
-}
-```
-
-#### **5. Webhook Mercado Pago (Automático)**
-
-```http
-POST /api/payments/webhook
-Content-Type: application/json
-```
-
-**Body (MP envía):**
-```json
-{
-  "id": 12345,
-  "live_mode": true,
-  "type": "payment",
-  "date_created": "2025-01-06T10:35:00.000-04:00",
-  "application_id": 123456789,
-  "user_id": 44444444,
-  "version": 1,
-  "api_version": "v1",
-  "action": "payment.created",
-  "data": {
-    "id": "123456789" // payment_id
-  }
+  "message": "Notificación procesada exitosamente",
+  "paymentStatus": "approved",
+  "orderUpdated": true,
+  "timestamp": "2025-07-08T12:34:56.789Z"
 }
 ```
 
 ---
 
-## 🎨 Implementación Frontend
+## 🧩 Ejemplo de integración Frontend
 
-### 📱 **Flujo de Checkout Recomendado:**
+```typescript
+// Obtener métodos de pago activos
+const response = await fetch('/api/payment-methods/active');
+const methods = await response.json();
 
-```javascript
-// 1. Componente principal de Checkout
-const CheckoutPage = () => {
-  const [deliveryMethods, setDeliveryMethods] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [showShippingForm, setShowShippingForm] = useState(false);
+// Crear orden con método de pago
+await fetch('/api/orders', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+  body: JSON.stringify({
+    items: [...],
+    paymentMethodCode: 'MERCADO_PAGO',
+    ...otrosCampos
+  })
+});
 
-  // Cargar métodos disponibles al inicializar
-  useEffect(() => {
-    loadAvailableMethods();
-  }, []);
-
-  const loadAvailableMethods = async () => {
-    try {
-      const [deliveryRes, paymentRes] = await Promise.all([
-        fetch('/api/delivery-methods/active'),
-        fetch('/api/payment-methods')
-      ]);
-      
-      setDeliveryMethods(await deliveryRes.json());
-      setPaymentMethods(await paymentRes.json());
-    } catch (error) {
-      console.error('Error cargando métodos:', error);
-    }
-  };
-
-  // Manejar selección de método de entrega
-  const handleDeliveryChange = (deliveryMethodId) => {
-    const method = deliveryMethods.find(m => m.id === deliveryMethodId);
-    setSelectedDelivery(method);
-    
-    // ⚡ LÓGICA CLAVE: Mostrar/ocultar campos de envío
-    setShowShippingForm(method?.requiresAddress || false);
-    
-    if (!method?.requiresAddress) {
-      // Limpiar campos de envío si no son necesarios
-      clearShippingFields();
-    }
-  };
-
-  // Crear orden final
-  const createOrder = async (formData) => {
-    const payload = {
-      items: cartItems,
-      paymentMethodId: selectedPayment.id,
-      deliveryMethodId: selectedDelivery.id,
-      
-      // Incluir campos de envío solo si el método los requiere
-      ...(selectedDelivery.requiresAddress && {
-        shippingRecipientName: formData.recipientName,
-        shippingPhone: formData.phone,
-        shippingStreetAddress: formData.address,
-        shippingNeighborhoodId: formData.neighborhoodId,
-        shippingPostalCode: formData.postalCode,
-        shippingAdditionalInfo: formData.additionalInfo
-      }),
-      
-      // Para usuarios invitados
-      ...(isGuest && {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail
-      })
-    };
-
-    try {
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isLoggedIn && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const order = await response.json();
-      
-      if (selectedPayment.code === 'MERCADO_PAGO') {
-        // Procesar pago online
-        return processOnlinePayment(order.id);
-      } else {
-        // Pago manual (efectivo, transferencia)
-        return showOrderConfirmation(order);
-      }
-    } catch (error) {
-      handleOrderError(error);
-    }
-  };
-
-  return (
-    <div className="checkout-container">
-      {/* Selector de método de entrega */}
-      <DeliveryMethodSelector 
-        methods={deliveryMethods}
-        selected={selectedDelivery}
-        onChange={handleDeliveryChange}
-      />
-      
-      {/* Formulario de envío condicional */}
-      {showShippingForm && (
-        <ShippingForm 
-          required={selectedDelivery?.requiresAddress}
-          onSubmit={(data) => setShippingData(data)}
-        />
-      )}
-      
-      {/* Selector de método de pago */}
-      <PaymentMethodSelector
-        methods={paymentMethods}
-        selected={selectedPayment}
-        onChange={setSelectedPayment}
-      />
-      
-      {/* Botón de finalizar compra */}
-      <CheckoutButton 
-        onClick={createOrder}
-        disabled={!selectedDelivery || !selectedPayment}
-      />
-    </div>
-  );
-};
-```
-
-### 🔍 **Validaciones Frontend:**
-
-```javascript
-// Función de validación condicional
-const validateCheckoutForm = (formData, deliveryMethod, paymentMethod) => {
-  const errors = {};
-
-  // Validar método de entrega seleccionado
-  if (!deliveryMethod) {
-    errors.delivery = 'Selecciona un método de entrega';
-  }
-
-  // Validar método de pago seleccionado
-  if (!paymentMethod) {
-    errors.payment = 'Selecciona un método de pago';
-  }
-
-  // Validar campos de envío solo si son requeridos
-  if (deliveryMethod?.requiresAddress) {
-    if (!formData.recipientName) {
-      errors.recipientName = 'Nombre del destinatario requerido';
-    }
-    if (!formData.phone) {
-      errors.phone = 'Teléfono requerido';
-    }
-    if (!formData.address) {
-      errors.address = 'Dirección requerida';
-    }
-    if (!formData.neighborhoodId) {
-      errors.neighborhood = 'Barrio requerido';
-    }
-  }
-
-  // Validar datos del cliente invitado
-  if (isGuest) {
-    if (!formData.customerName) {
-      errors.customerName = 'Nombre requerido';
-    }
-    if (!formData.customerEmail) {
-      errors.customerEmail = 'Email requerido';
-    }
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-```
-```
-
-#### **3. Crear Preferencia de Mercado Pago**
-
-```http
-POST /api/payments/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Parámetros:**
-- `saleId`: ID de la orden creada
-
-**Respuesta (200):**
-```json
-{
-  "preferenceId": "123456789-abcd-efgh-1234-567890abcdef",
-  "initPoint": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789",
-  "sandboxInitPoint": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789"
-}
-```
-
-#### **4. Verificar Estado de Pago**
-
-```http
-GET /api/payments/status/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "payment": {
-    "id": "payment_id",
-    "status": "approved", // approved, pending, rejected
-    "amount": 3015.00,
-    "lastVerified": "2025-01-06T10:35:00Z",
-    "saleId": "64a7f8c9b123456789abcdef"
-  }
-}
-```
-
-#### **5. Webhook Mercado Pago (Automático)**
-
-```http
-POST /api/payments/webhook
-Content-Type: application/json
-```
-
-**Body (MP envía):**
-```json
-{
-  "id": 12345,
-  "live_mode": true,
-  "type": "payment",
-  "date_created": "2025-01-06T10:35:00.000-04:00",
-  "application_id": 123456789,
-  "user_id": 44444444,
-  "version": 1,
-  "api_version": "v1",
-  "action": "payment.created",
-  "data": {
-    "id": "123456789" // payment_id
-  }
-}
+// Seleccionar método de pago para orden existente
+await fetch(`/api/orders/${orderId}/payment-method`, {
+  method: 'PATCH',
+  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+  body: JSON.stringify({ paymentMethodCode: 'CASH' })
+});
 ```
 
 ---
 
-## 🎨 Implementación Frontend
+## 📈 Diagrama General de Flujos
 
-### 📱 **Flujo de Checkout Recomendado:**
-
-```javascript
-// 1. Componente principal de Checkout
-const CheckoutPage = () => {
-  const [deliveryMethods, setDeliveryMethods] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [showShippingForm, setShowShippingForm] = useState(false);
-
-  // Cargar métodos disponibles al inicializar
-  useEffect(() => {
-    loadAvailableMethods();
-  }, []);
-
-  const loadAvailableMethods = async () => {
-    try {
-      const [deliveryRes, paymentRes] = await Promise.all([
-        fetch('/api/delivery-methods/active'),
-        fetch('/api/payment-methods')
-      ]);
-      
-      setDeliveryMethods(await deliveryRes.json());
-      setPaymentMethods(await paymentRes.json());
-    } catch (error) {
-      console.error('Error cargando métodos:', error);
-    }
-  };
-
-  // Manejar selección de método de entrega
-  const handleDeliveryChange = (deliveryMethodId) => {
-    const method = deliveryMethods.find(m => m.id === deliveryMethodId);
-    setSelectedDelivery(method);
-    
-    // ⚡ LÓGICA CLAVE: Mostrar/ocultar campos de envío
-    setShowShippingForm(method?.requiresAddress || false);
-    
-    if (!method?.requiresAddress) {
-      // Limpiar campos de envío si no son necesarios
-      clearShippingFields();
-    }
-  };
-
-  // Crear orden final
-  const createOrder = async (formData) => {
-    const payload = {
-      items: cartItems,
-      paymentMethodId: selectedPayment.id,
-      deliveryMethodId: selectedDelivery.id,
-      
-      // Incluir campos de envío solo si el método los requiere
-      ...(selectedDelivery.requiresAddress && {
-        shippingRecipientName: formData.recipientName,
-        shippingPhone: formData.phone,
-        shippingStreetAddress: formData.address,
-        shippingNeighborhoodId: formData.neighborhoodId,
-        shippingPostalCode: formData.postalCode,
-        shippingAdditionalInfo: formData.additionalInfo
-      }),
-      
-      // Para usuarios invitados
-      ...(isGuest && {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail
-      })
-    };
-
-    try {
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isLoggedIn && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const order = await response.json();
-      
-      if (selectedPayment.code === 'MERCADO_PAGO') {
-        // Procesar pago online
-        return processOnlinePayment(order.id);
-      } else {
-        // Pago manual (efectivo, transferencia)
-        return showOrderConfirmation(order);
-      }
-    } catch (error) {
-      handleOrderError(error);
-    }
-  };
-
-  return (
-    <div className="checkout-container">
-      {/* Selector de método de entrega */}
-      <DeliveryMethodSelector 
-        methods={deliveryMethods}
-        selected={selectedDelivery}
-        onChange={handleDeliveryChange}
-      />
-      
-      {/* Formulario de envío condicional */}
-      {showShippingForm && (
-        <ShippingForm 
-          required={selectedDelivery?.requiresAddress}
-          onSubmit={(data) => setShippingData(data)}
-        />
-      )}
-      
-      {/* Selector de método de pago */}
-      <PaymentMethodSelector
-        methods={paymentMethods}
-        selected={selectedPayment}
-        onChange={setSelectedPayment}
-      />
-      
-      {/* Botón de finalizar compra */}
-      <CheckoutButton 
-        onClick={createOrder}
-        disabled={!selectedDelivery || !selectedPayment}
-      />
-    </div>
-  );
-};
+```mermaid
+flowchart TD
+    A[Inicio Checkout] --> B{¿Método de pago?}
+    B -- Mercado Pago --> C[POST /api/orders con paymentMethodCode: MERCADO_PAGO]
+    C --> D[Recibe URL de pago]
+    D --> E[Redirige a MercadoPago]
+    E --> F[Webhook /api/payments/webhook]
+    F --> G[Actualiza estado de orden]
+    B -- Efectivo --> H[POST /api/orders con paymentMethodCode: CASH]
+    H --> I[Orden creada]
+    I --> J[Cliente paga en local]
+    J --> K[Admin confirma pago]
+    K --> G
 ```
-
-### 🔍 **Validaciones Frontend:**
-
-```javascript
-// Función de validación condicional
-const validateCheckoutForm = (formData, deliveryMethod, paymentMethod) => {
-  const errors = {};
-
-  // Validar método de entrega seleccionado
-  if (!deliveryMethod) {
-    errors.delivery = 'Selecciona un método de entrega';
-  }
-
-  // Validar método de pago seleccionado
-  if (!paymentMethod) {
-    errors.payment = 'Selecciona un método de pago';
-  }
-
-  // Validar campos de envío solo si son requeridos
-  if (deliveryMethod?.requiresAddress) {
-    if (!formData.recipientName) {
-      errors.recipientName = 'Nombre del destinatario requerido';
-    }
-    if (!formData.phone) {
-      errors.phone = 'Teléfono requerido';
-    }
-    if (!formData.address) {
-      errors.address = 'Dirección requerida';
-    }
-    if (!formData.neighborhoodId) {
-      errors.neighborhood = 'Barrio requerido';
-    }
-  }
-
-  // Validar datos del cliente invitado
-  if (isGuest) {
-    if (!formData.customerName) {
-      errors.customerName = 'Nombre requerido';
-    }
-    if (!formData.customerEmail) {
-      errors.customerEmail = 'Email requerido';
-    }
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-```
-```
-
-#### **3. Crear Preferencia de Mercado Pago**
-
-```http
-POST /api/payments/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Parámetros:**
-- `saleId`: ID de la orden creada
-
-**Respuesta (200):**
-```json
-{
-  "preferenceId": "123456789-abcd-efgh-1234-567890abcdef",
-  "initPoint": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789",
-  "sandboxInitPoint": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789"
-}
-```
-
-#### **4. Verificar Estado de Pago**
-
-```http
-GET /api/payments/status/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "payment": {
-    "id": "payment_id",
-    "status": "approved", // approved, pending, rejected
-    "amount": 3015.00,
-    "lastVerified": "2025-01-06T10:35:00Z",
-    "saleId": "64a7f8c9b123456789abcdef"
-  }
-}
-```
-
-#### **5. Webhook Mercado Pago (Automático)**
-
-```http
-POST /api/payments/webhook
-Content-Type: application/json
-```
-
-**Body (MP envía):**
-```json
-{
-  "id": 12345,
-  "live_mode": true,
-  "type": "payment",
-  "date_created": "2025-01-06T10:35:00.000-04:00",
-  "application_id": 123456789,
-  "user_id": 44444444,
-  "version": 1,
-  "api_version": "v1",
-  "action": "payment.created",
-  "data": {
-    "id": "123456789" // payment_id
-  }
-}
-```
-
----
-
-## 🎨 Implementación Frontend
-
-### 📱 **Flujo de Checkout Recomendado:**
-
-```javascript
-// 1. Componente principal de Checkout
-const CheckoutPage = () => {
-  const [deliveryMethods, setDeliveryMethods] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [showShippingForm, setShowShippingForm] = useState(false);
-
-  // Cargar métodos disponibles al inicializar
-  useEffect(() => {
-    loadAvailableMethods();
-  }, []);
-
-  const loadAvailableMethods = async () => {
-    try {
-      const [deliveryRes, paymentRes] = await Promise.all([
-        fetch('/api/delivery-methods/active'),
-        fetch('/api/payment-methods')
-      ]);
-      
-      setDeliveryMethods(await deliveryRes.json());
-      setPaymentMethods(await paymentRes.json());
-    } catch (error) {
-      console.error('Error cargando métodos:', error);
-    }
-  };
-
-  // Manejar selección de método de entrega
-  const handleDeliveryChange = (deliveryMethodId) => {
-    const method = deliveryMethods.find(m => m.id === deliveryMethodId);
-    setSelectedDelivery(method);
-    
-    // ⚡ LÓGICA CLAVE: Mostrar/ocultar campos de envío
-    setShowShippingForm(method?.requiresAddress || false);
----
-
-## ✅ Resumen de Actualizaciones (Enero 2025)
-
-### 🎯 **Sistema Completamente Funcional y Validado**
-
-✅ **Validación condicional robusta** - Tests de integración confirman funcionamiento  
-✅ **Soporte dual de identificadores** - `deliveryMethodId` y `deliveryMethodCode`  
-✅ **Seeding confiable** - `npm run seed:delivery-methods` previene duplicados  
-✅ **Tests actualizados** - Verifican 3 métodos activos exactos  
-
-**Para Frontend:** Usa códigos para mayor legibilidad:
-```javascript
-{ deliveryMethodCode: "PICKUP" } // Recomendado
-```
-
-**Verificación:** `npm run seed:delivery-methods && npm test -- --testPathPattern=delivery-methods`
-
-*Documentación actualizada: Enero 2025 - Sistema en producción* ✅   
-      // Incluir campos de envío solo si el método los requiere
-      ...(selectedDelivery.requiresAddress && {
-        shippingRecipientName: formData.recipientName,
-        shippingPhone: formData.phone,
-        shippingStreetAddress: formData.address,
-        shippingNeighborhoodId: formData.neighborhoodId,
-        shippingPostalCode: formData.postalCode,
-        shippingAdditionalInfo: formData.additionalInfo
-      }),
-      
-      // Para usuarios invitados
-      ...(isGuest && {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail
-      })
-    };
-
-    try {
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isLoggedIn && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const order = await response.json();
-      
-      if (selectedPayment.code === 'MERCADO_PAGO') {
-        // Procesar pago online
-        return processOnlinePayment(order.id);
-      } else {
-        // Pago manual (efectivo, transferencia)
-        return showOrderConfirmation(order);
-      }
-    } catch (error) {
-      handleOrderError(error);
-    }
-  };
-
-  return (
-    <div className="checkout-container">
-      {/* Selector de método de entrega */}
-      <DeliveryMethodSelector 
-        methods={deliveryMethods}
-        selected={selectedDelivery}
-        onChange={handleDeliveryChange}
-      />
-      
-      {/* Formulario de envío condicional */}
-      {showShippingForm && (
-        <ShippingForm 
-          required={selectedDelivery?.requiresAddress}
-          onSubmit={(data) => setShippingData(data)}
-        />
-      )}
-      
-      {/* Selector de método de pago */}
-      <PaymentMethodSelector
-        methods={paymentMethods}
-        selected={selectedPayment}
-        onChange={setSelectedPayment}
-      />
-      
-      {/* Botón de finalizar compra */}
-      <CheckoutButton 
-        onClick={createOrder}
-        disabled={!selectedDelivery || !selectedPayment}
-      />
-    </div>
-  );
-};
-```
-
-### 🔍 **Validaciones Frontend:**
-
-```javascript
-// Función de validación condicional
-const validateCheckoutForm = (formData, deliveryMethod, paymentMethod) => {
-  const errors = {};
-
-  // Validar método de entrega seleccionado
-  if (!deliveryMethod) {
-    errors.delivery = 'Selecciona un método de entrega';
-  }
-
-  // Validar método de pago seleccionado
-  if (!paymentMethod) {
-    errors.payment = 'Selecciona un método de pago';
-  }
-
-  // Validar campos de envío solo si son requeridos
-  if (deliveryMethod?.requiresAddress) {
-    if (!formData.recipientName) {
-      errors.recipientName = 'Nombre del destinatario requerido';
-    }
-    if (!formData.phone) {
-      errors.phone = 'Teléfono requerido';
-    }
-    if (!formData.address) {
-      errors.address = 'Dirección requerida';
-    }
-    if (!formData.neighborhoodId) {
-      errors.neighborhood = 'Barrio requerido';
-    }
-  }
-
-  // Validar datos del cliente invitado
-  if (isGuest) {
-    if (!formData.customerName) {
-      errors.customerName = 'Nombre requerido';
-    }
-    if (!formData.customerEmail) {
-      errors.customerEmail = 'Email requerido';
-    }
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-```
-```
-
-#### **3. Crear Preferencia de Mercado Pago**
-
-```http
-POST /api/payments/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Parámetros:**
-- `saleId`: ID de la orden creada
-
-**Respuesta (200):**
-```json
-{
-  "preferenceId": "123456789-abcd-efgh-1234-567890abcdef",
-  "initPoint": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789",
-  "sandboxInitPoint": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789"
-}
-```
-
-#### **4. Verificar Estado de Pago**
-
-```http
-GET /api/payments/status/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "payment": {
-    "id": "payment_id",
-    "status": "approved", // approved, pending, rejected
-    "amount": 3015.00,
-    "lastVerified": "2025-01-06T10:35:00Z",
-    "saleId": "64a7f8c9b123456789abcdef"
-  }
-}
-```
-
-#### **5. Webhook Mercado Pago (Automático)**
-
-```http
-POST /api/payments/webhook
-Content-Type: application/json
-```
-
-**Body (MP envía):**
-```json
-{
-  "id": 12345,
-  "live_mode": true,
-  "type": "payment",
-  "date_created": "2025-01-06T10:35:00.000-04:00",
-  "application_id": 123456789,
-  "user_id": 44444444,
-  "version": 1,
-  "api_version": "v1",
-  "action": "payment.created",
-  "data": {
-    "id": "123456789" // payment_id
-  }
-}
-```
-
----
-
-## 🎨 Implementación Frontend
-
-### 📱 **Flujo de Checkout Recomendado:**
-
-```javascript
-// 1. Componente principal de Checkout
-const CheckoutPage = () => {
-  const [deliveryMethods, setDeliveryMethods] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
-  const [selectedDelivery, setSelectedDelivery] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [showShippingForm, setShowShippingForm] = useState(false);
-
-  // Cargar métodos disponibles al inicializar
-  useEffect(() => {
-    loadAvailableMethods();
-  }, []);
-
-  const loadAvailableMethods = async () => {
-    try {
-      const [deliveryRes, paymentRes] = await Promise.all([
-        fetch('/api/delivery-methods/active'),
-        fetch('/api/payment-methods')
-      ]);
-      
-      setDeliveryMethods(await deliveryRes.json());
-      setPaymentMethods(await paymentRes.json());
-    } catch (error) {
-      console.error('Error cargando métodos:', error);
-    }
-  };
-
-  // Manejar selección de método de entrega
-  const handleDeliveryChange = (deliveryMethodId) => {
-    const method = deliveryMethods.find(m => m.id === deliveryMethodId);
-    setSelectedDelivery(method);
-    
-    // ⚡ LÓGICA CLAVE: Mostrar/ocultar campos de envío
-    setShowShippingForm(method?.requiresAddress || false);
-    
-    if (!method?.requiresAddress) {
-      // Limpiar campos de envío si no son necesarios
-      clearShippingFields();
-    }
-  };
-
-  // Crear orden final
-  const createOrder = async (formData) => {
-    const payload = {
-      items: cartItems,
-      paymentMethodId: selectedPayment.id,
-      deliveryMethodId: selectedDelivery.id,
-      
-      // Incluir campos de envío solo si el método los requiere
-      ...(selectedDelivery.requiresAddress && {
-        shippingRecipientName: formData.recipientName,
-        shippingPhone: formData.phone,
-        shippingStreetAddress: formData.address,
-        shippingNeighborhoodId: formData.neighborhoodId,
-        shippingPostalCode: formData.postalCode,
-        shippingAdditionalInfo: formData.additionalInfo
-      }),
-      
-      // Para usuarios invitados
-      ...(isGuest && {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail
-      })
-    };
-
-    try {
-      const response = await fetch('/api/sales', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isLoggedIn && { 'Authorization': `Bearer ${token}` })
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const order = await response.json();
-      
-      if (selectedPayment.code === 'MERCADO_PAGO') {
-        // Procesar pago online
-        return processOnlinePayment(order.id);
-      } else {
-        // Pago manual (efectivo, transferencia)
-        return showOrderConfirmation(order);
-      }
-    } catch (error) {
-      handleOrderError(error);
-    }
-  };
-
-  return (
-    <div className="checkout-container">
-      {/* Selector de método de entrega */}
-      <DeliveryMethodSelector 
-        methods={deliveryMethods}
-        selected={selectedDelivery}
-        onChange={handleDeliveryChange}
-      />
-      
-      {/* Formulario de envío condicional */}
-      {showShippingForm && (
-        <ShippingForm 
-          required={selectedDelivery?.requiresAddress}
-          onSubmit={(data) => setShippingData(data)}
-        />
-      )}
-      
-      {/* Selector de método de pago */}
-      <PaymentMethodSelector
-        methods={paymentMethods}
-        selected={selectedPayment}
-        onChange={setSelectedPayment}
-      />
-      
-      {/* Botón de finalizar compra */}
-      <CheckoutButton 
-        onClick={createOrder}
-        disabled={!selectedDelivery || !selectedPayment}
-      />
-    </div>
-  );
-};
-```
-
-### 🔍 **Validaciones Frontend:**
-
-```javascript
-// Función de validación condicional
-const validateCheckoutForm = (formData, deliveryMethod, paymentMethod) => {
-  const errors = {};
-
-  // Validar método de entrega seleccionado
-  if (!deliveryMethod) {
-    errors.delivery = 'Selecciona un método de entrega';
-  }
-
-  // Validar método de pago seleccionado
-  if (!paymentMethod) {
-    errors.payment = 'Selecciona un método de pago';
-  }
-
-  // Validar campos de envío solo si son requeridos
-  if (deliveryMethod?.requiresAddress) {
-    if (!formData.recipientName) {
-      errors.recipientName = 'Nombre del destinatario requerido';
-    }
-    if (!formData.phone) {
-      errors.phone = 'Teléfono requerido';
-    }
-    if (!formData.address) {
-      errors.address = 'Dirección requerida';
-    }
-    if (!formData.neighborhoodId) {
-      errors.neighborhood = 'Barrio requerido';
-    }
-  }
-
-  // Validar datos del cliente invitado
-  if (isGuest) {
-    if (!formData.customerName) {
-      errors.customerName = 'Nombre requerido';
-    }
-    if (!formData.customerEmail) {
-      errors.customerEmail = 'Email requerido';
-    }
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-```
-```
-
-#### **3. Crear Preferencia de Mercado Pago**
-
-```http
-POST /api/payments/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Parámetros:**
-- `saleId`: ID de la orden creada
-
-**Respuesta (200):**
-```json
-{
-  "preferenceId": "123456789-abcd-efgh-1234-567890abcdef",
-  "initPoint": "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789",
-  "sandboxInitPoint": "https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=123456789"
-}
-```
-
-#### **4. Verificar Estado de Pago**
-
-```http
-GET /api/payments/status/sale/:saleId
-Authorization: Bearer <jwt-token>
-```
-
-**Respuesta (200):**
-```json
-{
-  "success": true,
-  "payment": {
-    "id": "payment_id",
-    "status": "approved", // approved, pending, rejected
-    "amount": 3015.00,
-    "lastVerified": "2025-01-06T10:35:00Z",
-    "saleId": "64a7f8c9b123456789abcdef"
-  }
-}
-```
-
-#### **5. Webhook Mercado Pago (Automático)**
-
-```http
-POST /api/payments/webhook
-Content-Type: application/json
-```
-
-**Body (MP envía):**
-```json
-{
-  "id": 12345,
-  "live_mode": true,
-  "type": "payment",
-  "date_created": "2025-01-06T10:35:00.000-04:00",
-  "application_id": 123456789,
-  "user_id": 44444444,
-  "version": 1,
-  "api_version": "v1",
-  "action": "payment.created",
-  "data": {
-    "id": "123456789" // payment_id
-  }
-}
-```
-
----
-
-## 🎨 Implementación Frontend
-
-### 📱 **Flujo de Checkout Recomendado:**
-
-```javascript
-// 1. Componente
