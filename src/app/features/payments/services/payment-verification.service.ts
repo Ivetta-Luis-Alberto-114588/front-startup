@@ -29,7 +29,7 @@ export interface OrderStatusResponse {
 })
 export class PaymentVerificationService {
     private apiUrl = `${environment.apiUrl}/api/payments`;
-    private ordersApiUrl = `${environment.apiUrl}/api/sales`;
+    private ordersApiUrl = `${environment.apiUrl}/api/orders`;
 
     constructor(private http: HttpClient) { }
 

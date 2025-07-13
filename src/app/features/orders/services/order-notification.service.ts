@@ -1,21 +1,15 @@
 // src/app/features/orders/services/order-notification.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
-export interface OrderNotificationPayload {
-    orderId: string;
-    customerName: string;
-    customerEmail: string;
-    total: number;
-    paymentMethod: string;
-    paymentId?: string;
-    items: {
-        name: string;
-        quantity: number;
-        price: number;
-    }[];
+export interface ManualNotificationPayload {
+    subject: string;
+    message: string;
+    emailTo?: string;
+    telegramChatId?: string;
 }
 
 export interface NotificationResponse {
@@ -27,21 +21,14 @@ export interface NotificationResponse {
     providedIn: 'root'
 })
 export class OrderNotificationService {
-    private apiUrl = `${environment.apiUrl}/api/notifications`;
+    private apiUrl = `${environment.apiUrl}/api/notifications/manual`;
 
     constructor(private http: HttpClient) { }
 
     /**
-     * Envía notificación de Telegram cuando un pago es exitoso
+     * Envía una notificación manual por email y/o Telegram usando el nuevo endpoint
      */
-    sendOrderPaidNotification(payload: OrderNotificationPayload): Observable<NotificationResponse> {
-        return this.http.post<NotificationResponse>(`${this.apiUrl}/order-paid`, payload);
-    }
-
-    /**
-     * Envía notificación de Telegram para órdenes pagadas en efectivo
-     */
-    sendCashOrderNotification(payload: OrderNotificationPayload): Observable<NotificationResponse> {
-        return this.http.post<NotificationResponse>(`${this.apiUrl}/cash-order`, payload);
+    sendManualNotification(payload: ManualNotificationPayload): Observable<NotificationResponse> {
+        return this.http.post<NotificationResponse>(this.apiUrl, payload);
     }
 }

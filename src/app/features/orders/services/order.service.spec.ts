@@ -8,7 +8,7 @@ import { environment } from 'src/environments/environment';
 describe('OrderService', () => {
     let service: OrderService;
     let httpMock: HttpTestingController;
-    const apiUrl = `${environment.apiUrl}/api/sales`;  // Mocks de datos
+    const apiUrl = `${environment.apiUrl}/api/orders`;  // Mocks de datos
     const mockCustomer = {
         id: '1',
         name: 'John Doe',
@@ -97,7 +97,7 @@ describe('OrderService', () => {
                 unitPrice: 15.00
             }
         ],
-        deliveryMethod: 'delivery-method-1',
+        deliveryMethodId: 'delivery-method-1',
         paymentMethodId: 'cash',
         notes: 'Entrega en horario de oficina',
         selectedAddressId: 'addr-1'
@@ -165,7 +165,7 @@ describe('OrderService', () => {
         it('should create order with minimal payload using selected address', () => {
             const minimalPayload: ICreateOrderPayload = {
                 items: [{ productId: 'prod-1', quantity: 1, unitPrice: 10.00 }],
-                deliveryMethod: 'delivery-method-1',
+                deliveryMethodId: 'delivery-method-1',
                 paymentMethodId: 'cash',
                 selectedAddressId: 'address-123'
             };

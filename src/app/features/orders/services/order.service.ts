@@ -9,7 +9,7 @@ import { ICreateOrderPayload } from '../models/ICreateOrderPayload';
 
 @Injectable({ providedIn: 'root' })
 export class OrderService {
-  private apiUrl = `${environment.apiUrl}/api/sales`; // Endpoint base
+  private apiUrl = `${environment.apiUrl}/api/orders`; // Endpoint base
 
   constructor(private http: HttpClient) { }
 
@@ -25,7 +25,15 @@ export class OrderService {
     console.log('📤 Payload keys:', Object.keys(validatedPayload));
     console.log('📤 Payload size:', JSON.stringify(validatedPayload).length, 'characters');
 
-    return this.http.post<IOrder>(this.apiUrl, validatedPayload).pipe(
+    return this.http.post<any>(this.apiUrl, validatedPayload).pipe(
+      map((response: any) => {
+        // El backend responde con { data: { ...order } }
+        if (response && response.data && response.data.id) {
+          return response.data as IOrder;
+        }
+        // Si la respuesta no tiene el formato esperado, lanzar error
+        throw new Error('La respuesta del backend no contiene la orden creada.');
+      }),
       catchError(err => {
         console.error('❌ COMPLETE Backend error details:', err);
         console.error('❌ Error status:', err.status);
@@ -221,7 +229,7 @@ export class OrderService {
     const cleanOrderId = orderId.trim();
     const url = `${this.apiUrl}/${cleanOrderId}`;
 
-    // Llama al endpoint GET /api/sales/:id
+    // Llama al endpoint GET /api/orders/:id
     return this.http.get<IOrder>(url).pipe(
       catchError(err => {
         return throwError(() => err);

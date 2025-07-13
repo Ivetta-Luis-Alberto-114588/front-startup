@@ -169,33 +169,33 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
    */
   private async sendOrderNotification(paymentData: any): Promise<void> {
     try {
-      // Preparar payload base
+      // Preparar payload base para el nuevo endpoint manual
       const basePayload = {
         orderId: this.orderId!,
         customerName: paymentData.payer?.email || 'Cliente',
         customerEmail: paymentData.payer?.email || '',
         total: paymentData.transactionAmount || 0,
         paymentMethod: paymentData.paymentMethodId || 'unknown',
+        paymentId: this.paymentId || undefined,
         items: [] // Por ahora vacío, se podría obtener del backend si es necesario
       };
 
-      if (paymentData.paymentMethod === 'cash') {
-        // Notificación para pagos en efectivo en el local
-        await this.orderNotificationService.sendCashOrderNotification(basePayload).toPromise();
-      } else {
-        // Notificación para pagos con MercadoPago u otros métodos electrónicos
-        const onlinePaymentPayload = {
-          ...basePayload,
-          paymentId: this.paymentId || undefined
-        };
-        await this.orderNotificationService.sendOrderPaidNotification(onlinePaymentPayload).toPromise();
-      }
+      const subject = paymentData.paymentMethod === 'cash'
+        ? `Nueva orden en efectivo #${this.orderId}`
+        : `Orden pagada online #${this.orderId}`;
+      const message = JSON.stringify(basePayload);
+      const payload = {
+        subject,
+        message,
+        emailTo: basePayload.customerEmail // opcional
+      };
 
+      await this.orderNotificationService.sendManualNotification(payload).toPromise();
       this.notificationSent = true;
-      console.log('Notificación de Telegram enviada exitosamente');
+      console.log('Notificación manual enviada exitosamente');
 
     } catch (error) {
-      console.error('Error al enviar notificación de Telegram:', error);
+      console.error('Error al enviar notificación manual:', error);
       // No mostramos error al usuario ya que el pago ya fue exitoso
       // La notificación es secundaria
     }

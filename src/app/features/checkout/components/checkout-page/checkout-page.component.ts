@@ -16,6 +16,8 @@ import { OrderService } from 'src/app/features/orders/services/order.service';
 import { PaymentService } from 'src/app/features/payments/services/payment.service';
 import { ICreateOrderPayload } from 'src/app/features/orders/models/ICreateOrderPayload';
 import { NotificationService } from 'src/app/shared/services/notification.service';
+import { OrderNotificationService } from 'src/app/features/orders/services/order-notification.service';
+import { TelegramNotificationService } from 'src/app/shared/services/telegram-notification.service';
 import { CheckoutStateService, ShippingAddressOption } from '../../services/checkout-state.service'; // Importa el servicio de estado
 import { DeliveryMethodService } from 'src/app/shared/services/delivery-method.service';
 import { PaymentMethodService } from 'src/app/shared/services/payment-method.service';
@@ -76,8 +78,9 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     private deliveryMethodService: DeliveryMethodService, // Nuevo servicio
     private paymentMethodService: PaymentMethodService, // Nuevo servicio para métodos de pago
     private fb: FormBuilder,
-    private router: Router
-    // private telegramNotificationService: TelegramNotificationService // Ya no necesario
+    private router: Router,
+    private orderNotificationService: OrderNotificationService,
+    private telegramNotificationService: TelegramNotificationService
   ) {
     this.cart$ = this.cartService.cart$;
     this.isAuthenticated$ = this.authService.isAuthenticated$;
@@ -255,6 +258,15 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       // Validaciones usando el nuevo servicio mejorado
       this.validateOrderBeforeCreation();
 
+      // Validación extra: asegurar que el método de pago es válido para el método de entrega
+      if (this.selectedDeliveryMethod && this.selectedPaymentMethod) {
+        const validPaymentIds = this.availablePaymentMethods.map(m => m._id);
+        if (!validPaymentIds.includes(this.selectedPaymentMethod)) {
+          this.notificationService.showWarning('El método de pago seleccionado no es válido para la forma de entrega elegida.', 'Validación');
+          return;
+        }
+      }
+
       this.isProcessingOrder = true;
       const cart = this.cartService.getCurrentCartValue();
 
@@ -386,12 +398,16 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    * Procesa la orden con manejo de errores mejorado
    */
   private processOrder(orderPayload: ICreateOrderPayload): void {
+    // Buscar el método de pago seleccionado y obtener su code
+    const selectedPayment = this.availablePaymentMethods.find(m => m._id === this.selectedPaymentMethod);
+    const selectedPaymentCode = selectedPayment?.code?.toUpperCase() || '';
+
     this.orderService.createOrder(orderPayload).pipe(
       tap((createdOrder) => {
         console.log('✅ Orden creada exitosamente con método:', this.selectedDeliveryMethod?.name);
 
         // Mostrar mensaje según el tipo de pago
-        if (this.selectedPaymentMethod === 'cash') {
+        if (selectedPaymentCode === 'CASH') {
           this.notificationService.showSuccess('¡Pedido confirmado! Puedes retirarlo y pagar en efectivo.', 'Orden Creada');
         } else {
           this.notificationService.showInfo('Procesando pago...', 'Orden Creada');
@@ -404,14 +420,19 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         }
 
         // Si es pago en efectivo, no crear preferencia de pago
-        if (this.selectedPaymentMethod === 'cash') {
+        if (selectedPaymentCode === 'CASH') {
           return of({ orderId: createdOrder.id, paymentType: 'cash' });
         }
 
         // Si es Mercado Pago, crear preferencia de pago
-        return this.paymentService.createPaymentPreference(createdOrder.id).pipe(
-          map((preference: any) => ({ orderId: createdOrder.id, paymentType: 'mercado_pago', preference }))
-        );
+        if (selectedPaymentCode === 'MERCADO_PAGO') {
+          return this.paymentService.createPaymentPreference(createdOrder.id).pipe(
+            map((preference: any) => ({ orderId: createdOrder.id, paymentType: 'mercado_pago', preference }))
+          );
+        }
+
+        // Si el método de pago no es soportado, finalizar con éxito simple
+        return of({ orderId: createdOrder.id, paymentType: selectedPaymentCode.toLowerCase() });
       }),
       catchError(err => {
         this.handleOrderError(err);
@@ -430,11 +451,11 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
             if (result.paymentType === 'cash') {
               // Para pago en efectivo, redirigir a una página de confirmación
               this.handleCashPaymentSuccess(result.orderId);
-            } else if (result.preference?.preference?.init_point) {
+            } else if (result.paymentType === 'mercado_pago' && result.preference?.preference?.init_point) {
               // Para Mercado Pago, redirigir al pago
               this.navigateToPayment(result.preference.preference.init_point);
             } else {
-              this.notificationService.showError('No se pudo inicializar el pago. Inténtalo nuevamente.', 'Error de Pago');
+              this.notificationService.showSuccess('¡Pedido confirmado!', 'Orden Creada');
             }
           },
           error: (err) => {
@@ -442,7 +463,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
             // Continuar según el tipo de pago
             if (result.paymentType === 'cash') {
               this.handleCashPaymentSuccess(result.orderId);
-            } else if (result.preference?.preference?.init_point) {
+            } else if (result.paymentType === 'mercado_pago' && result.preference?.preference?.init_point) {
               this.navigateToPayment(result.preference.preference.init_point);
             }
           }
@@ -776,22 +797,62 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    * Maneja el éxito de un pago en efectivo
    */
   private handleCashPaymentSuccess(orderId: string): void {
-    // Redirigir a una página de confirmación o mostrar mensaje de éxito
+    // Mostrar mensaje de éxito breve
     this.notificationService.showSuccess(
       '¡Pedido confirmado exitosamente! Acércate al local para retirar y pagar en efectivo.',
       'Pago en Efectivo'
     );
 
-    // Redirigir a la página de inicio o a una página de confirmación específica
-    setTimeout(() => {
-      this.router.navigate(['/'], {
-        queryParams: {
-          orderConfirmed: 'true',
-          orderId: orderId,
-          paymentType: 'cash'
-        }
-      });
-    }, 3000);
+    // Enviar notificación por mail y telegram antes de redirigir
+    // 1. Notificación por mail (OrderNotificationService)
+    // 2. Notificación por Telegram (TelegramNotificationService)
+    // Se puede mejorar con forkJoin si ambas devuelven Observable
+
+    // Obtener datos mínimos para la notificación
+    const orderIdStr = orderId?.toString();
+    // Obtener el carrito actual
+    const cart = this.cartService.getCurrentCartValue();
+    const customerName = cart?.user?.name || '';
+    const customerEmail = cart?.user?.email || '';
+    const total = cart?.total || 0;
+    const items = (cart?.items || []).map(item => ({
+      name: item.product?.name || '',
+      quantity: item.quantity,
+      price: item.unitPriceWithTax || item.priceAtTime || 0
+    }));
+
+    // Construir el payload para el nuevo endpoint manual
+    const subject = `Nueva orden en efectivo #${orderIdStr}`;
+    // Mensaje de texto plano para Telegram y email
+    const plainMessage = `🛒 Nueva orden en efectivo\nID: ${orderIdStr}\nCliente: ${customerName}\nEmail: ${customerEmail}\nTotal: $${total}\nItems: ${items.map(i => `${i.quantity} x ${i.name}`).join(', ')}`;
+    const payload = {
+      subject,
+      message: plainMessage,
+      emailTo: customerEmail,
+      telegramChatId: '736207422' // chatId por defecto según logs backend
+    };
+
+    // Enviar la notificación manual y también por Telegram directo
+    this.orderNotificationService.sendManualNotification(payload).subscribe({
+      next: () => {
+        // Además, enviar por Telegram directo (requiere token admin en localStorage)
+        this.telegramNotificationService.sendMessage(plainMessage)
+          .finally(() => {
+            setTimeout(() => {
+              this.router.navigate(['/my-orders', orderIdStr]);
+            }, 2000);
+          });
+      },
+      error: () => {
+        // Igual intentar Telegram aunque falle la manual
+        this.telegramNotificationService.sendMessage(plainMessage)
+          .finally(() => {
+            setTimeout(() => {
+              this.router.navigate(['/my-orders', orderIdStr]);
+            }, 2000);
+          });
+      }
+    });
   }
 
   // Método separado para navegación - fácil de mockear en tests

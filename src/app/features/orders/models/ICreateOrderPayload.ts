@@ -2,7 +2,7 @@ import { ICreateOrderItemPayload } from "./ICreateOrderItemPayload";
 
 /**
  * Representa la estructura completa del payload que se envía
- * desde el frontend Angular al endpoint POST /api/sales del backend
+ * desde el frontend Angular al endpoint POST /api/orders del backend
  * para crear una nueva orden.
  */
 export interface ICreateOrderPayload {
