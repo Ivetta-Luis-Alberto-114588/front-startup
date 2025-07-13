@@ -192,7 +192,6 @@ export class OrderService {
   
   private isPickupMethod(payload: ICreateOrderPayload): boolean {
     return payload.deliveryMethodCode === 'PICKUP';
-  }
   
   private validateShippingData(payload: ICreateOrderPayload): void {
     if (!payload.selectedAddressId) {
@@ -258,17 +257,10 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     if (!method.requiresAddress) {
       this.selectedAddressOption = null;
       this.selectedExistingAddressId = null;
-      this.checkoutStateService.setSelectedShippingAddress(null);
-    }
-  }
-  
   // Actualizar métodos de pago según método de entrega
   updateAvailablePaymentMethods(method: IDeliveryMethod): void {
     this.selectedPaymentMethod = null;
-    this.checkoutStateService.setSelectedPaymentMethodId(null);
-    
     this.paymentMethodService.getActivePaymentMethods().subscribe({
-      next: (allMethods) => {
         this.availablePaymentMethods = this.paymentMethodService
           .filterPaymentMethodsByDelivery(allMethods, method.code);
         

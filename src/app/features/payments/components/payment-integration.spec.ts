@@ -151,7 +151,7 @@ describe('Payment Components Integration Tests', () => {
             };
 
             const paymentVerificationServiceSpy = jasmine.createSpyObj('PaymentVerificationService', ['verifyOrderStatus']);
-            const orderNotificationServiceSpy = jasmine.createSpyObj('OrderNotificationService', ['sendOrderPaidNotification', 'sendCashOrderNotification']);
+            const orderNotificationServiceSpy = jasmine.createSpyObj('OrderNotificationService', ['sendManualNotification']);
             const cartServiceSpy = jasmine.createSpyObj('CartService', ['clearCart']);
             const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated']);
 
@@ -186,7 +186,7 @@ describe('Payment Components Integration Tests', () => {
             };
 
             mockPaymentVerificationService.verifyOrderStatus.and.returnValue(of(complexOrderStatus));
-            mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(of({
+            mockOrderNotificationService.sendManualNotification.and.returnValue(of({
                 success: true,
                 message: 'Integration test notification sent'
             }));

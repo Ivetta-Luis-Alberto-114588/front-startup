@@ -451,9 +451,15 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
             if (result.paymentType === 'cash') {
               // Para pago en efectivo, redirigir a una página de confirmación
               this.handleCashPaymentSuccess(result.orderId);
-            } else if (result.paymentType === 'mercado_pago' && result.preference?.preference?.init_point) {
-              // Para Mercado Pago, redirigir al pago
-              this.navigateToPayment(result.preference.preference.init_point);
+            } else if (result.paymentType === 'mercado_pago') {
+              if (result.preference?.preference?.init_point) {
+                // Para Mercado Pago, redirigir al pago
+                this.navigateToPayment(result.preference.preference.init_point);
+              } else {
+                // Error: no se pudo obtener el init_point para Mercado Pago
+                this.notificationService.showError('No se pudo inicializar el pago. Inténtalo nuevamente.', 'Error de Pago');
+                this.isProcessingOrder = false;
+              }
             } else {
               this.notificationService.showSuccess('¡Pedido confirmado!', 'Orden Creada');
             }
@@ -463,8 +469,13 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
             // Continuar según el tipo de pago
             if (result.paymentType === 'cash') {
               this.handleCashPaymentSuccess(result.orderId);
-            } else if (result.paymentType === 'mercado_pago' && result.preference?.preference?.init_point) {
-              this.navigateToPayment(result.preference.preference.init_point);
+            } else if (result.paymentType === 'mercado_pago') {
+              if (result.preference?.preference?.init_point) {
+                this.navigateToPayment(result.preference.preference.init_point);
+              } else {
+                this.notificationService.showError('No se pudo inicializar el pago. Inténtalo nuevamente.', 'Error de Pago');
+                this.isProcessingOrder = false;
+              }
             }
           }
         });

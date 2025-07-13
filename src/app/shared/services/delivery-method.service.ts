@@ -48,9 +48,11 @@ export class DeliveryMethodService {
         this.loadingSubject.next(true);
 
         // Crear nueva petición con cache
-        this.deliveryMethodsCache$ = this.http.get<IDeliveryMethod[]>(`${this.apiUrl}/delivery-methods`)
+        // Petición a API que devuelve objeto con deliveryMethods
+        this.deliveryMethodsCache$ = this.http.get<IDeliveryMethodsResponse>(`${this.apiUrl}/delivery-methods`)
             .pipe(
-                // No necesitamos map porque la API devuelve directamente el array
+                // Extraer array de métodos del cuerpo de respuesta
+                map(response => response.deliveryMethods),
                 tap(() => {
                     this.lastCacheTime = now;
                     this.loadingSubject.next(false);
@@ -58,7 +60,6 @@ export class DeliveryMethodService {
                 catchError(error => {
                     this.loadingSubject.next(false);
                     this.deliveryMethodsCache$ = null; // Limpiar cache en caso de error
-
                     let errorMessage = 'Error al cargar métodos de entrega';
                     if (error.status === 0) {
                         errorMessage = 'No se pudo conectar con el servidor';
@@ -67,7 +68,6 @@ export class DeliveryMethodService {
                     } else if (error.error?.message) {
                         errorMessage = error.error.message;
                     }
-
                     this.errorSubject.next(errorMessage);
                     return throwError(() => error);
                 }),

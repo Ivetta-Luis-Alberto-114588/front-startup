@@ -61,7 +61,6 @@ graph TD
     J -->|Efectivo| K[Confirmación Local]
     J -->|MercadoPago| L[Redirección Pago]
     K --> M[Pedido Completado]
-    L --> M
 ```
 
 ---
@@ -127,17 +126,10 @@ flowchart TD
     E --> G[Pago al Retiro]
     F --> H[Pago Inmediato]
   
-    G --> I[Estado: PENDING]
-    H --> J[Estado: AWAITING_PAYMENT]
-  
-    I --> K[Confirmación Manual]
     J --> L[Webhook MercadoPago]
   
     K --> M[Estado: CONFIRMED]
-    L --> M
-```
 
----
 
 ## 4. Implementación Frontend
 

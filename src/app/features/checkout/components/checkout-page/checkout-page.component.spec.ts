@@ -6,6 +6,7 @@ import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { environment } from 'src/environments/environment';
+import { ToastrModule } from 'ngx-toastr';
 
 import { CheckoutPageComponent } from './checkout-page.component';
 import { AuthService } from 'src/app/auth/services/auth.service';
@@ -18,6 +19,9 @@ import { PaymentService } from 'src/app/features/payments/services/payment.servi
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { CheckoutStateService } from '../../services/checkout-state.service';
 import { DeliveryMethodService } from 'src/app/shared/services/delivery-method.service';
+import { PaymentMethodService } from 'src/app/shared/services/payment-method.service';
+import { OrderNotificationService } from 'src/app/features/orders/services/order-notification.service';
+import { TelegramNotificationService } from 'src/app/shared/services/telegram-notification.service';
 import { ICart } from 'src/app/features/cart/models/icart';
 import { ICartItem } from 'src/app/features/cart/models/icart-item';
 import { IAddress } from 'src/app/features/customers/models/iaddress';
@@ -30,6 +34,7 @@ import { ICreatePaymentResponse } from 'src/app/features/orders/models/ICreatePa
 import { IPayment } from 'src/app/features/orders/models/IPayment';
 import { IPaymentPreferenceInfo } from 'src/app/features/orders/models/IPaymentPreferenceInfo';
 import { IDeliveryMethod } from 'src/app/shared/models/idelivery-method';
+import { IPaymentMethod } from 'src/app/shared/models/ipayment-method';
 
 describe('CheckoutPageComponent', () => {
     let component: CheckoutPageComponent;
@@ -44,8 +49,11 @@ describe('CheckoutPageComponent', () => {
     let notificationService: jasmine.SpyObj<NotificationService>;
     let checkoutStateService: jasmine.SpyObj<CheckoutStateService>;
     let deliveryMethodService: jasmine.SpyObj<DeliveryMethodService>;
+    let paymentMethodService: jasmine.SpyObj<PaymentMethodService>;
+    let orderNotificationService: jasmine.SpyObj<OrderNotificationService>;
+    let telegramNotificationService: jasmine.SpyObj<TelegramNotificationService>;
     let router: jasmine.SpyObj<Router>;
-    let httpMock: HttpTestingController;  // Mock for window.location.href in specific tests that need it
+    let httpMock: HttpTestingController;
 
     // Mocks de datos
     const mockUser = {
@@ -148,6 +156,32 @@ describe('CheckoutPageComponent', () => {
             price: 0.00,
             requiresAddress: false,
             isActive: true
+        }
+    ];
+
+    // Mock payment methods
+    const mockPaymentMethods: IPaymentMethod[] = [
+        {
+            _id: 'payment-method-1',
+            code: 'CASH',
+            name: 'Efectivo',
+            description: 'Pago en efectivo al momento de la entrega o retiro',
+            isActive: true,
+            requiresOnlinePayment: false,
+            defaultOrderStatusId: 'status-1',
+            createdAt: '2023-01-01',
+            updatedAt: '2023-01-01'
+        },
+        {
+            _id: 'payment-method-2',
+            code: 'MERCADO_PAGO',
+            name: 'Mercado Pago',
+            description: 'Pago online con Mercado Pago',
+            isActive: true,
+            requiresOnlinePayment: true,
+            defaultOrderStatusId: 'status-2',
+            createdAt: '2023-01-01',
+            updatedAt: '2023-01-01'
         }
     ];
 
@@ -263,14 +297,30 @@ describe('CheckoutPageComponent', () => {
             'setSelectedDeliveryMethod',
             'getSelectedDeliveryMethod',
             'setAvailableDeliveryMethods',
-            'shouldShowAddressSection$',
-            'isCheckoutValid$'
-        ]);
+            'setSelectedPaymentMethodId'
+        ], {
+            shouldShowAddressSection$: of(true),
+            isCheckoutValid$: of(true)
+        });
 
         const deliveryMethodServiceSpy = jasmine.createSpyObj('DeliveryMethodService', [
             'getActiveDeliveryMethods',
             'getDeliveryMethodById',
             'requiresAddress'
+        ]);
+
+        const paymentMethodServiceSpy = jasmine.createSpyObj('PaymentMethodService', [
+            'getActivePaymentMethods',
+            'filterPaymentMethodsByDelivery'
+        ]);
+
+        const orderNotificationServiceSpy = jasmine.createSpyObj('OrderNotificationService', [
+            'sendManualNotification'
+        ]);
+
+        const telegramNotificationServiceSpy = jasmine.createSpyObj('TelegramNotificationService', [
+            'sendMessage',
+            'sendMessageObservable'
         ]);
 
         const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
@@ -290,11 +340,20 @@ describe('CheckoutPageComponent', () => {
         deliveryMethodServiceSpy.getDeliveryMethodById.and.returnValue(of(mockDeliveryMethods[0]));
         deliveryMethodServiceSpy.requiresAddress.and.returnValue(of(true));
 
-        // Configure checkout state service observables
-        checkoutStateServiceSpy.shouldShowAddressSection$ = of(true);
-        checkoutStateServiceSpy.isCheckoutValid$ = of(true); await TestBed.configureTestingModule({
+        // Configure payment method service
+        paymentMethodServiceSpy.getActivePaymentMethods.and.returnValue(of(mockPaymentMethods));
+        paymentMethodServiceSpy.filterPaymentMethodsByDelivery.and.returnValue(mockPaymentMethods);
+
+        // Configure notification services
+        orderNotificationServiceSpy.sendManualNotification.and.returnValue(of({ success: true, message: 'Sent' }));
+        telegramNotificationServiceSpy.sendMessage.and.returnValue(Promise.resolve());
+        telegramNotificationServiceSpy.sendMessageObservable.and.returnValue(of({ success: true })); await TestBed.configureTestingModule({
             declarations: [CheckoutPageComponent],
-            imports: [ReactiveFormsModule, HttpClientTestingModule],
+            imports: [
+                ReactiveFormsModule,
+                HttpClientTestingModule,
+                ToastrModule.forRoot()
+            ],
             providers: [
                 FormBuilder,
                 { provide: AuthService, useValue: authServiceSpy },
@@ -307,6 +366,9 @@ describe('CheckoutPageComponent', () => {
                 { provide: NotificationService, useValue: notificationServiceSpy },
                 { provide: CheckoutStateService, useValue: checkoutStateServiceSpy },
                 { provide: DeliveryMethodService, useValue: deliveryMethodServiceSpy },
+                { provide: PaymentMethodService, useValue: paymentMethodServiceSpy },
+                { provide: OrderNotificationService, useValue: orderNotificationServiceSpy },
+                { provide: TelegramNotificationService, useValue: telegramNotificationServiceSpy },
                 { provide: Router, useValue: routerSpy }
             ]
         }).compileComponents();
@@ -318,10 +380,14 @@ describe('CheckoutPageComponent', () => {
         addressService = TestBed.inject(AddressService) as jasmine.SpyObj<AddressService>;
         cityService = TestBed.inject(CityService) as jasmine.SpyObj<CityService>;
         neighborhoodService = TestBed.inject(NeighborhoodService) as jasmine.SpyObj<NeighborhoodService>;
-        orderService = TestBed.inject(OrderService) as jasmine.SpyObj<OrderService>; paymentService = TestBed.inject(PaymentService) as jasmine.SpyObj<PaymentService>;
+        orderService = TestBed.inject(OrderService) as jasmine.SpyObj<OrderService>;
+        paymentService = TestBed.inject(PaymentService) as jasmine.SpyObj<PaymentService>;
         notificationService = TestBed.inject(NotificationService) as jasmine.SpyObj<NotificationService>;
         checkoutStateService = TestBed.inject(CheckoutStateService) as jasmine.SpyObj<CheckoutStateService>;
         deliveryMethodService = TestBed.inject(DeliveryMethodService) as jasmine.SpyObj<DeliveryMethodService>;
+        paymentMethodService = TestBed.inject(PaymentMethodService) as jasmine.SpyObj<PaymentMethodService>;
+        orderNotificationService = TestBed.inject(OrderNotificationService) as jasmine.SpyObj<OrderNotificationService>;
+        telegramNotificationService = TestBed.inject(TelegramNotificationService) as jasmine.SpyObj<TelegramNotificationService>;
         router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
         httpMock = TestBed.inject(HttpTestingController);
 
@@ -340,7 +406,9 @@ describe('CheckoutPageComponent', () => {
     });
     beforeEach(() => {
         // Reset form
-        component.newAddressForm.reset();
+        if (component.newAddressForm) {
+            component.newAddressForm.reset();
+        }
 
         // Reset spy calls
         notificationService.showWarning.calls.reset();
@@ -357,10 +425,17 @@ describe('CheckoutPageComponent', () => {
         deliveryMethodService.getActiveDeliveryMethods.calls.reset();
         deliveryMethodService.getDeliveryMethodById.calls.reset();
         deliveryMethodService.requiresAddress.calls.reset();
+        paymentMethodService.getActivePaymentMethods.calls.reset();
+        paymentMethodService.filterPaymentMethodsByDelivery.calls.reset();
+        orderNotificationService.sendManualNotification.calls.reset();
+        telegramNotificationService.sendMessage.calls.reset();
+        telegramNotificationService.sendMessageObservable.calls.reset();
 
-        // Set default delivery method for all tests
+        // Set default delivery method and payment methods for all tests
         component.selectedDeliveryMethod = mockDeliveryMethods[0];
         component.availableDeliveryMethods = mockDeliveryMethods;
+        component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+        component.availablePaymentMethods = mockPaymentMethods;
     });
 
     describe('Component Initialization', () => {
@@ -780,11 +855,44 @@ describe('CheckoutPageComponent', () => {
 
         it('should prevent order confirmation with invalid address', () => {
             component.selectedAddressOption = null;
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0]; // Requires address
+            component.availablePaymentMethods = mockPaymentMethods;
 
             component.confirmOrder();
 
             expect(notificationService.showWarning).toHaveBeenCalledWith(
                 'Por favor, selecciona o completa una dirección de envío válida.'
+            );
+            expect(orderService.createOrder).not.toHaveBeenCalled();
+        });
+
+        it('should prevent order confirmation without payment method', () => {
+            component.selectedAddressOption = 'existing';
+            component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = null;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
+
+            component.confirmOrder();
+
+            expect(notificationService.showWarning).toHaveBeenCalledWith(
+                'Por favor, selecciona un método de pago.'
+            );
+            expect(orderService.createOrder).not.toHaveBeenCalled();
+        });
+
+        it('should prevent order confirmation without delivery method', () => {
+            component.selectedAddressOption = 'existing';
+            component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = null;
+            component.availablePaymentMethods = mockPaymentMethods;
+
+            component.confirmOrder();
+
+            expect(notificationService.showWarning).toHaveBeenCalledWith(
+                'Por favor, selecciona un método de entrega.'
             );
             expect(orderService.createOrder).not.toHaveBeenCalled();
         });
@@ -803,6 +911,9 @@ describe('CheckoutPageComponent', () => {
             cartService.getCurrentCartValue.and.returnValue(mockEmptyCart);
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
 
             component.confirmOrder();
 
@@ -814,6 +925,9 @@ describe('CheckoutPageComponent', () => {
         it('should create order with existing address', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
 
             component.confirmOrder();
 
@@ -825,12 +939,17 @@ describe('CheckoutPageComponent', () => {
                         unitPrice: mockCartItem.unitPriceWithTax
                     })
                 ]),
-                deliveryMethod: jasmine.any(String),
+                deliveryMethodId: mockDeliveryMethods[0].id,
+                paymentMethodId: mockPaymentMethods[0]._id,
                 notes: jasmine.any(String),
+                deliveryMethodCode: mockDeliveryMethods[0].code,
                 selectedAddressId: 'addr-1'
             });
         }); it('should create order with new address', () => {
             component.selectedAddressOption = 'new';
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
 
             // Enable neighborhood control first (it might be disabled by default)
             component.newAddressForm.get('neighborhoodId')?.enable();
@@ -858,8 +977,10 @@ describe('CheckoutPageComponent', () => {
                         unitPrice: mockCartItem.unitPriceWithTax
                     })
                 ]),
-                deliveryMethod: jasmine.any(String),
+                deliveryMethodId: mockDeliveryMethods[0].id,
+                paymentMethodId: mockPaymentMethods[0]._id,
                 notes: jasmine.any(String),
+                deliveryMethodCode: mockDeliveryMethods[0].code,
                 shippingRecipientName: 'John Doe',
                 shippingPhone: '+1234567890',
                 shippingStreetAddress: '123 Main St',
@@ -872,6 +993,9 @@ describe('CheckoutPageComponent', () => {
         it('should create payment preference after order creation', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[1]._id; // Mercado Pago
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
 
             component.confirmOrder();
 
@@ -879,6 +1003,9 @@ describe('CheckoutPageComponent', () => {
         }); it('should redirect to Mercado Pago on successful payment preference creation', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[1]._id; // Mercado Pago
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
 
             component.confirmOrder();
 
@@ -890,6 +1017,9 @@ describe('CheckoutPageComponent', () => {
         it('should handle order creation error', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
             orderService.createOrder.and.returnValue(throwError(() => ({
                 error: { error: 'Order creation failed' }
             })));
@@ -903,6 +1033,9 @@ describe('CheckoutPageComponent', () => {
         it('should handle payment preference creation error', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[1]._id; // Mercado Pago
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
             paymentService.createPaymentPreference.and.returnValue(throwError(() => new Error('Payment error')));
 
             component.confirmOrder();
@@ -912,6 +1045,9 @@ describe('CheckoutPageComponent', () => {
         }); it('should handle missing payment preference init_point', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[1]._id; // Mercado Pago
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
             const invalidPaymentResponse: ICreatePaymentResponse = {
                 payment: mockPayment,
                 preference: { id: '', init_point: '', sandbox_init_point: '' }
@@ -927,6 +1063,9 @@ describe('CheckoutPageComponent', () => {
         }); it('should handle order creation without ID', () => {
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
             const orderWithoutId = { ...mockOrder, id: '' };
             orderService.createOrder.and.returnValue(of(orderWithoutId));
 
@@ -943,6 +1082,9 @@ describe('CheckoutPageComponent', () => {
             cartService.getCurrentCartValue.and.returnValue(null);
             component.selectedAddressOption = 'existing';
             component.selectedExistingAddressId = 'addr-1';
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
 
             component.confirmOrder();
 
@@ -952,6 +1094,9 @@ describe('CheckoutPageComponent', () => {
 
         it('should mark form as touched when address is invalid', () => {
             component.selectedAddressOption = 'new';
+            component.selectedPaymentMethod = mockPaymentMethods[0]._id;
+            component.selectedDeliveryMethod = mockDeliveryMethods[0];
+            component.availablePaymentMethods = mockPaymentMethods;
             component.newAddressForm.reset(); // Make form invalid
             spyOn(component.newAddressForm, 'markAllAsTouched');
 
@@ -1013,5 +1158,109 @@ describe('CheckoutPageComponent', () => {
 
             expect(component.isProcessingOrder).toBe(false); // Finalized after observable completes
         });
+    });
+});
+
+
+describe('CheckoutPageComponent - Notificaciones de orden', () => {
+    let component: CheckoutPageComponent;
+    let fixture: ComponentFixture<CheckoutPageComponent>;
+    let orderNotificationService: jasmine.SpyObj<OrderNotificationService>;
+    let telegramNotificationService: jasmine.SpyObj<TelegramNotificationService>;
+    let cartService: jasmine.SpyObj<CartService>;
+    let orderService: jasmine.SpyObj<OrderService>;
+    let notificationService: jasmine.SpyObj<NotificationService>;
+    let paymentMethodService: jasmine.SpyObj<PaymentMethodService>;
+    let deliveryMethodService: jasmine.SpyObj<DeliveryMethodService>;
+
+    beforeEach(async () => {
+        const orderNotificationServiceSpy = jasmine.createSpyObj('OrderNotificationService', ['sendManualNotification']);
+        const telegramNotificationServiceSpy = jasmine.createSpyObj('TelegramNotificationService', ['sendMessage', 'sendMessageObservable']);
+        const cartServiceSpy = jasmine.createSpyObj('CartService', ['getCurrentCartValue', 'clearCart']);
+        const orderServiceSpy = jasmine.createSpyObj('OrderService', ['createOrder']);
+        const notificationServiceSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError', 'showWarning', 'showInfo']);
+        const paymentMethodServiceSpy = jasmine.createSpyObj('PaymentMethodService', ['getActivePaymentMethods', 'filterPaymentMethodsByDelivery']);
+        const deliveryMethodServiceSpy = jasmine.createSpyObj('DeliveryMethodService', ['getActiveDeliveryMethods']);
+
+        await TestBed.configureTestingModule({
+            declarations: [CheckoutPageComponent],
+            providers: [
+                FormBuilder,
+                { provide: OrderNotificationService, useValue: orderNotificationServiceSpy },
+                { provide: TelegramNotificationService, useValue: telegramNotificationServiceSpy },
+                { provide: CartService, useValue: cartServiceSpy },
+                { provide: OrderService, useValue: orderServiceSpy },
+                { provide: NotificationService, useValue: notificationServiceSpy },
+                { provide: PaymentMethodService, useValue: paymentMethodServiceSpy },
+                { provide: DeliveryMethodService, useValue: deliveryMethodServiceSpy },
+                { provide: AuthService, useValue: jasmine.createSpyObj('AuthService', [], { isAuthenticated$: of(true) }) },
+                { provide: AddressService, useValue: jasmine.createSpyObj('AddressService', ['getAddresses']) },
+                { provide: CityService, useValue: jasmine.createSpyObj('CityService', ['getCities']) },
+                { provide: NeighborhoodService, useValue: jasmine.createSpyObj('NeighborhoodService', ['getNeighborhoodsByCity']) },
+                { provide: PaymentService, useValue: jasmine.createSpyObj('PaymentService', ['createPaymentPreference']) },
+                { provide: CheckoutStateService, useValue: jasmine.createSpyObj('CheckoutStateService', ['setSelectedShippingAddress', 'setSelectedDeliveryMethod', 'setAvailableDeliveryMethods', 'setSelectedPaymentMethodId'], { shouldShowAddressSection$: of(true), isCheckoutValid$: of(true) }) },
+                { provide: Router, useValue: jasmine.createSpyObj('Router', ['navigate']) }
+            ],
+            imports: [ReactiveFormsModule, HttpClientTestingModule, ToastrModule.forRoot()]
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(CheckoutPageComponent);
+        component = fixture.componentInstance;
+        orderNotificationService = TestBed.inject(OrderNotificationService) as jasmine.SpyObj<OrderNotificationService>;
+        telegramNotificationService = TestBed.inject(TelegramNotificationService) as jasmine.SpyObj<TelegramNotificationService>;
+        cartService = TestBed.inject(CartService) as jasmine.SpyObj<CartService>;
+        orderService = TestBed.inject(OrderService) as jasmine.SpyObj<OrderService>;
+        notificationService = TestBed.inject(NotificationService) as jasmine.SpyObj<NotificationService>;
+        paymentMethodService = TestBed.inject(PaymentMethodService) as jasmine.SpyObj<PaymentMethodService>;
+        deliveryMethodService = TestBed.inject(DeliveryMethodService) as jasmine.SpyObj<DeliveryMethodService>;
+
+        // Setup default mocks
+        deliveryMethodService.getActiveDeliveryMethods.and.returnValue(of([{
+            id: '1', code: 'PICKUP', name: 'Retiro', requiresAddress: false, isActive: true, price: 0, description: 'Retiro en local'
+        }]));
+        paymentMethodService.getActivePaymentMethods.and.returnValue(of([{
+            _id: 'CASH', code: 'CASH', name: 'Efectivo', description: '', isActive: true, requiresOnlinePayment: false,
+            defaultOrderStatusId: '', createdAt: '', updatedAt: ''
+        }]));
+        paymentMethodService.filterPaymentMethodsByDelivery.and.returnValue([{
+            _id: 'CASH', code: 'CASH', name: 'Efectivo', description: '', isActive: true, requiresOnlinePayment: false,
+            defaultOrderStatusId: '', createdAt: '', updatedAt: ''
+        }]);
+    });
+
+    it('debe llamar a ambos servicios de notificación tras crear una orden', () => {
+        // Arrange
+        const mockOrderId = 'order-123';
+        const mockCart = {
+            items: [{
+                product: { id: 'prod-1', name: 'Test Product' },
+                quantity: 1,
+                priceAtTime: 100,
+                taxRate: 10,
+                unitPriceWithTax: 110,
+                subtotalWithTax: 110
+            }],
+            user: { name: 'Test User', email: 'test@example.com' },
+            total: 110
+        };
+
+        orderService.createOrder.and.returnValue(of({ id: mockOrderId } as any));
+        cartService.getCurrentCartValue.and.returnValue(mockCart as any);
+        cartService.clearCart.and.returnValue(of({} as any));
+        orderNotificationService.sendManualNotification.and.returnValue(of({ success: true, message: 'Notification sent' }));
+        telegramNotificationService.sendMessage.and.returnValue(Promise.resolve({ success: true, message: 'Sent' }));
+        telegramNotificationService.sendMessageObservable.and.returnValue(of({ success: true, message: 'Telegram sent' }));
+
+        // Setup component with required data
+        component.selectedDeliveryMethod = { id: '1', code: 'PICKUP', name: 'Retiro', requiresAddress: false, isActive: true, price: 0, description: 'Retiro en local' };
+        component.selectedPaymentMethod = 'CASH';
+        component.availablePaymentMethods = [{ _id: 'CASH', code: 'CASH', name: 'Efectivo', description: '', isActive: true, requiresOnlinePayment: false, defaultOrderStatusId: '', createdAt: '', updatedAt: '' }];
+
+        // Act
+        component.confirmOrder();
+
+        // Assert
+        expect(orderNotificationService.sendManualNotification).toHaveBeenCalled();
+        expect(telegramNotificationService.sendMessage).toHaveBeenCalled();
     });
 });

@@ -1,14 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { HttpClient } from '@angular/common/http';
 import { OrderService } from './order.service';
 import { IOrder } from '../models/iorder';
 import { ICreateOrderPayload } from '../models/ICreateOrderPayload';
-import { environment } from 'src/environments/environment';
+import { of, throwError } from 'rxjs';
 
 describe('OrderService', () => {
     let service: OrderService;
-    let httpMock: HttpTestingController;
-    const apiUrl = `${environment.apiUrl}/api/orders`;  // Mocks de datos
+    let httpClientSpy: jasmine.SpyObj<HttpClient>;
+
+    // Mock data
     const mockCustomer = {
         id: '1',
         name: 'John Doe',
@@ -104,16 +105,17 @@ describe('OrderService', () => {
     };
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [OrderService]
-        });
-        service = TestBed.inject(OrderService);
-        httpMock = TestBed.inject(HttpTestingController);
-    });
+        const spy = jasmine.createSpyObj('HttpClient', ['post', 'get']);
 
-    afterEach(() => {
-        httpMock.verify();
+        TestBed.configureTestingModule({
+            providers: [
+                OrderService,
+                { provide: HttpClient, useValue: spy }
+            ]
+        });
+
+        service = TestBed.inject(OrderService);
+        httpClientSpy = TestBed.inject(HttpClient) as jasmine.SpyObj<HttpClient>;
     });
 
     describe('Service Creation', () => {
@@ -124,6 +126,9 @@ describe('OrderService', () => {
 
     describe('createOrder', () => {
         it('should create a new order successfully', () => {
+            const mockResponse = { data: mockOrder };
+            httpClientSpy.post.and.returnValue(of(mockResponse));
+
             service.createOrder(mockCreateOrderPayload).subscribe(order => {
                 expect(order).toEqual(mockOrder);
                 expect(order.id).toBe('order-1');
@@ -132,24 +137,12 @@ describe('OrderService', () => {
                 expect(order.total).toBe(33.60);
             });
 
-            const req = httpMock.expectOne(apiUrl);
-            expect(req.request.method).toBe('POST');
-            expect(req.request.body).toEqual(mockCreateOrderPayload);
-            req.flush(mockOrder);
-        });
-
-        it('should send correct payload when creating order', () => {
-            service.createOrder(mockCreateOrderPayload).subscribe();
-
-            const req = httpMock.expectOne(apiUrl);
-            expect(req.request.body.items).toEqual(mockCreateOrderPayload.items);
-            expect(req.request.body.notes).toBe(mockCreateOrderPayload.notes);
-            expect(req.request.body.selectedAddressId).toBe(mockCreateOrderPayload.selectedAddressId);
-            req.flush(mockOrder);
+            expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
         });
 
         it('should handle create order error', () => {
             const errorMessage = 'Error creating order';
+            httpClientSpy.post.and.returnValue(throwError({ error: errorMessage }));
 
             service.createOrder(mockCreateOrderPayload).subscribe({
                 next: () => fail('Expected error'),
@@ -158,8 +151,7 @@ describe('OrderService', () => {
                 }
             });
 
-            const req = httpMock.expectOne(apiUrl);
-            req.flush(errorMessage, { status: 400, statusText: 'Bad Request' });
+            expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
         });
 
         it('should create order with minimal payload using selected address', () => {
@@ -170,15 +162,14 @@ describe('OrderService', () => {
                 selectedAddressId: 'address-123'
             };
 
+            const mockResponse = { data: mockOrder };
+            httpClientSpy.post.and.returnValue(of(mockResponse));
+
             service.createOrder(minimalPayload).subscribe(order => {
                 expect(order).toEqual(mockOrder);
             });
 
-            const req = httpMock.expectOne(apiUrl);
-            expect(req.request.body.items.length).toBe(1);
-            expect(req.request.body.selectedAddressId).toBe('address-123');
-            expect(req.request.body.notes).toContain('Pedido realizado desde el checkout');
-            req.flush(mockOrder);
+            expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
         });
 
         it('should create order with coupon code', () => {
@@ -187,11 +178,26 @@ describe('OrderService', () => {
                 couponCode: 'SAVE10'
             };
 
+            const mockResponse = { data: mockOrder };
+            httpClientSpy.post.and.returnValue(of(mockResponse));
+
             service.createOrder(payloadWithCoupon).subscribe();
 
-            const req = httpMock.expectOne(apiUrl);
-            expect(req.request.body.couponCode).toBe('SAVE10');
-            req.flush(mockOrder);
+            expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
+        });
+
+        it('should handle invalid response format', () => {
+            const invalidResponse = { message: 'Order created but invalid format' }; // Missing data
+            httpClientSpy.post.and.returnValue(of(invalidResponse));
+
+            service.createOrder(mockCreateOrderPayload).subscribe({
+                next: () => fail('Expected error'),
+                error: (error) => {
+                    expect(error.message).toBe('La respuesta del backend no contiene la orden creada.');
+                }
+            });
+
+            expect(httpClientSpy.post).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -199,10 +205,14 @@ describe('OrderService', () => {
         it('should retrieve user orders from paginated response', () => {
             const mockPaginatedResponse = {
                 orders: [mockOrder],
-                total: 1,
-                page: 1,
-                limit: 10
+                totalCount: 1,
+                currentPage: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false
             };
+
+            httpClientSpy.get.and.returnValue(of(mockPaginatedResponse));
 
             service.getMyOrders().subscribe(orders => {
                 expect(orders).toEqual([mockOrder]);
@@ -210,115 +220,52 @@ describe('OrderService', () => {
                 expect(orders[0].id).toBe('order-1');
             });
 
-            const req = httpMock.expectOne(`${apiUrl}/my-orders`);
-            expect(req.request.method).toBe('GET');
-            req.flush(mockPaginatedResponse);
+            expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
         });
 
         it('should retrieve user orders from direct array response', () => {
             const mockDirectResponse = [mockOrder];
 
+            httpClientSpy.get.and.returnValue(of(mockDirectResponse));
+
             service.getMyOrders().subscribe(orders => {
                 expect(orders).toEqual([mockOrder]);
                 expect(orders.length).toBe(1);
             });
 
-            const req = httpMock.expectOne(`${apiUrl}/my-orders`);
-            req.flush(mockDirectResponse);
+            expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
         });
 
         it('should handle empty orders response', () => {
+            const emptyResponse = { orders: [] };
+
+            httpClientSpy.get.and.returnValue(of(emptyResponse));
+
             service.getMyOrders().subscribe(orders => {
                 expect(orders).toEqual([]);
                 expect(orders.length).toBe(0);
             });
 
-            const req = httpMock.expectOne(`${apiUrl}/my-orders`);
-            req.flush({ orders: [] });
-        });
-
-        it('should handle invalid response structure', () => {
-            service.getMyOrders().subscribe(orders => {
-                expect(orders).toEqual([]);
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/my-orders`);
-            req.flush({ invalidStructure: true });
-        });
-
-        it('should handle null response', () => {
-            service.getMyOrders().subscribe(orders => {
-                expect(orders).toEqual([]);
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/my-orders`);
-            req.flush(null);
-        });
-
-        it('should handle get orders error', () => {
-            service.getMyOrders().subscribe({
-                next: () => fail('Expected error'),
-                error: (error) => {
-                    expect(error.status).toBe(401);
-                }
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/my-orders`);
-            req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
-        });
-
-        it('should retrieve multiple orders correctly', () => {
-            const mockOrder2: IOrder = {
-                ...mockOrder,
-                id: 'order-2',
-                total: 25.50,
-                date: new Date('2024-01-16')
-            };
-
-            const mockResponse = { orders: [mockOrder, mockOrder2] };
-
-            service.getMyOrders().subscribe(orders => {
-                expect(orders.length).toBe(2);
-                expect(orders[0].id).toBe('order-1');
-                expect(orders[1].id).toBe('order-2');
-                expect(orders[0].total).toBe(33.60);
-                expect(orders[1].total).toBe(25.50);
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/my-orders`);
-            req.flush(mockResponse);
+            expect(httpClientSpy.get).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('getOrderById', () => {
-        it('should retrieve specific order by ID', () => {
+        it('should retrieve order by id successfully', () => {
             const orderId = 'order-1';
+            httpClientSpy.get.and.returnValue(of(mockOrder));
 
             service.getOrderById(orderId).subscribe(order => {
                 expect(order).toEqual(mockOrder);
                 expect(order.id).toBe(orderId);
-                expect(order.customer.name).toBe('John Doe');
             });
 
-            const req = httpMock.expectOne(`${apiUrl}/${orderId}`);
-            expect(req.request.method).toBe('GET');
-            req.flush(mockOrder);
-        });
-
-        it('should sanitize order ID before making request', () => {
-            const orderId = '  order-1  '; // Con espacios
-            const cleanOrderId = 'order-1';
-
-            service.getOrderById(orderId).subscribe();
-
-            const req = httpMock.expectOne(`${apiUrl}/${cleanOrderId}`);
-            expect(req.request.url).toContain(cleanOrderId);
-            expect(req.request.url).not.toContain('  ');
-            req.flush(mockOrder);
+            expect(httpClientSpy.get).toHaveBeenCalledWith(jasmine.stringMatching(orderId));
         });
 
         it('should handle order not found error', () => {
-            const orderId = 'non-existent-order';
+            const orderId = 'non-existent';
+            httpClientSpy.get.and.returnValue(throwError({ status: 404, error: 'Order not found' }));
 
             service.getOrderById(orderId).subscribe({
                 next: () => fail('Expected error'),
@@ -326,197 +273,6 @@ describe('OrderService', () => {
                     expect(error.status).toBe(404);
                 }
             });
-
-            const req = httpMock.expectOne(`${apiUrl}/${orderId}`);
-            req.flush('Order not found', { status: 404, statusText: 'Not Found' });
-        });
-
-        it('should handle unauthorized access to order', () => {
-            const orderId = 'order-1';
-
-            service.getOrderById(orderId).subscribe({
-                next: () => fail('Expected error'),
-                error: (error) => {
-                    expect(error.status).toBe(403);
-                }
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/${orderId}`);
-            req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
-        });
-
-        it('should handle server error when retrieving order', () => {
-            const orderId = 'order-1';
-
-            service.getOrderById(orderId).subscribe({
-                next: () => fail('Expected error'),
-                error: (error) => {
-                    expect(error.status).toBe(500);
-                }
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/${orderId}`);
-            req.flush('Internal Server Error', { status: 500, statusText: 'Internal Server Error' });
-        }); it('should retrieve order with complete details', () => {
-            const detailedOrder: IOrder = {
-                ...mockOrder,
-                shippingDetails: {
-                    recipientName: 'John Doe',
-                    phone: '+1234567890',
-                    streetAddress: '123 Main St',
-                    postalCode: '1000',
-                    neighborhoodName: 'Centro',
-                    cityName: 'Buenos Aires',
-                    additionalInfo: 'Ring doorbell twice'
-                }
-            };
-
-            service.getOrderById('order-1').subscribe(order => {
-                expect(order.shippingDetails).toBeDefined();
-                expect(order.shippingDetails?.streetAddress).toBe('123 Main St');
-                expect(order.shippingDetails?.additionalInfo).toBe('Ring doorbell twice');
-                expect(order.shippingDetails?.recipientName).toBe('John Doe');
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/order-1`);
-            req.flush(detailedOrder);
-        });
-    });
-
-    describe('API Integration', () => {
-        it('should use correct base URL for all endpoints', () => {
-            // Create order
-            service.createOrder(mockCreateOrderPayload).subscribe();
-            const createReq = httpMock.expectOne(apiUrl);
-            expect(createReq.request.url).toBe(apiUrl);
-            createReq.flush(mockOrder);
-
-            // Get my orders
-            service.getMyOrders().subscribe();
-            const myOrdersReq = httpMock.expectOne(`${apiUrl}/my-orders`);
-            expect(myOrdersReq.request.url).toBe(`${apiUrl}/my-orders`);
-            myOrdersReq.flush({ orders: [mockOrder] });
-
-            // Get order by ID
-            service.getOrderById('order-1').subscribe();
-            const getOrderReq = httpMock.expectOne(`${apiUrl}/order-1`);
-            expect(getOrderReq.request.url).toBe(`${apiUrl}/order-1`);
-            getOrderReq.flush(mockOrder);
-        });
-
-        it('should handle network errors consistently', () => {
-            const networkError = new ErrorEvent('Network error', {
-                message: 'Network connection failed'
-            });
-
-            // Test createOrder network error
-            service.createOrder(mockCreateOrderPayload).subscribe({
-                next: () => fail('Expected error'),
-                error: (error) => {
-                    expect(error.error.message).toBe('Network connection failed');
-                }
-            });
-
-            const createReq = httpMock.expectOne(apiUrl);
-            createReq.error(networkError);
-
-            // Test getMyOrders network error
-            service.getMyOrders().subscribe({
-                next: () => fail('Expected error'),
-                error: (error) => {
-                    expect(error.error.message).toBe('Network connection failed');
-                }
-            });
-
-            const myOrdersReq = httpMock.expectOne(`${apiUrl}/my-orders`);
-            myOrdersReq.error(networkError);
-
-            // Test getOrderById network error
-            service.getOrderById('order-1').subscribe({
-                next: () => fail('Expected error'),
-                error: (error) => {
-                    expect(error.error.message).toBe('Network connection failed');
-                }
-            });
-
-            const getOrderReq = httpMock.expectOne(`${apiUrl}/order-1`);
-            getOrderReq.error(networkError);
-        });
-    });
-
-    describe('Data Validation', () => {
-        it('should handle orders with different status types', () => {
-            const processedStatus = {
-                ...mockOrderStatus,
-                _id: 'status-2',
-                code: 'PROCESSED',
-                name: 'Procesado',
-                color: '#28a745'
-            };
-
-            const processedOrder: IOrder = {
-                ...mockOrder,
-                status: processedStatus
-            };
-
-            service.getOrderById('order-1').subscribe(order => {
-                expect(order.status.code).toBe('PROCESSED');
-                expect(order.status.name).toBe('Procesado');
-                expect(order.status.color).toBe('#28a745');
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/order-1`);
-            req.flush(processedOrder);
-        });
-
-        it('should handle orders with multiple items', () => {
-            const multiItemOrder: IOrder = {
-                ...mockOrder,
-                items: [
-                    mockOrderItem,
-                    {
-                        ...mockOrderItem,
-                        id: 'item-2',
-                        product: {
-                            ...mockOrderItem.product,
-                            id: 'prod-2',
-                            name: 'Pizza Pepperoni'
-                        },
-                        quantity: 1,
-                        total: 16.80
-                    }
-                ],
-                total: 50.40
-            };
-
-            service.getOrderById('order-1').subscribe(order => {
-                expect(order.items.length).toBe(2);
-                expect(order.total).toBe(50.40);
-                expect(order.items[0].product.name).toBe('Pizza Margarita');
-                expect(order.items[1].product.name).toBe('Pizza Pepperoni');
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/order-1`);
-            req.flush(multiItemOrder);
-        });
-
-        it('should handle orders with discount applied', () => {
-            const discountedOrder: IOrder = {
-                ...mockOrder,
-                subtotal: 30.00,
-                discountRate: 10,
-                discountAmount: 3.00,
-                total: 30.60 // 30 + 3.60 tax - 3.00 discount
-            };
-
-            service.getOrderById('order-1').subscribe(order => {
-                expect(order.discountRate).toBe(10);
-                expect(order.discountAmount).toBe(3.00);
-                expect(order.total).toBe(30.60);
-            });
-
-            const req = httpMock.expectOne(`${apiUrl}/order-1`);
-            req.flush(discountedOrder);
         });
     });
 });

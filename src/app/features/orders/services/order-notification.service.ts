@@ -21,7 +21,8 @@ export interface NotificationResponse {
     providedIn: 'root'
 })
 export class OrderNotificationService {
-    private apiUrl = `${environment.apiUrl}/api/notifications/manual`;
+    // Ruta relativa para pruebas y proxy
+    private apiUrl = '/api/notifications/manual';
 
     constructor(private http: HttpClient) { }
 

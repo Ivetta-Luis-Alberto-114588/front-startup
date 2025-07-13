@@ -47,7 +47,7 @@ describe('PaymentSuccessComponent', () => {
         };
 
         const paymentVerificationServiceSpy = jasmine.createSpyObj('PaymentVerificationService', ['verifyOrderStatus']);
-        const orderNotificationServiceSpy = jasmine.createSpyObj('OrderNotificationService', ['sendCashOrderNotification', 'sendOrderPaidNotification']);
+        const orderNotificationServiceSpy = jasmine.createSpyObj('OrderNotificationService', ['sendManualNotification']);
         const cartServiceSpy = jasmine.createSpyObj('CartService', ['clearCart']);
         const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated']);
 
@@ -79,8 +79,7 @@ describe('PaymentSuccessComponent', () => {
         mockAuthService.isAuthenticated.and.returnValue(true);
         mockPaymentVerificationService.verifyOrderStatus.and.returnValue(of(mockOrderStatus));
         mockCartService.clearCart.and.returnValue(of(mockCartResponse as ICart));
-        mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(of(mockNotificationResponse));
-        mockOrderNotificationService.sendCashOrderNotification.and.returnValue(of(mockNotificationResponse));
+        mockOrderNotificationService.sendManualNotification.and.returnValue(of(mockNotificationResponse));
     });
 
     afterEach(() => {
@@ -124,7 +123,7 @@ describe('PaymentSuccessComponent', () => {
 
         it('should verify payment and send notification for approved payment', fakeAsync(() => {
             mockCartService.clearCart.and.returnValue(of(mockCartResponse as ICart));
-            mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(of(mockNotificationResponse));
+            mockOrderNotificationService.sendManualNotification.and.returnValue(of(mockNotificationResponse));
 
             component['verifyPaymentAndNotify']();
             tick(); // Simular paso del tiempo
@@ -142,7 +141,7 @@ describe('PaymentSuccessComponent', () => {
             };
             mockPaymentVerificationService.verifyOrderStatus.and.returnValue(of(orderWithObjectStatus as OrderStatusResponse));
             mockCartService.clearCart.and.returnValue(of(mockCartResponse as ICart));
-            mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(of(mockNotificationResponse));
+            mockOrderNotificationService.sendManualNotification.and.returnValue(of(mockNotificationResponse));
 
             component['verifyPaymentAndNotify']();
             tick();
@@ -162,7 +161,7 @@ describe('PaymentSuccessComponent', () => {
             tick();
 
             expect(component.verificationComplete).toBe(true);
-            expect(mockOrderNotificationService.sendOrderPaidNotification).not.toHaveBeenCalled();
+            expect(mockOrderNotificationService.sendManualNotification).not.toHaveBeenCalled();
             expect(mockCartService.clearCart).not.toHaveBeenCalled();
         }));
 
@@ -246,17 +245,14 @@ describe('PaymentSuccessComponent', () => {
                 paymentMethodId: 'cash',
                 payer: { email: 'test@example.com' }
             };
-            mockOrderNotificationService.sendCashOrderNotification.and.returnValue(of(mockNotificationResponse));
+            mockOrderNotificationService.sendManualNotification.and.returnValue(of(mockNotificationResponse));
 
             await component['sendOrderNotification'](paymentData);
 
-            expect(mockOrderNotificationService.sendCashOrderNotification).toHaveBeenCalledWith({
-                orderId: 'sale-123',
-                customerName: 'test@example.com',
-                customerEmail: 'test@example.com',
-                total: 100,
-                paymentMethod: 'cash',
-                items: []
+            expect(mockOrderNotificationService.sendManualNotification).toHaveBeenCalledWith({
+                subject: 'Nueva orden en efectivo #sale-123',
+                message: jasmine.any(String),
+                emailTo: 'test@example.com'
             });
             expect(component.notificationSent).toBe(true);
         });
@@ -270,18 +266,14 @@ describe('PaymentSuccessComponent', () => {
                 payer: { email: 'test@example.com' }
             };
             component.paymentId = 'payment-456';
-            mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(of(mockNotificationResponse));
+            mockOrderNotificationService.sendManualNotification.and.returnValue(of(mockNotificationResponse));
 
             await component['sendOrderNotification'](paymentData);
 
-            expect(mockOrderNotificationService.sendOrderPaidNotification).toHaveBeenCalledWith({
-                orderId: 'sale-123',
-                customerName: 'test@example.com',
-                customerEmail: 'test@example.com',
-                total: 100,
-                paymentMethod: 'mercadopago',
-                items: [],
-                paymentId: 'payment-456'
+            expect(mockOrderNotificationService.sendManualNotification).toHaveBeenCalledWith({
+                subject: 'Orden pagada online #sale-123',
+                message: jasmine.any(String),
+                emailTo: 'test@example.com'
             });
             expect(component.notificationSent).toBe(true);
         });
@@ -293,7 +285,7 @@ describe('PaymentSuccessComponent', () => {
                 transactionAmount: 100,
                 payer: { email: 'test@example.com' }
             };
-            mockOrderNotificationService.sendOrderPaidNotification.and.returnValue(throwError('Notification error'));
+            mockOrderNotificationService.sendManualNotification.and.returnValue(throwError('Notification error'));
 
             await component['sendOrderNotification'](paymentData);
 
