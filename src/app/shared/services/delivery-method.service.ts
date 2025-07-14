@@ -48,11 +48,21 @@ export class DeliveryMethodService {
         this.loadingSubject.next(true);
 
         // Crear nueva petición con cache
-        // Petición a API que devuelve objeto con deliveryMethods
-        this.deliveryMethodsCache$ = this.http.get<IDeliveryMethodsResponse>(`${this.apiUrl}/delivery-methods`)
+        // El backend puede devolver un array directo o un objeto con deliveryMethods
+        this.deliveryMethodsCache$ = this.http.get<any>(`${this.apiUrl}/delivery-methods`)
             .pipe(
-                // Extraer array de métodos del cuerpo de respuesta
-                map(response => response.deliveryMethods),
+                map(response => {
+                    // Si la respuesta es un array, devolverla directamente
+                    if (Array.isArray(response)) {
+                        return response as IDeliveryMethod[];
+                    }
+                    // Si es objeto con deliveryMethods, devolver ese array
+                    if (response && Array.isArray(response.deliveryMethods)) {
+                        return response.deliveryMethods as IDeliveryMethod[];
+                    }
+                    // Si no, devolver array vacío
+                    return [];
+                }),
                 tap(() => {
                     this.lastCacheTime = now;
                     this.loadingSubject.next(false);

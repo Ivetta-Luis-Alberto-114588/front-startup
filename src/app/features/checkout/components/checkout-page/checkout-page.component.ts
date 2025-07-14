@@ -522,7 +522,8 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     this.isLoadingDeliveryMethods = true;
 
     this.deliveryMethodService.getActiveDeliveryMethods().subscribe({
-      next: (methods) => {
+      next: (methodsRaw) => {
+        const methods: IDeliveryMethod[] = Array.isArray(methodsRaw) ? methodsRaw : [];
         this.availableDeliveryMethods = methods;
         this.checkoutStateService.setAvailableDeliveryMethods(methods);
         this.isLoadingDeliveryMethods = false;
@@ -538,6 +539,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
           'No se pudieron cargar los métodos de entrega. Por favor, recarga la página.',
           'Error'
         );
+        this.availableDeliveryMethods = [];
         this.isLoadingDeliveryMethods = false;
       }
     });
