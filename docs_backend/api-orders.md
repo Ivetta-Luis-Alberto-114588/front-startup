@@ -96,53 +96,191 @@ Content-Type: application/json
 ### Endpoints
 
 #### `POST /api/orders` — Crear pedido (checkout)
+
+**Descripción:** Crea un nuevo pedido. Funciona tanto para usuarios registrados como invitados.
+
+**IMPORTANTE:** El sistema detecta automáticamente si es un usuario registrado o invitado basándose en la presencia del token JWT.
+
+---
+
+### Para USUARIOS REGISTRADOS:
+
 **Headers:**
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
-**Body para usuario registrado:**
+
+**Body:**
 ```json
 {
-  "customerId": "<mongoId>",
   "items": [
-    { "productId": "<mongoId>", "quantity": 2, "unitPrice": 100 }
+    { 
+      "productId": "6807f8e6022d7fe5f9d9620d", 
+      "quantity": 2, 
+      "unitPrice": 100 
+    }
   ],
-  "notes": "opcional"
+  "deliveryMethodId": "686b18f09808aab4814098cb",
+  "notes": "Notas opcionales",
+  "couponCode": "DESCUENTO10",
+  
+  // Solo para entrega a domicilio:
+  "shippingRecipientName": "Juan Pérez",
+  "shippingPhone": "+1234567890",
+  "shippingStreetAddress": "Av. Principal 123",
+  "shippingNeighborhoodId": "67dc9ed0e260c0eef5279179",
+  "shippingCityId": "67dc9ed0e260c0eef5279178",
+  "shippingPostalCode": "1000",
+  "shippingAdditionalInfo": "Departamento 4B"
 }
 ```
-**Body para invitado:**
+
+---
+
+### Para USUARIOS INVITADOS (Guest Checkout):
+
+**Headers:**
+```
+Content-Type: application/json
+```
+(❌ **NO incluir** `Authorization: Bearer <token>`)
+
+**Body para retiro en local:**
 ```json
 {
-  "customerData": {
-    "name": "Invitado",
-    "email": "guest@mail.com",
-    "phone": "+123456789",
-    "address": "Calle 123",
-    "neighborhoodId": "<mongoId>"
-  },
-  "shippingAddress": {
-    "street": "Calle 123",
-    "cityId": "<mongoId>",
-    "neighborhoodId": "<mongoId>"
-  },
-  "items": [ ... ],
-  "notes": "opcional"
+  "customerName": "Juan Pérez",
+  "customerEmail": "juan@gmail.com",
+  "items": [
+    { 
+      "productId": "6807f8e6022d7fe5f9d9620d", 
+      "quantity": 2, 
+      "unitPrice": 100 
+    }
+  ],
+  "deliveryMethodId": "686b18f09808aab4814098cb",
+  "notes": "Retiro por la tarde"
 }
 ```
+
+**Body para entrega a domicilio:**
+```json
+{
+  "customerName": "María González",
+  "customerEmail": "maria@example.com",
+  "items": [
+    { 
+      "productId": "6807f8e6022d7fe5f9d9620d", 
+      "quantity": 1, 
+      "unitPrice": 150 
+    }
+  ],
+  "deliveryMethodId": "686b18f09808aab4814098cc",
+  "shippingRecipientName": "María González",
+  "shippingPhone": "+1234567890",
+  "shippingStreetAddress": "Av. Principal 123",
+  "shippingNeighborhoodId": "67dc9ed0e260c0eef5279179",
+  "shippingCityId": "67dc9ed0e260c0eef5279178",
+  "shippingPostalCode": "1000",
+  "shippingAdditionalInfo": "Departamento 4B",
+  "notes": "Departamento con portero"
+}
+```
+
+---
+
+### Campos requeridos según método de entrega:
+
+| Campo | Retiro en local | Entrega a domicilio |
+|-------|:---------------:|:-------------------:|
+| `customerName` (guest) | ✅ | ✅ |
+| `customerEmail` (guest) | ✅ | ✅ |
+| `items` | ✅ | ✅ |
+| `deliveryMethodId` | ✅ | ✅ |
+| `shippingRecipientName` | ❌ | ✅ |
+| `shippingPhone` | ❌ | ✅ |
+| `shippingStreetAddress` | ❌ | ✅ |
+| `shippingNeighborhoodId` | ❌ | ✅ |
+| `shippingCityId` | ❌ | ✅ |
+
+---
+
+### ✅ **Beneficios del Guest Checkout:**
+- **Múltiples pedidos con mismo email** (sin restricciones)
+- **No requiere registro** ni autenticación
+- **Datos personales reutilizables** (nombre, teléfono, email)
+- **Flujo simplificado** para compradores esporádicos
+
+---
+
 **Respuesta exitosa (201):**
 ```json
 {
-  "success": true,
-  "message": "Orden creada exitosamente",
-  "data": {
-    "id": "orderId",
-    "customer": { ... },
-    "items": [ ... ],
-    "status": "PENDING",
-    "total": 200,
-    ...otros campos
-  }
+  "id": "68766f1171537bbcca28ab80",
+  "customer": {
+    "id": "68766f1171537bbcca28ab7a",
+    "name": "Juan Pérez",
+    "email": "juan@gmail.com",
+    "phone": "00000000",
+    "address": "dirección pendiente",
+    "isActive": true,
+    "userId": null
+  },
+  "items": [
+    {
+      "product": {
+        "id": "6807f8e6022d7fe5f9d9620d",
+        "name": "picada casera tipo 10",
+        "price": 5.99
+      },
+      "quantity": 1,
+      "unitPrice": 7.25,
+      "subtotal": 7.25
+    }
+  ],
+  "deliveryMethod": {
+    "id": "686b18f09808aab4814098cb",
+    "name": "Retiro en Local",
+    "code": "PICKUP",
+    "requiresAddress": false
+  },
+  "status": {
+    "id": "status-id", 
+    "name": "PENDING",
+    "code": "PENDING"
+  },
+  "total": 7.25,
+  "subtotal": 7.25,
+  "taxAmount": 0,
+  "discountRate": 0,
+  "discountAmount": 0,
+  "createdAt": "2025-07-15T15:09:05.000Z",
+  "updatedAt": "2025-07-15T15:09:05.000Z"
+}
+```
+
+---
+
+### Errores comunes:
+
+**400 - Campos faltantes:**
+```json
+{
+  "error": "customerName is required for guest orders"
+}
+```
+
+**400 - Producto inválido:**
+```json
+{
+  "error": "Product with id '...' not found"
+}
+```
+
+**400 - Método de entrega inválido:**
+```json
+{
+  "error": "Delivery method with id '...' not found"
 }
 ```
 
@@ -248,14 +386,102 @@ stateDiagram-v2
 
 ## Ejemplos de Uso Frontend
 
-### Obtener carrito
+### Guest Checkout Completo (Invitado)
+```js
+// 1. Crear pedido como invitado (SIN token JWT)
+const crearPedidoInvitado = async () => {
+  try {
+    const response = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json'
+        // ❌ NO incluir Authorization para invitados
+      },
+      body: JSON.stringify({
+        customerName: "Juan Pérez",
+        customerEmail: "juan@gmail.com",
+        items: [
+          { 
+            productId: "6807f8e6022d7fe5f9d9620d", 
+            quantity: 2, 
+            unitPrice: 100 
+          }
+        ],
+        deliveryMethodId: "686b18f09808aab4814098cb",
+        notes: "Retiro por la tarde"
+      })
+    });
+    
+    const order = await response.json();
+    console.log('Pedido creado:', order);
+    return order;
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+// 2. Segundo pedido con mismo email (✅ Permitido)
+const segundoPedidoMismoEmail = async () => {
+  const response = await fetch('/api/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      customerName: "Juan Pérez",
+      customerEmail: "juan@gmail.com", // ✅ Mismo email es válido
+      items: [
+        { productId: "6807f8e6022d7fe5f9d9620d", quantity: 1, unitPrice: 50 }
+      ],
+      deliveryMethodId: "686b18f09808aab4814098cb"
+    })
+  });
+  return await response.json();
+};
+```
+
+### Checkout Usuario Registrado
+```js
+// 1. Usuario registrado con token
+const crearPedidoRegistrado = async (token) => {
+  const response = await fetch('/api/orders', {
+    method: 'POST',
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json' 
+    },
+    body: JSON.stringify({
+      items: [
+        { productId: "6807f8e6022d7fe5f9d9620d", quantity: 1, unitPrice: 100 }
+      ],
+      deliveryMethodId: "686b18f09808aab4814098cb",
+      notes: "Pedido de usuario registrado"
+    })
+  });
+  return await response.json();
+};
+```
+
+### Obtener Métodos de Entrega
+```js
+const obtenerMetodosEntrega = async () => {
+  const response = await fetch('/api/delivery-methods');
+  const methods = await response.json();
+  
+  // Filtrar por tipo
+  const pickup = methods.find(m => m.code === 'PICKUP');
+  const delivery = methods.find(m => m.code === 'DELIVERY');
+  
+  return { pickup, delivery };
+};
+```
+
+### Obtener carrito (usuarios registrados)
 ```js
 fetch('/api/cart', { headers: { Authorization: `Bearer ${token}` } })
   .then(res => res.json())
   .then(cart => { /* ... */ });
 ```
 
-### Agregar producto al carrito
+### Agregar producto al carrito (usuarios registrados)
 ```js
 fetch('/api/cart/items', {
   method: 'POST',
@@ -264,13 +490,31 @@ fetch('/api/cart/items', {
 });
 ```
 
-### Crear pedido
+### Validación frontend para guest checkout
 ```js
-fetch('/api/orders', {
-  method: 'POST',
-  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-  body: JSON.stringify({ customerId, items: [ ... ] })
-});
+const validarFormularioInvitado = (formData, deliveryMethodId) => {
+  const errors = [];
+  
+  // Campos siempre requeridos
+  if (!formData.customerName) errors.push('Nombre es requerido');
+  if (!formData.customerEmail) errors.push('Email es requerido');
+  if (!formData.items?.length) errors.push('Debe incluir al menos un producto');
+  if (!deliveryMethodId) errors.push('Método de entrega es requerido');
+  
+  // Campos requeridos solo para entrega a domicilio
+  const deliveryMethod = await obtenerMetodosEntrega();
+  const isDelivery = deliveryMethod.delivery?.id === deliveryMethodId;
+  
+  if (isDelivery) {
+    if (!formData.shippingRecipientName) errors.push('Nombre del destinatario requerido');
+    if (!formData.shippingPhone) errors.push('Teléfono requerido');
+    if (!formData.shippingStreetAddress) errors.push('Dirección requerida');
+    if (!formData.shippingNeighborhoodId) errors.push('Barrio requerido');
+    if (!formData.shippingCityId) errors.push('Ciudad requerida');
+  }
+  
+  return errors;
+};
 ```
 
 ---

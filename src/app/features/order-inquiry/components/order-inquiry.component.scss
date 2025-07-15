@@ -1,0 +1,107 @@
+// Estilos específicos para el componente de consulta de órdenes
+.order-inquiry-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+// Estados de la orden con colores específicos
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+}
+
+// Tabla de productos con hover mejorado
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+// Cards con shadow suave
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    border-bottom: none;
+    font-weight: 600;
+}
+
+// Spinner personalizado
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+// Responsive improvements
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        margin-bottom: 0.5rem;
+    }
+}
+
+// Print styles
+@media print {
+    .btn {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        break-inside: avoid;
+    }
+
+    .container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+}
+
+// Error state
+.alert-danger {
+    border-left: 4px solid #dc3545;
+}
+
+// Success indicators
+.text-success {
+    color: #28a745 !important;
+}
+
+// Status badges styling
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.bg-primary {
+    background-color: #007bff !important;
+}
+
+.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.bg-secondary {
+    background-color: #6c757d !important;
+}

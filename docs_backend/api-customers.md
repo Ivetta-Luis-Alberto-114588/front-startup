@@ -177,9 +177,11 @@ Authorization: Bearer <admin_token>
 
 #### `POST /api/customers` - Crear Cliente
 **Casos de uso:**
-- Cliente invitado durante checkout
-- Cliente registrado vinculado a usuario
-- Administrador crea cliente
+- ⚠️ **Cliente registrado** vinculado a usuario
+- ⚠️ **Administrador** crea cliente manualmente
+- ❌ **YA NO:** Cliente invitado durante checkout (ahora automático)
+
+**⚠️ NOTA:** Para checkout de invitados, usar directamente `POST /api/orders` sin JWT. El cliente se crea automáticamente.
 
 **Body:**
 ```json
@@ -484,11 +486,42 @@ flowchart TD
 
 ### Flujo de Checkout (Invitado)
 
+**⚠️ IMPORTANTE:** El flujo de checkout para invitados se ha simplificado. Ahora se crea automáticamente un cliente durante la creación del pedido, sin necesidad de crear el cliente por separado.
+
 ```mermaid
 flowchart TD
-    A[Checkout como invitado] --> B[POST /api/customers (isGuest: true)]
-    B --> C[POST /api/orders con shippingAddress]
-    C --> D[Pedido creado]
+    A[Checkout como invitado] --> B[POST /api/orders sin JWT]
+    B --> C[Backend crea cliente automáticamente]
+    C --> D[Pedido creado con nuevo cliente]
+    
+    style B fill:#e1f5fe
+    style C fill:#e1f5fe
+    style D fill:#e1f5fe
+```
+
+**Flujo recomendado:**
+1. Frontend recolecta datos del invitado
+2. POST `/api/orders` sin header `Authorization`
+3. Backend crea cliente y pedido automáticamente
+4. Se permite múltiples pedidos con mismos datos personales
+
+**Ejemplo de request:**
+```javascript
+// ✅ Flujo actual simplificado
+fetch('/api/orders', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  // ❌ NO incluir Authorization para invitados
+  body: JSON.stringify({
+    customerName: "Juan Pérez",
+    customerEmail: "juan@gmail.com",
+    items: [{ productId: "...", quantity: 1, unitPrice: 100 }],
+    deliveryMethodId: "..."
+  })
+});
+
+// ❌ Ya NO es necesario este flujo:
+// POST /api/customers -> POST /api/orders
 ```
 
 ### Conversión Invitado → Registrado

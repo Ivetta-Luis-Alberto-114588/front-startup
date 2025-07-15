@@ -69,6 +69,17 @@ const routes: Routes = [
       { path: 'payment/success', component: PaymentSuccessComponent },
       { path: 'payment/failure', component: PaymentFailureComponent },
       { path: 'payment/pending', component: PaymentPendingComponent },
+      // --- Ruta pública para consulta de órdenes ---
+      {
+        path: 'order/:orderId',
+        loadChildren: () => import('./features/order-inquiry').then(module => module.OrderInquiryModule)
+        // Sin guards: ruta pública para consultas de órdenes por invitados
+      },
+      // --- Ruta de prueba para consultas de órdenes ---
+      {
+        path: 'test-order',
+        loadChildren: () => import('./features/order-inquiry').then(module => module.OrderInquiryModule)
+      },
       // Redirección por defecto DENTRO del layout
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]

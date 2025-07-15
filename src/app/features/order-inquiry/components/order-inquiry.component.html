@@ -1,0 +1,217 @@
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="text-center">
+                <i class="fas fa-receipt me-2"></i>
+                Consulta de Orden
+            </h2>
+            <p class="text-center text-muted">
+                Información detallada de tu pedido #{{ orderId }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Estado de carga -->
+    <div *ngIf="isLoading" class="row">
+        <div class="col text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-3">Cargando información de la orden...</p>
+        </div>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !isLoading" class="row">
+        <div class="col">
+            <div class="alert alert-danger text-center">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>{{ error }}</strong>
+                <br>
+                <button class="btn btn-outline-danger mt-3" (click)="retryLoad()">
+                    <i class="fas fa-redo me-2"></i>
+                    Reintentar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de la orden -->
+    <div *ngIf="order && !isLoading && !error">
+        <!-- Estado y resumen -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Información General
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <p><strong>Orden #:</strong> {{ order.id }}</p>
+                                <p><strong>Cliente:</strong> {{ order.customer.name }}</p>
+                                <p><strong>Email:</strong> {{ order.customer.email }}</p>
+                                <p *ngIf="order.customer.phone"><strong>Teléfono:</strong> {{ order.customer.phone }}
+                                </p>
+                            </div>
+                            <div class="col-sm-6">
+                                <p><strong>Fecha:</strong> {{ formatDate(order.date) }}</p>
+                                <p><strong>Estado:</strong>
+                                    <span [class]="getStatusClass()">{{ getStatusText() }}</span>
+                                </p>
+                                <p *ngIf="order.deliveryMethod"><strong>Entrega:</strong> {{ order.deliveryMethod.name
+                                    }}</p>
+                                <p *ngIf="order.paymentMethod"><strong>Pago:</strong> {{ order.paymentMethod.description
+                                    || 'Método no especificado' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen totales -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            Totales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>${{ order.subtotal.toFixed(2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" *ngIf="order.taxAmount > 0">
+                            <span>Impuestos:</span>
+                            <span>${{ order.taxAmount.toFixed(2) }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" *ngIf="order.discountAmount > 0">
+                            <span>Descuento:</span>
+                            <span class="text-success">-${{ order.discountAmount.toFixed(2) }}</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total:</strong>
+                            <strong class="text-primary">${{ order.total.toFixed(2) }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Productos ({{ order.items.length }})
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio Unit.</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of order.items">
+                                        <td>
+                                            <strong>{{ item.product.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">ID: {{ item.product.id }}</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">{{ item.quantity }}</span>
+                                        </td>
+                                        <td class="text-end">${{ item.unitPrice.toFixed(2) }}</td>
+                                        <td class="text-end">
+                                            <strong>${{ item.subtotal.toFixed(2) }}</strong>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información de entrega -->
+        <div class="row mb-4" *ngIf="order.deliveryMethod && order.deliveryMethod.requiresAddress">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-truck me-2"></i>
+                            Información de Entrega
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p *ngIf="order.shippingRecipientName">
+                                    <strong>Destinatario:</strong> {{ order.shippingRecipientName }}
+                                </p>
+                                <p *ngIf="order.shippingPhone">
+                                    <strong>Teléfono:</strong> {{ order.shippingPhone }}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p *ngIf="order.shippingStreetAddress">
+                                    <strong>Dirección:</strong> {{ order.shippingStreetAddress }}
+                                </p>
+                                <p *ngIf="order.shippingPostalCode">
+                                    <strong>Código Postal:</strong> {{ order.shippingPostalCode }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notas adicionales -->
+        <div class="row mb-4" *ngIf="order.notes">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sticky-note me-2"></i>
+                            Notas Adicionales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">{{ order.notes }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="row">
+            <div class="col text-center">
+                <button class="btn btn-outline-primary me-3" (click)="retryLoad()">
+                    <i class="fas fa-sync-alt me-2"></i>
+                    Actualizar
+                </button>
+                <button class="btn btn-secondary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>
+                    Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

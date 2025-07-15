@@ -41,6 +41,14 @@
         </a>
       </li>
 
+      <!-- Consulta Pública de Órdenes (para todos los usuarios) -->
+      <li class="nav-item">
+        <a class="nav-link" routerLink="/test-order/buscar" routerLinkActive="active">
+          <i class="bi bi-search me-2"></i>
+          <span *ngIf="!(sidebarService.isSidebarCollapsed$ | async)">Consultar Orden</span>
+        </a>
+      </li>
+
       <li class="nav-item">
         <a class="nav-link" routerLink="/admin/order-status-dashboard" routerLinkActive="active">
           <i class="bi bi-kanban me-2"></i> <!-- Icono para dashboard de estados -->
