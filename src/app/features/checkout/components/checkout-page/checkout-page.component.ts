@@ -65,6 +65,11 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
   private citySubscription: Subscription | null = null;
   private neighborhoodSubscription: Subscription | null = null;
 
+  /**
+   * Variable temporal para guardar el estado del carrito antes de limpiar
+   */
+  private tempCartForNotification: ICart | null = null;
+
   constructor(
     private cartService: CartService,
     private authService: AuthService,
@@ -398,6 +403,9 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    * Procesa la orden con manejo de errores mejorado
    */
   private processOrder(orderPayload: ICreateOrderPayload): void {
+    // Capturar el carrito antes de limpiar para la notificación
+    this.tempCartForNotification = this.cartService.getCurrentCartValue();
+
     // Buscar el método de pago seleccionado y obtener su code
     const selectedPayment = this.availablePaymentMethods.find(m => m._id === this.selectedPaymentMethod);
     const selectedPaymentCode = selectedPayment?.code?.toUpperCase() || '';
@@ -816,50 +824,47 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       'Pago en Efectivo'
     );
 
-    // Enviar notificación por mail y telegram antes de redirigir
-    // 1. Notificación por mail (OrderNotificationService)
-    // 2. Notificación por Telegram (TelegramNotificationService)
-    // Se puede mejorar con forkJoin si ambas devuelven Observable
-
-    // Obtener datos mínimos para la notificación
+    // Usar el carrito capturado antes de limpiar
+    const cart = this.tempCartForNotification;
     const orderIdStr = orderId?.toString();
-    // Obtener el carrito actual
-    const cart = this.cartService.getCurrentCartValue();
     const customerName = cart?.user?.name || '';
-    const customerEmail = cart?.user?.email || '';
+    const customerEmail = cart?.user?.email || 'No proporcionado';
     const total = cart?.total || 0;
-    const items = (cart?.items || []).map(item => ({
-      name: item.product?.name || '',
-      quantity: item.quantity,
-      price: item.unitPriceWithTax || item.priceAtTime || 0
-    }));
+    const fecha = new Date().toLocaleString('es-AR');
+    const items = (cart?.items || []).map(item => {
+      const nombre = item.product?.name || '';
+      const cantidad = item.quantity;
+      const precio = item.unitPriceWithTax || item.priceAtTime || 0;
+      return `${nombre} (x${cantidad}) - $${precio.toFixed(2)}`;
+    });
 
-    // Construir el payload para el nuevo endpoint manual
-    const subject = `Nueva orden en efectivo #${orderIdStr}`;
-    // Mensaje de texto plano para Telegram y email
-    const plainMessage = `🛒 Nueva orden en efectivo\nID: ${orderIdStr}\nCliente: ${customerName}\nEmail: ${customerEmail}\nTotal: $${total}\nItems: ${items.map(i => `${i.quantity} x ${i.name}`).join(', ')}`;
+    // Mensaje unificado igual al de MercadoPago
+    const subject = `Nueva Orden Recibida Efectivo`;
+    const plainMessage = `🛒 Nueva Orden Recibida\n\nSe ha recibido una nueva orden del cliente ${customerName}.\n\nDetalles:\n• ID de Orden: ${orderIdStr}\n• Cliente: ${customerName}\n• Email: ${customerEmail}\n• Total: $${total}\n• Fecha: ${fecha}\n• Productos: ${items.join(', ')}`;
     const payload = {
       subject,
       message: plainMessage,
       emailTo: customerEmail,
-      telegramChatId: '736207422' // chatId por defecto según logs backend
+      telegramChatId: '736207422'
     };
 
     // Enviar la notificación manual y también por Telegram directo
     this.orderNotificationService.sendManualNotification(payload).subscribe({
       next: () => {
-        // Además, enviar por Telegram directo (requiere token admin en localStorage)
         this.telegramNotificationService.sendMessage(plainMessage)
           .finally(() => {
+            // Limpiar la variable temporal después de enviar
+            this.tempCartForNotification = null;
             setTimeout(() => {
               this.router.navigate(['/my-orders', orderIdStr]);
             }, 2000);
           });
       },
       error: () => {
-        // Igual intentar Telegram aunque falle la manual
         this.telegramNotificationService.sendMessage(plainMessage)
           .finally(() => {
+            // Limpiar la variable temporal después de enviar
+            this.tempCartForNotification = null;
             setTimeout(() => {
               this.router.navigate(['/my-orders', orderIdStr]);
             }, 2000);

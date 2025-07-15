@@ -31,7 +31,7 @@ export class LoginComponent implements OnInit, OnDestroy { // Implementar OnDest
     this.loginForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
-      rememberMe: [false] // Considera la lógica para 'rememberMe' si la necesitas
+      rememberMe: [true] // Marcado por defecto
     });
   }
 
