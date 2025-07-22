@@ -308,6 +308,26 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       throw new Error('Por favor, selecciona un método de pago.');
     }
 
+    // Validar información del cliente invitado si no está autenticado
+    const isAuthenticated = this.authService.isAuthenticated();
+    if (!isAuthenticated) {
+      const guestInfo = this.checkoutStateService.getGuestCustomerInfo();
+      if (!guestInfo || !guestInfo.customerName || !guestInfo.customerEmail) {
+        throw new Error('Por favor, completa tu información de contacto.');
+      }
+
+      // Validar formato del email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(guestInfo.customerEmail)) {
+        throw new Error('Por favor, ingresa un email válido.');
+      }
+
+      // Validar longitud del nombre
+      if (guestInfo.customerName.trim().length < 2) {
+        throw new Error('El nombre debe tener al menos 2 caracteres.');
+      }
+    }
+
     // Validar dirección solo si el método requiere dirección
     if (this.selectedDeliveryMethod.requiresAddress) {
       if (!this.isAddressSelectedOrValid) {
@@ -386,6 +406,25 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       console.log('🏪 Delivery method does NOT require address (pickup)');
     }
 
+    // Agregar información del cliente invitado si no está autenticado
+    const isAuthenticated = this.authService.isAuthenticated();
+    console.log('🔐 Is user authenticated?', isAuthenticated);
+
+    if (!isAuthenticated) {
+      console.log('👤 Adding guest customer information...');
+      const guestInfo = this.checkoutStateService.getGuestCustomerInfo();
+      console.log('Guest info from state:', guestInfo);
+
+      if (guestInfo && guestInfo.customerName && guestInfo.customerEmail) {
+        orderPayload.customerName = guestInfo.customerName;
+        orderPayload.customerEmail = guestInfo.customerEmail;
+        console.log('✅ Added guest customer info:', { name: guestInfo.customerName, email: guestInfo.customerEmail });
+      } else {
+        console.log('❌ No valid guest info found');
+        throw new Error('Por favor, completa tu información de contacto.');
+      }
+    }
+
     // Validación adicional para debugging
     console.log('Final payload validation:');
     console.log('- Has items?', orderPayload.items?.length > 0);
@@ -394,6 +433,8 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     console.log('- Has paymentMethodId?', !!orderPayload.paymentMethodId);
     console.log('- RequiresAddress?', this.selectedDeliveryMethod.requiresAddress);
     console.log('- Has shipping data?', !!(orderPayload.selectedAddressId || orderPayload.shippingRecipientName));
+    console.log('- Has customerName?', !!orderPayload.customerName);
+    console.log('- Has customerEmail?', !!orderPayload.customerEmail);
 
     console.log('Final payload to send:', orderPayload);
     return orderPayload;
@@ -818,17 +859,35 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
    * Maneja el éxito de un pago en efectivo
    */
   private handleCashPaymentSuccess(orderId: string): void {
-    // Mostrar mensaje de éxito breve
-    this.notificationService.showSuccess(
-      '¡Pedido confirmado exitosamente! Acércate al local para retirar y pagar en efectivo.',
-      'Pago en Efectivo'
-    );
+    // Verificar tipo de usuario una sola vez
+    const isAuthenticated = this.authService.isAuthenticated();
+
+    // Mensaje personalizado según el tipo de usuario
+    const successMessage = isAuthenticated
+      ? '¡Pedido confirmado exitosamente! Acércate al local para retirar y pagar en efectivo.'
+      : '¡Pedido confirmado exitosamente! Tu orden se ha registrado correctamente. Acércate al local para retirar y pagar en efectivo.';
+
+    this.notificationService.showSuccess(successMessage, 'Pago en Efectivo');
 
     // Usar el carrito capturado antes de limpiar
     const cart = this.tempCartForNotification;
     const orderIdStr = orderId?.toString();
-    const customerName = cart?.user?.name || '';
-    const customerEmail = cart?.user?.email || 'No proporcionado';
+
+    // Obtener información del cliente según el tipo de usuario
+    let customerName = '';
+    let customerEmail = '';
+
+    if (isAuthenticated) {
+      // Usuario autenticado: usar datos del carrito/usuario
+      customerName = cart?.user?.name || '';
+      customerEmail = cart?.user?.email || '';
+    } else {
+      // Usuario invitado: usar datos del checkout state
+      const guestInfo = this.checkoutStateService.getGuestCustomerInfo();
+      customerName = guestInfo?.customerName || 'Cliente Invitado';
+      customerEmail = guestInfo?.customerEmail || 'No proporcionado';
+    }
+
     const total = cart?.total || 0;
     const fecha = new Date().toLocaleString('es-AR');
     const items = (cart?.items || []).map(item => {
@@ -855,8 +914,12 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
           .finally(() => {
             // Limpiar la variable temporal después de enviar
             this.tempCartForNotification = null;
+            // Resetear estado del checkout para usuarios invitados
+            if (!isAuthenticated) {
+              this.checkoutStateService.resetCheckoutState();
+            }
             setTimeout(() => {
-              this.router.navigate(['/my-orders', orderIdStr]);
+              this.redirectToOrderPage(orderIdStr);
             }, 2000);
           });
       },
@@ -865,12 +928,34 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
           .finally(() => {
             // Limpiar la variable temporal después de enviar
             this.tempCartForNotification = null;
+            // Resetear estado del checkout para usuarios invitados
+            if (!isAuthenticated) {
+              this.checkoutStateService.resetCheckoutState();
+            }
             setTimeout(() => {
-              this.router.navigate(['/my-orders', orderIdStr]);
+              this.redirectToOrderPage(orderIdStr);
             }, 2000);
           });
       }
     });
+  }
+
+  /**
+   * Redirige a la página apropiada según si el usuario está autenticado o no
+   */
+  /**
+   * Redirige a la página apropiada según si el usuario está autenticado o no
+   */
+  private redirectToOrderPage(orderId: string): void {
+    const isAuthenticated = this.authService.isAuthenticated();
+
+    if (isAuthenticated) {
+      // Usuario autenticado: ir a "mis órdenes"
+      this.router.navigate(['/my-orders', orderId]);
+    } else {
+      // Usuario invitado: ir a consulta pública de orden
+      this.router.navigate(['/order', orderId]);
+    }
   }
 
   // Método separado para navegación - fácil de mockear en tests

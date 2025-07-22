@@ -38,17 +38,14 @@ export class CartPageComponent implements OnInit, OnDestroy {
     this.cart$ = this.cartService.cart$;
   }
 
-  // ... (ngOnInit, ngOnDestroy, loadCart, increaseQuantity, etc. sin cambios) ...
   ngOnInit(): void { this.loadCart(); }
   ngOnDestroy(): void { this.cartSubscription?.unsubscribe(); }
 
 
   proceedToCheckout(): void {
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/checkout']);
-    } else {
-      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: '/checkout' } });
-    }
+    // Para guest checkout, siempre ir directamente a checkout
+    // El checkout-page.component se encargará de mostrar el formulario guest o el flujo autenticado
+    this.router.navigate(['/checkout']);
   }
 
   decreaseQuantity(item: ICartItem): void {
@@ -153,5 +150,10 @@ export class CartPageComponent implements OnInit, OnDestroy {
     this.openClearCartConfirmation();
   }
   // --- FIN MÉTODO clearCart MODIFICADO ---
+
+  // Getter para usar en template
+  get authenticationService() {
+    return this.authService;
+  }
 
 }

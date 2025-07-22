@@ -127,18 +127,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
 
   addToCart(product: IProduct): void {
-    // 1. VERIFICAR AUTENTICACIÓN
-    if (!this.authService.isAuthenticated()) {
-      this.notificationService.showInfo('Inicia sesión para añadir al carrito.', 'Inicio Requerido');
-      // GUARDAR ACCIÓN PENDIENTE
-      const pendingAction = { productId: product.id, quantity: 1 }; // Asumimos cantidad 1
-      localStorage.setItem('pendingCartAction', JSON.stringify(pendingAction));
-      // REDIRIGIR
-      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
-
-    // 2. SI ESTÁ AUTENTICADO
     if (!product || this.productsBeingAdded[product.id] || product.stock <= 0) return;
 
     this.productsBeingAdded[product.id] = true;

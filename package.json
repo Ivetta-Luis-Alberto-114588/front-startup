@@ -13,7 +13,8 @@
     "test:ci": "ng test --watch=false --browsers=ChromeHeadlessNoSandbox",
     "test:checkout": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --watch=false --browsers=ChromeHeadlessNoSandbox",
     "test:checkout:coverage": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --karma-config=karma-checkout.conf.js --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox",
-    "test:checkout:coverage:open": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --karma-config=karma-checkout.conf.js --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox && start coverage/checkout/index.html"
+    "test:checkout:coverage:open": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --karma-config=karma-checkout.conf.js --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox && start coverage/checkout/index.html",
+    "lint": "ng lint"
   },
   "private": true,
   "dependencies": {
@@ -40,12 +41,15 @@
     "@angular/cli": "^16.2.14",
     "@angular/compiler-cli": "^16.2.0",
     "@types/jasmine": "~4.3.0",
+    "angular-eslint": "20.1.1",
+    "eslint": "^9.29.0",
     "jasmine-core": "~4.6.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.1.3"
+    "typescript": "~5.1.3",
+    "typescript-eslint": "8.34.1"
   }
 }

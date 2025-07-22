@@ -1,0 +1,66 @@
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="fas fa-user-circle me-2"></i>
+      Información del Cliente
+    </h5>
+    <small class="text-muted">Complete sus datos para continuar con la compra</small>
+  </div>
+
+  <div class="card-body">
+    <form [formGroup]="guestForm" novalidate>
+
+      <!-- Campo Nombre -->
+      <div class="mb-3">
+        <label for="customerName" class="form-label">
+          Nombre Completo <span class="text-danger">*</span>
+        </label>
+        <input type="text" class="form-control"
+          [class.is-invalid]="hasError('customerName', 'required') || hasError('customerName', 'minlength')"
+          [class.is-valid]="customerName?.valid && (customerName?.dirty || customerName?.touched)" id="customerName"
+          formControlName="customerName" placeholder="Ej: Juan Pérez" autocomplete="name">
+
+        <div class="invalid-feedback" *ngIf="getErrorMessage('customerName')">
+          {{ getErrorMessage('customerName') }}
+        </div>
+      </div>
+
+      <!-- Campo Email -->
+      <div class="mb-3">
+        <label for="customerEmail" class="form-label">
+          Email <span class="text-danger">*</span>
+        </label>
+        <input type="email" class="form-control"
+          [class.is-invalid]="hasError('customerEmail', 'required') || hasError('customerEmail', 'email')"
+          [class.is-valid]="customerEmail?.valid && (customerEmail?.dirty || customerEmail?.touched)" id="customerEmail"
+          formControlName="customerEmail" placeholder="Ej: juan@gmail.com" autocomplete="email">
+
+        <div class="invalid-feedback" *ngIf="getErrorMessage('customerEmail')">
+          {{ getErrorMessage('customerEmail') }}
+        </div>
+      </div>
+
+      <!-- Estado del formulario -->
+      <div class="alert alert-info d-flex align-items-center" *ngIf="guestForm.valid">
+        <i class="fas fa-check-circle me-2"></i>
+        <span>Información completa. Puede continuar con el checkout.</span>
+      </div>
+
+      <div class="alert alert-warning d-flex align-items-center"
+        *ngIf="guestForm.invalid && (guestForm.dirty || guestForm.touched)">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <span>Complete todos los campos requeridos para continuar.</span>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<!-- Información adicional -->
+<div class="mt-3">
+  <small class="text-muted">
+    <i class="fas fa-info-circle me-1"></i>
+    Sus datos solo se utilizarán para procesar este pedido. Para futuras compras más rápidas,
+    considere <a href="/auth/registro" class="text-decoration-none">crear una cuenta</a>.
+  </small>
+</div>

@@ -38,8 +38,8 @@ const routes: Routes = [
       },
       {
         path: 'cart',
-        loadChildren: () => import('./features/cart/cart.module').then(m => m.CartModule),
-        canActivate: [AuthGuard] // Proteger carrito si es necesario
+        loadChildren: () => import('./features/cart/cart.module').then(m => m.CartModule)
+        // Ahora público - permite acceso a invitados
       },
       {
         path: 'terms',
@@ -51,13 +51,18 @@ const routes: Routes = [
       },
       {
         path: 'checkout',
-        loadChildren: () => import('./features/checkout/checkout.module').then(m => m.CheckoutModule),
-        canActivate: [AuthGuard] // Proteger checkout
+        loadChildren: () => import('./features/checkout/checkout.module').then(m => m.CheckoutModule)
+        // Ahora público - permite checkout para invitados
       },
       {
         path: 'my-orders',
         loadChildren: () => import('./features/orders/orders.module').then(m => m.OrdersModule),
         canActivate: [AuthGuard] // Proteger historial de órdenes
+      },
+      {
+        path: 'order-confirmation',
+        loadChildren: () => import('./features/orders/orders.module').then(m => m.OrdersModule)
+        // Público - permite confirmación para invitados
       },
       // --- Ruta Admin (Lazy Loaded y Protegida) ---
       {

@@ -92,33 +92,26 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   addToCart(): void {
     if (!this.product || this.isAddingToCart || this.product.stock <= 0 || this.quantity <= 0 || this.quantity > this.product.stock) {
-      // Añadir validación quantity > 0
+      // Validaciones de producto y cantidad
       if (this.product && this.quantity <= 0) {
         this.notificationService.showWarning('La cantidad debe ser mayor a cero.');
+      }
+      if (this.product && this.quantity > this.product.stock) {
+        this.notificationService.showWarning(`Solo hay ${this.product.stock} unidades disponibles.`);
       }
       return;
     }
 
-    // 1. VERIFICAR AUTENTICACIÓN
-    if (!this.authService.isAuthenticated()) {
-      this.notificationService.showInfo('Inicia sesión para añadir al carrito.', 'Inicio Requerido');
-      // GUARDAR ACCIÓN PENDIENTE en localStorage
-      const pendingAction = {
-        productId: this.product.id,
-        quantity: this.quantity
-      };
-      localStorage.setItem('pendingCartAction', JSON.stringify(pendingAction));
-      // REDIRIGIR a login, guardando la URL actual para volver
-      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return; // Detener aquí si no está logueado
-    }
-
-    // 2. SI ESTÁ AUTENTICADO, AÑADIR AL CARRITO
+    // Agregar al carrito (funciona tanto para usuarios autenticados como invitados)
     this.isAddingToCart = true;
     this.cartService.addItem(this.product.id, this.quantity).pipe(
       finalize(() => { this.isAddingToCart = false; })
     ).subscribe({
-      // next: ya no necesita hacer nada, el servicio notifica
+      next: () => {
+        // El servicio ya maneja las notificaciones
+        // Resetear cantidad a 1 después de agregar exitosamente
+        this.quantity = 1;
+      },
       error: (err) => {
         console.error('[ProductDetail] Error al añadir al carrito:', err);
         // El servicio ya muestra el error, no necesitamos duplicar notificación
