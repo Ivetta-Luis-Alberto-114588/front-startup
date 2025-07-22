@@ -4,9 +4,11 @@ import { Subscription } from 'rxjs';
 import { PaymentVerificationService, OrderStatusResponse } from '../../services/payment-verification.service';
 import { OrderNotificationService } from '../../../orders/services/order-notification.service';
 import { OrderService } from '../../../orders/services/order.service';
+import { OrderInquiryService } from '../../../order-inquiry/services/order-inquiry.service';
 import { CartService } from '../../../cart/services/cart.service';
 import { AuthService } from '../../../../auth/services/auth.service';
 import { IOrder } from '../../../orders/models/iorder';
+import { PublicOrderResponse } from '../../../order-inquiry/models/order-public.interface';
 
 @Component({
   selector: 'app-payment-success',
@@ -22,7 +24,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
   public notificationSent: boolean = false; // Notificación enviada
   public errorMessage: string | null = null; // Mensaje de error si algo falla
   public isUserAuthenticated: boolean = false;
-  public orderDetails: IOrder | null = null; // Detalles de la orden con productos
+  public orderDetails: IOrder | PublicOrderResponse | null = null; // Detalles de la orden con productos
   public showNavigationConfirmation: boolean = false; // Controlar si mostrar confirmación antes de navegar
 
   private routeSub: Subscription | null = null; // Para manejar la suscripción
@@ -34,6 +36,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
     private paymentVerificationService: PaymentVerificationService,
     private orderNotificationService: OrderNotificationService,
     private orderService: OrderService,
+    private orderInquiryService: OrderInquiryService,
     private cartService: CartService,
     private authService: AuthService
   ) { }
@@ -89,17 +92,49 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
 
   /**
    * Carga los detalles de la orden incluyendo productos
+   * Usa diferentes servicios según si el usuario está autenticado o no
    */
   private loadOrderDetails(): void {
     if (!this.orderId) return;
 
-    this.orderService.getOrderById(this.orderId).subscribe({
+    // Verificar si el usuario está autenticado
+    const isAuthenticated = this.authService.isAuthenticated();
+    console.log('🔍 Usuario autenticado:', isAuthenticated);
+
+    if (isAuthenticated) {
+      // Usuario autenticado: usar servicio privado con más detalles
+      console.log('🔍 Cargando detalles con servicio autenticado...');
+      this.orderService.getOrderById(this.orderId).subscribe({
+        next: (order) => {
+          this.orderDetails = order;
+          console.log('✅ Detalles de la orden cargados (autenticado):', order);
+        },
+        error: (error) => {
+          console.warn('⚠️ Error al cargar detalles de la orden (autenticado):', error);
+          // Fallback: intentar con servicio público
+          this.loadPublicOrderDetails();
+        }
+      });
+    } else {
+      // Usuario invitado: usar servicio público
+      console.log('🔍 Cargando detalles con servicio público...');
+      this.loadPublicOrderDetails();
+    }
+  }
+
+  /**
+   * Carga los detalles de la orden usando el servicio público (sin autenticación)
+   */
+  private loadPublicOrderDetails(): void {
+    if (!this.orderId) return;
+
+    this.orderInquiryService.getOrderById(this.orderId).subscribe({
       next: (order) => {
         this.orderDetails = order;
-        console.log('Detalles de la orden cargados:', order);
+        console.log('✅ Detalles de la orden cargados (público):', order);
       },
       error: (error) => {
-        console.warn('Error al cargar detalles de la orden:', error);
+        console.error('❌ Error al cargar detalles de la orden (público):', error);
         // No es crítico si no se pueden cargar los productos
       }
     });
@@ -301,7 +336,18 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
    */
   navigateToMyOrders(): void {
     this.showNavigationConfirmation = false;
-    this.router.navigate(['/my-orders']);
+    
+    if (this.isUserAuthenticated) {
+      // Usuario autenticado: ir a mis pedidos
+      this.router.navigate(['/my-orders']);
+    } else {
+      // Usuario invitado: ir a consulta pública de orden
+      if (this.orderId) {
+        this.router.navigate(['/order', this.orderId]);
+      } else {
+        this.router.navigate(['/']);
+      }
+    }
   }
 
   /**
@@ -310,6 +356,59 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
   navigateToDashboard(): void {
     this.showNavigationConfirmation = false;
     this.router.navigate(['/dashboard']);
+  }
+
+  // Helper methods para normalizar el acceso a datos entre IOrder y PublicOrderResponse
+
+  /**
+   * Obtiene los items de la orden de forma normalizada
+   */
+  getOrderItems(): any[] {
+    if (!this.orderDetails) return [];
+    return this.orderDetails.items || [];
+  }
+
+  /**
+   * Obtiene el total de la orden de forma normalizada
+   */
+  getOrderTotal(): number {
+    if (!this.orderDetails) return 0;
+    return this.orderDetails.total || 0;
+  }
+
+  /**
+   * Obtiene el nombre del producto de un item de forma normalizada
+   */
+  getItemProductName(item: any): string {
+    return item.product?.name || 'Producto';
+  }
+
+  /**
+   * Obtiene la descripción del producto de un item de forma normalizada
+   */
+  getItemProductDescription(item: any): string {
+    return item.product?.description || '';
+  }
+
+  /**
+   * Obtiene el precio unitario de un item de forma normalizada
+   */
+  getItemUnitPrice(item: any): number {
+    return item.unitPrice || 0;
+  }
+
+  /**
+   * Obtiene la cantidad de un item de forma normalizada
+   */
+  getItemQuantity(item: any): number {
+    return item.quantity || 0;
+  }
+
+  /**
+   * Obtiene el subtotal de un item de forma normalizada
+   */
+  getItemSubtotal(item: any): number {
+    return item.subtotal || (this.getItemUnitPrice(item) * this.getItemQuantity(item));
   }
 
   ngOnDestroy(): void {

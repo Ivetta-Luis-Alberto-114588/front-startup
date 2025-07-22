@@ -1,5 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { PaymentService } from '../../services/payment.service';
+import { AuthService } from '../../../../auth/services/auth.service';
 import { IPaymentStatusResponse } from '../../models/IPaymentStatusResponse';
 
 @Component({
@@ -16,7 +17,10 @@ export class PaymentStatusDisplayComponent implements OnInit {
     public error: string | null = null;
     public paymentStatus: IPaymentStatusResponse | null = null;
 
-    constructor(private paymentService: PaymentService) { }
+    constructor(
+        private paymentService: PaymentService,
+        private authService: AuthService
+    ) { }
 
     ngOnInit(): void {
         if (this.saleId) {
@@ -41,7 +45,14 @@ export class PaymentStatusDisplayComponent implements OnInit {
                 console.error('Error al cargar estado del pago:', error);
 
                 if (error.status === 401) {
-                    this.error = 'Se requiere autenticación para ver los detalles completos del pago';
+                    // Para usuarios invitados, no mostrar error, solo ocultar la información
+                    const isAuthenticated = this.authService.isAuthenticated();
+                    if (!isAuthenticated) {
+                        console.log('Usuario invitado: ocultando información de pago detallada');
+                        this.error = null; // No mostrar error para invitados
+                    } else {
+                        this.error = 'Se requiere autenticación para ver los detalles completos del pago';
+                    }
                 } else {
                     this.error = 'No se pudo cargar la información del pago';
                 }
