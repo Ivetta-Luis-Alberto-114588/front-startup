@@ -905,14 +905,31 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       telegramChatId: '736207422'
     };
 
+    console.log('📧 Payload de notificación preparado:', payload);
+    console.log('📧 Email del cliente:', customerEmail);
+    console.log('📧 Nombre del cliente:', customerName);
+    console.log('📧 Total de la orden:', total);
+
     // Enviar la notificación manual (incluye tanto Email como Telegram)
     this.orderNotificationService.sendManualNotification(payload).subscribe({
       next: (response) => {
-        console.log('Notificación enviada exitosamente:', response);
+        console.log('✅ Notificación enviada exitosamente:', response);
+        console.log('✅ Tipo de respuesta:', typeof response);
+        console.log('✅ Respuesta completa:', JSON.stringify(response, null, 2));
         this.finalizeCashPayment(isAuthenticated, orderIdStr);
       },
       error: (error) => {
-        console.error('Error al enviar notificación:', error);
+        console.error('❌ Error detallado al enviar notificación:', error);
+        console.error('❌ Status del error:', error?.status);
+        console.error('❌ Mensaje del error:', error?.message);
+        console.error('❌ Error body:', error?.error);
+
+        // Mostrar un mensaje al usuario
+        this.notificationService.showWarning(
+          'El pedido se creó correctamente, pero hubo un problema al enviar la notificación.',
+          'Advertencia'
+        );
+
         // Continuar con el flujo aunque falle la notificación
         this.finalizeCashPayment(isAuthenticated, orderIdStr);
       }
