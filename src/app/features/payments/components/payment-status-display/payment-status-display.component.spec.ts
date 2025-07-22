@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 
 import { PaymentStatusDisplayComponent } from './payment-status-display.component';
@@ -43,6 +44,7 @@ describe('PaymentStatusDisplayComponent', () => {
         const paymentServiceSpy = jasmine.createSpyObj('PaymentService', ['getPaymentStatusBySale']);
 
         await TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             declarations: [PaymentStatusDisplayComponent],
             providers: [
                 { provide: PaymentService, useValue: paymentServiceSpy }
@@ -99,14 +101,27 @@ describe('PaymentStatusDisplayComponent', () => {
             }));
         });
 
-        it('should handle 401 error with specific message', () => {
+        it('should handle 401 error with specific message for authenticated user', () => {
             const error = { status: 401 };
             mockPaymentService.getPaymentStatusBySale.and.returnValue(throwError(error));
+            spyOn(component['authService'], 'isAuthenticated').and.returnValue(true);
 
             component.loadPaymentStatus();
 
             expect(component.isLoading).toBe(false);
             expect(component.error).toBe('Se requiere autenticación para ver los detalles completos del pago');
+            expect(component.paymentStatus).toBeNull();
+        });
+
+        it('should handle 401 error with null message for guest user', () => {
+            const error = { status: 401 };
+            mockPaymentService.getPaymentStatusBySale.and.returnValue(throwError(error));
+            spyOn(component['authService'], 'isAuthenticated').and.returnValue(false);
+
+            component.loadPaymentStatus();
+
+            expect(component.isLoading).toBe(false);
+            expect(component.error).toBeNull();
             expect(component.paymentStatus).toBeNull();
         });
 

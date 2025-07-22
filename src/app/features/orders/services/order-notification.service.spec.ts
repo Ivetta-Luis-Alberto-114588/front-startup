@@ -28,7 +28,7 @@ describe('OrderNotificationService', () => {
 
     it('debe enviar notificación manual correctamente', () => {
         service.sendManualNotification(mockPayload).subscribe();
-        const req = httpMock.expectOne('/api/notifications/manual');
+        const req = httpMock.expectOne('https://sistema-mongo.onrender.com/api/notifications/manual');
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(mockPayload);
         req.flush({ success: true });

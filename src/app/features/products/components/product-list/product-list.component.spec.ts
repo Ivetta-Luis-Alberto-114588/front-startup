@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Location } from '@angular/common';
 import { of, throwError, BehaviorSubject, EMPTY } from 'rxjs';
 import { DebugElement } from '@angular/core';
@@ -112,6 +113,7 @@ describe('ProductListComponent', () => {
         const locationSpy = jasmine.createSpyObj('Location', ['back']);
 
         await TestBed.configureTestingModule({
+            imports: [HttpClientTestingModule],
             declarations: [ProductListComponent],
             providers: [
                 { provide: ProductService, useValue: productServiceSpy },

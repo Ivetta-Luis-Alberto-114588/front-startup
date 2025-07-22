@@ -385,14 +385,12 @@ describe('CartPageComponent', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/checkout']);
         });
 
-        it('should navigate to login when user is not authenticated', () => {
+        it('should navigate to checkout even when user is not authenticated (guest checkout)', () => {
             authService.isAuthenticated.and.returnValue(false);
 
             component.proceedToCheckout();
 
-            expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
-                queryParams: { returnUrl: '/checkout' }
-            });
+            expect(router.navigate).toHaveBeenCalledWith(['/checkout']);
         });
     });
 
