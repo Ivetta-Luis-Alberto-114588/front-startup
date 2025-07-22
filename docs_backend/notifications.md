@@ -222,7 +222,40 @@ FRONTEND_URL=https://front-startup.pages.dev
 
 ## 📋 API Endpoints
 
-### Gestión de Preferencias
+### Endpoints Públicos (Sin Autenticación)
+
+#### Envío de Notificación Manual
+```http
+POST /api/notifications/manual
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "subject": "Título de la notificación",
+  "message": "Texto plano o stringificado",
+  "emailTo": "destinatario@email.com",     // opcional
+  "telegramChatId": "123456789"            // opcional
+}
+```
+
+**Respuesta Exitosa (200):**
+```json
+{
+  "success": true,
+  "message": "Notificación enviada",
+  "timestamp": "2025-07-22T13:35:00.000Z",
+  "sentTo": {
+    "telegram": "123456789",
+    "email": "destinatario@email.com"
+  }
+}
+```
+
+> ℹ️ **Uso:** Endpoint público para formularios de contacto, consultas de invitados, etc. No requiere autenticación.
+
+### Gestión de Preferencias (Requiere Autenticación)
 
 #### Obtener Preferencias de Usuario
 ```http

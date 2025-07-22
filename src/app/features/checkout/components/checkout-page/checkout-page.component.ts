@@ -17,7 +17,6 @@ import { PaymentService } from 'src/app/features/payments/services/payment.servi
 import { ICreateOrderPayload } from 'src/app/features/orders/models/ICreateOrderPayload';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { OrderNotificationService } from 'src/app/features/orders/services/order-notification.service';
-import { TelegramNotificationService } from 'src/app/shared/services/telegram-notification.service';
 import { CheckoutStateService, ShippingAddressOption } from '../../services/checkout-state.service'; // Importa el servicio de estado
 import { DeliveryMethodService } from 'src/app/shared/services/delivery-method.service';
 import { PaymentMethodService } from 'src/app/shared/services/payment-method.service';
@@ -84,8 +83,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     private paymentMethodService: PaymentMethodService, // Nuevo servicio para métodos de pago
     private fb: FormBuilder,
     private router: Router,
-    private orderNotificationService: OrderNotificationService,
-    private telegramNotificationService: TelegramNotificationService
+    private orderNotificationService: OrderNotificationService
   ) {
     this.cart$ = this.cartService.cart$;
     this.isAuthenticated$ = this.authService.isAuthenticated$;
@@ -907,35 +905,16 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       telegramChatId: '736207422'
     };
 
-    // Enviar la notificación manual y también por Telegram directo
+    // Enviar la notificación manual (incluye tanto Email como Telegram)
     this.orderNotificationService.sendManualNotification(payload).subscribe({
-      next: () => {
-        this.telegramNotificationService.sendMessage(plainMessage)
-          .finally(() => {
-            // Limpiar la variable temporal después de enviar
-            this.tempCartForNotification = null;
-            // Resetear estado del checkout para usuarios invitados
-            if (!isAuthenticated) {
-              this.checkoutStateService.resetCheckoutState();
-            }
-            setTimeout(() => {
-              this.redirectToOrderPage(orderIdStr);
-            }, 2000);
-          });
+      next: (response) => {
+        console.log('Notificación enviada exitosamente:', response);
+        this.finalizeCashPayment(isAuthenticated, orderIdStr);
       },
-      error: () => {
-        this.telegramNotificationService.sendMessage(plainMessage)
-          .finally(() => {
-            // Limpiar la variable temporal después de enviar
-            this.tempCartForNotification = null;
-            // Resetear estado del checkout para usuarios invitados
-            if (!isAuthenticated) {
-              this.checkoutStateService.resetCheckoutState();
-            }
-            setTimeout(() => {
-              this.redirectToOrderPage(orderIdStr);
-            }, 2000);
-          });
+      error: (error) => {
+        console.error('Error al enviar notificación:', error);
+        // Continuar con el flujo aunque falle la notificación
+        this.finalizeCashPayment(isAuthenticated, orderIdStr);
       }
     });
   }
@@ -956,6 +935,21 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       // Usuario invitado: ir a consulta pública de orden
       this.router.navigate(['/order', orderId]);
     }
+  }
+
+  /**
+   * Finaliza el proceso de pago en efectivo
+   */
+  private finalizeCashPayment(isAuthenticated: boolean, orderIdStr: string): void {
+    // Limpiar la variable temporal después de enviar
+    this.tempCartForNotification = null;
+    // Resetear estado del checkout para usuarios invitados
+    if (!isAuthenticated) {
+      this.checkoutStateService.resetCheckoutState();
+    }
+    setTimeout(() => {
+      this.redirectToOrderPage(orderIdStr);
+    }, 2000);
   }
 
   // Método separado para navegación - fácil de mockear en tests
