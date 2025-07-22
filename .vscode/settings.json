@@ -1,0 +1,20 @@
+{
+    "mermaid": {
+        "theme": "default",
+        "themeVariables": {
+            "primaryColor": "#fff",
+            "primaryTextColor": "#000",
+            "primaryBorderColor": "#1976d2",
+            "lineColor": "#f57c00",
+            "sectionBkgColor": "#e3f2fd",
+            "altSectionBkgColor": "#e8f5e8",
+            "gridColor": "#cccccc",
+            "secondaryColor": "#fff3e0",
+            "tertiaryColor": "#fce4ec"
+        }
+    },
+    "markdown-preview-enhanced": {
+        "mermaidTheme": "default",
+        "enableMermaidDiagrams": true
+    }
+}
