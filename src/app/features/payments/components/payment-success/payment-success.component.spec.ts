@@ -47,9 +47,9 @@ describe('PaymentSuccessComponent', () => {
 
     const mockAuthenticatedOrder: Partial<IOrder> = {
         id: 'order-123',
-        customer: { 
-            id: 'user-456', 
-            name: 'Test User', 
+        customer: {
+            id: 'user-456',
+            name: 'Test User',
             email: 'test@example.com'
         } as any,
         items: [
@@ -78,10 +78,10 @@ describe('PaymentSuccessComponent', () => {
         discountRate: 0,
         discountAmount: 0,
         date: new Date().toISOString(),
-        status: { 
-            id: 'pending', 
+        status: {
+            id: 'pending',
             code: 'pending',
-            name: 'Pending', 
+            name: 'Pending',
             description: 'Pending order',
             color: 'orange',
             order: 1,
