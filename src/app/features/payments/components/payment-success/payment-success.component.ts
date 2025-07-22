@@ -132,10 +132,26 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
       next: (order) => {
         this.orderDetails = order;
         console.log('✅ Detalles de la orden cargados (público):', order);
+
+        // Para usuarios invitados, redirigir automáticamente después de un breve delay
+        console.log('🔄 Programando redirección automática para usuario invitado...');
+        setTimeout(() => {
+          if (!this.authService.isAuthenticated() && this.orderId) {
+            console.log('🔄 Redirigiendo a /order/' + this.orderId);
+            this.router.navigate(['/order', this.orderId]);
+          }
+        }, 3000); // 3 segundos para que el usuario vea la pantalla de éxito
       },
       error: (error) => {
         console.error('❌ Error al cargar detalles de la orden (público):', error);
         // No es crítico si no se pueden cargar los productos
+        // Pero aún así redirigir al usuario invitado
+        if (!this.authService.isAuthenticated() && this.orderId) {
+          console.log('🔄 Redirigiendo a /order/' + this.orderId + ' (con error)');
+          setTimeout(() => {
+            this.router.navigate(['/order', this.orderId]);
+          }, 2000);
+        }
       }
     });
   }
@@ -336,7 +352,7 @@ export class PaymentSuccessComponent implements OnInit, OnDestroy {
    */
   navigateToMyOrders(): void {
     this.showNavigationConfirmation = false;
-    
+
     if (this.isUserAuthenticated) {
       // Usuario autenticado: ir a mis pedidos
       this.router.navigate(['/my-orders']);
