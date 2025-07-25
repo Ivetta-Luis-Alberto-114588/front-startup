@@ -14,7 +14,8 @@ import { MainLayoutComponent } from './layouts/main-layout.component';
 import { CameraModalComponent } from './components/camera-modal/camera-modal.component';
 import { McpChatComponent } from './components/mcp-chat/mcp-chat.component';
 
-@NgModule({  declarations: [
+@NgModule({
+  declarations: [
     HeaderComponent,
     SidebarComponent,
     NotpagefoundComponent,
@@ -31,7 +32,7 @@ import { McpChatComponent } from './components/mcp-chat/mcp-chat.component';
     HttpClientModule,
     RouterModule,
     NgbModule
-  ],  exports: [
+  ], exports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,

@@ -1,32 +1,25 @@
 <!-- src/app/shared/components/mcp-chat/mcp-chat.component.html -->
 
 <!-- Botón para mostrar/ocultar chat -->
-<div class="d-flex align-items-center justify-content-between p-3 bg-light border rounded cursor-pointer"
-     (click)="toggleChat()"
-     style="cursor: pointer; transition: all 0.3s ease;"
-     onmouseover="this.style.backgroundColor='#e9ecef'"
-     onmouseout="this.style.backgroundColor='#f8f9fa'">
+<div class="d-flex align-items-center justify-content-between p-3 bg-light border rounded" (click)="toggleChat()"
+  role="button" tabindex="0" onkeyup="if(event.key==='Enter'||event.key===' ')this.click()">
   <div class="d-flex align-items-center">
     <i class="bi bi-robot me-2 text-primary" *ngIf="!isSidebarCollapsed"></i>
     <span *ngIf="!isSidebarCollapsed" class="fw-bold">AI Assistant</span>
     <i class="bi bi-robot text-primary" *ngIf="isSidebarCollapsed"></i>
   </div>
-  <i class="bi" 
-     [class.bi-chevron-up]="isExpanded" 
-     [class.bi-chevron-down]="!isExpanded"
-     *ngIf="!isSidebarCollapsed"></i>
+  <i class="bi" [class.bi-chevron-up]="isExpanded" [class.bi-chevron-down]="!isExpanded"
+    *ngIf="!isSidebarCollapsed"></i>
 </div>
 
 <!-- Panel del chat como overlay completo -->
-<div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-     style="background-color: rgba(0,0,0,0.5); z-index: 1060;"
-     *ngIf="isExpanded"
-     (click)="toggleChat()">
-  
-  <div class="bg-white rounded shadow-lg d-flex flex-column"
-       style="width: 90%; max-width: 500px; height: 80%; max-height: 600px;"
-       (click)="$event.stopPropagation()">
-    
+<div
+  class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-black bg-opacity-50"
+  *ngIf="isExpanded" (click)="toggleChat()" [attr.style]="'z-index: 1060;'">
+
+  <div class="bg-white rounded shadow-lg d-flex flex-column w-90 h-80" (click)="$event.stopPropagation()"
+    [attr.style]="'max-width: 500px; max-height: 600px;'">
+
     <!-- Header del chat -->
     <div class="p-3 bg-light border-bottom">
       <div class="d-flex align-items-center justify-content-between">
@@ -41,50 +34,39 @@
           </small>
           <!-- Botones de acción -->
           <div class="btn-group" role="group">
-            <button type="button" 
-                    class="btn btn-sm btn-outline-secondary" 
-                    (click)="clearChat()"
-                    title="Limpiar chat">
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearChat()" title="Limpiar chat">
               <i class="bi bi-trash"></i>
             </button>
-            <button type="button" 
-                    class="btn btn-sm btn-outline-secondary" 
-                    (click)="resetSession()"
-                    title="Reiniciar sesión">
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="reconnect()" title="Reconectar"
+              *ngIf="!isConnected">
               <i class="bi bi-arrow-clockwise"></i>
             </button>
-            <button type="button" 
-                    class="btn btn-sm btn-outline-secondary" 
-                    (click)="toggleChat()"
-                    title="Cerrar">
-              <i class="bi bi-x"></i>
+            <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggleChat()" title="Cerrar">
+              <i class="bi bi-x-lg"></i>
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Contenedor de mensajes -->
-    <div class="flex-fill overflow-auto p-3" 
-         #messagesContainer
-         style="max-height: 350px; scrollbar-width: thin;">
-      
-      <div *ngFor="let message of messages; trackBy: trackByMessageId" 
-           class="mb-3">
-        
+    <!-- Área de mensajes -->
+    <div class="flex-grow-1 p-3 overflow-auto" #messagesContainer [attr.style]="'max-height: 350px;'">
+
+      <div *ngFor="let message of messages$ | async; trackBy: trackByMessageId" class="mb-3">
+
         <!-- Mensaje del usuario -->
         <div *ngIf="message.role === 'user'" class="d-flex justify-content-end">
-          <div class="d-flex align-items-start" style="max-width: 80%;">
+          <div class="d-flex align-items-start" [attr.style]="'max-width: 80%;'">
             <div class="me-2">
               <div class="p-2 bg-primary text-white rounded">
                 <div class="mb-1">{{ message.content }}</div>
-                <small class="opacity-75" style="font-size: 0.75rem;">
+                <small class="opacity-75 small">
                   {{ formatTimestamp(message.timestamp) }}
                 </small>
               </div>
             </div>
-            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
-                 style="width: 32px; height: 32px; flex-shrink: 0;">
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+              [attr.style]="'width: 32px; height: 32px; flex-shrink: 0;'">
               <i class="bi bi-person-circle"></i>
             </div>
           </div>
@@ -92,70 +74,91 @@
 
         <!-- Mensaje del asistente -->
         <div *ngIf="message.role === 'assistant'" class="d-flex justify-content-start">
-          <div class="d-flex align-items-start" style="max-width: 80%;">
-            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2" 
-                 style="width: 32px; height: 32px; flex-shrink: 0;">
+          <div class="d-flex align-items-start" [attr.style]="'max-width: 80%;'">
+            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-2"
+              [attr.style]="'width: 32px; height: 32px; flex-shrink: 0;'">
               <i class="bi bi-robot"></i>
             </div>
-            <div class="p-2 bg-light border rounded">
-              <!-- Mensaje con loading -->
-              <div *ngIf="message.isLoading" class="d-flex align-items-center text-muted fst-italic">
-                <div class="spinner-border spinner-border-sm me-2" role="status">
-                  <span class="visually-hidden">Cargando...</span>
+            <div>
+              <div class="p-2 bg-light border rounded">
+                <!-- Mensaje con loading -->
+                <div *ngIf="message.isLoading" class="d-flex align-items-center">
+                  <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                  <span class="text-muted">Escribiendo...</span>
                 </div>
-                <span>Escribiendo...</span>
-              </div>
-              
-              <!-- Mensaje normal -->
-              <div *ngIf="!message.isLoading">
-                <div class="mb-1" style="white-space: pre-wrap; word-wrap: break-word;">
+
+                <!-- Mensaje normal -->
+                <div *ngIf="!message.isLoading" class="mb-1">
                   {{ message.content }}
                 </div>
-                <small class="text-muted" style="font-size: 0.75rem;">
-                  {{ formatTimestamp(message.timestamp) }}
-                </small>
+
+                <div *ngIf="!message.isLoading" class="d-flex justify-content-between align-items-center mt-2">
+                  <small class="text-muted small">
+                    {{ formatTimestamp(message.timestamp) }}
+                  </small>
+
+                  <!-- Información adicional -->
+                  <div *ngIf="hasAdditionalInfo(message)" class="d-flex align-items-center">
+                    <small class="text-muted me-2" *ngIf="message.toolUsed">
+                      <i class="bi bi-gear-fill me-1"></i>
+                      {{ getToolUsedText(message.toolUsed) }}
+                    </small>
+                    <small class="text-muted" *ngIf="message.executionTime">
+                      <i class="bi bi-clock me-1"></i>
+                      {{ formatExecutionTime(message.executionTime) }}
+                    </small>
+                  </div>
+                </div>
               </div>
-              
-              <!-- Error -->
-              <div *ngIf="message.error" class="text-danger small mt-1">
-                <i class="bi bi-exclamation-triangle me-1"></i>
-                {{ message.error }}
+
+              <!-- Error si existe -->
+              <div *ngIf="message.error" class="mt-1">
+                <small class="text-danger">
+                  <i class="bi bi-exclamation-triangle me-1"></i>
+                  {{ message.error }}
+                </small>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Mensaje cuando no hay mensajes -->
-      <div *ngIf="messages.length === 0" class="d-flex align-items-center justify-content-center h-100">
+      <div *ngIf="((messages$ | async)?.length || 0) === 0"
+        class="d-flex align-items-center justify-content-center h-100">
         <div class="text-center text-muted">
-          <i class="bi bi-chat-dots" style="font-size: 4rem;"></i>
-          <p class="mt-3 mb-0">¡Hola! Soy tu asistente de e-commerce.<br>
-             Pregúntame sobre productos, clientes o pedidos.</p>
+          <i class="bi bi-chat-dots display-4 mb-3"></i>
+          <p>¡Inicia una conversación con el asistente!</p>
         </div>
       </div>
     </div>
 
-    <!-- Formulario de entrada -->
-    <div class="p-3 border-top bg-light">
+    <!-- Error general -->
+    <div *ngIf="errorMessage" class="alert alert-danger m-3 mb-0">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <span>{{ errorMessage }}</span>
+        <button type="button" class="btn btn-sm btn-outline-danger ms-auto" (click)="reconnect()">
+          Reintentar
+        </button>
+      </div>
+    </div>
+
+    <!-- Input de mensaje -->
+    <div class="p-3 border-top">
       <form [formGroup]="chatForm" (ngSubmit)="sendMessage()">
         <div class="input-group">
-          <textarea 
-            class="form-control"
-            formControlName="message"
-            placeholder="Escribe tu mensaje..."
-            rows="2"
-            (keydown)="onKeyDown($event)"
-            style="resize: none;"></textarea>
-          
-          <button 
-            type="submit" 
-            class="btn btn-primary"
-            [disabled]="!chatForm.get('message')?.value?.trim() || chatState === 'loading'">
-            <span *ngIf="chatState !== 'loading'">
+          <input type="text" #messageInput class="form-control" formControlName="message"
+            placeholder="Escribe tu mensaje..." (keydown)="onKeyDown($event)"
+            [disabled]="!chatForm.get('message')?.value?.trim() || (chatState$ | async) === 'loading'">
+          <button class="btn btn-primary" type="submit"
+            [disabled]="!chatForm.get('message')?.value?.trim() || (chatState$ | async) === 'loading'">
+            <span *ngIf="(chatState$ | async) !== 'loading'">
               <i class="bi bi-send"></i>
             </span>
-            <span *ngIf="chatState === 'loading'">
+            <span *ngIf="(chatState$ | async) === 'loading'">
               <div class="spinner-border spinner-border-sm" role="status">
                 <span class="visually-hidden">Enviando...</span>
               </div>
@@ -163,15 +166,13 @@
           </button>
         </div>
       </form>
-      
+
       <!-- Sugerencias -->
-      <div class="mt-2" *ngIf="messages.length <= 1">
-        <small class="text-muted">Prueba preguntar:</small>
-        <div class="d-flex flex-wrap gap-1 mt-1">
-          <button type="button" 
-                  class="btn btn-sm btn-outline-secondary"
-                  (click)="chatForm.patchValue({message: suggestion})"
-                  *ngFor="let suggestion of getSuggestions()">
+      <div class="mt-2" *ngIf="((messages$ | async)?.length || 0) <= 1">
+        <small class="text-muted mb-2 d-block">Sugerencias:</small>
+        <div class="d-flex flex-wrap">
+          <button type="button" class="btn btn-sm btn-outline-secondary me-1 mb-1"
+            *ngFor="let suggestion of getSuggestions()" (click)="sendSuggestion(suggestion)">
             {{ suggestion }}
           </button>
         </div>

@@ -77,3 +77,41 @@ body.sidebar-open {
 }
 
 /* --- FIN DE ESTILOS GLOBALES --- */
+
+/* Clases utilitarias específicas para el chat */
+.w-90 {
+  width: 90% !important;
+}
+
+.h-80 {
+  height: 80% !important;
+}
+
+/* Mejorar la apariencia de elementos interactivos */
+[role="button"] {
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+[role="button"]:hover {
+  background-color: var(--bs-gray-200) !important;
+}
+
+/* Mejorar la apariencia de scrollbars en webkit */
+.overflow-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
