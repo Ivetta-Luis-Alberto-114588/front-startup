@@ -1,5 +1,5 @@
 # Dockerfile para Angular con Node.js 22
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 
 # Establecer directorio de trabajo
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependencias
-RUN npm install
+RUN npm ci --omit=dev
 
 # Copiar código fuente
 COPY . .
