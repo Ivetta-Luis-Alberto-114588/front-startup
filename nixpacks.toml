@@ -3,7 +3,7 @@ NODE_ENV = "production"
 NIXPACKS_PATH = ".nixpacks"
 
 [phases.install]
-commands = ["npm ci --omit=dev --prefer-offline --no-audit"]
+commands = ["npm ci --omit=dev --cache=/tmp/npm-cache --prefer-offline --no-audit"]
 
 [phases.build]
 commands = ["npm run build"]
