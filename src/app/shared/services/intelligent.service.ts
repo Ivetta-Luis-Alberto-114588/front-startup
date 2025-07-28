@@ -82,7 +82,7 @@ export class IntelligentService {
      * Test directo al backend sin proxy
      */
     testDirectConnection(): Observable<any> {
-        const directUrl = 'https://sistema-mongo.onrender.com/api/intelligent/health';
+        const directUrl = `${environment.apiUrl}/api/intelligent/health`;
         console.log('🧪 Testing direct connection to:', directUrl);
 
         return this.http.get(directUrl).pipe(

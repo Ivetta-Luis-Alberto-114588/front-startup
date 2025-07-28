@@ -23,7 +23,7 @@ export interface NotificationResponse {
 })
 export class OrderNotificationService {
     // URL completa del endpoint de notificaciones para bypass del proxy
-    private apiUrl = 'https://sistema-mongo.onrender.com/api/notifications/manual';
+    private apiUrl = `${environment.apiUrl}/api/notifications/manual`;
 
     constructor(private http: HttpClient) { }
 

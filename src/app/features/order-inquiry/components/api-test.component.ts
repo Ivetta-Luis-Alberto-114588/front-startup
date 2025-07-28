@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
+import { environment } from 'src/environments/environment';
 import { OrderInquiryService } from '../services/order-inquiry.service';
 
 @Component({
-    selector: 'app-api-test',
-    template: `
+  selector: 'app-api-test',
+  template: `
     <div class="container my-5">
       <div class="row">
         <div class="col-md-10 offset-md-1">
@@ -112,7 +113,7 @@ import { OrderInquiryService } from '../services/order-inquiry.service';
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     pre {
       max-height: 400px;
       overflow-y: auto;
@@ -133,48 +134,49 @@ import { OrderInquiryService } from '../services/order-inquiry.service';
   `]
 })
 export class ApiTestComponent implements OnInit {
-    orderId: string = '';
-    response: any = null;
-    error: string = '';
-    isLoading: boolean = false;
-    apiUrl: string = '';
+  orderId: string = '';
+  response: any = null;
+  error: string = '';
+  isLoading: boolean = false;
+  apiUrl: string = '';
 
-    constructor(private orderInquiryService: OrderInquiryService) { }
+  constructor(private orderInquiryService: OrderInquiryService) { }
 
-    ngOnInit(): void {
-        // Obtener la URL de la API del environment
-        this.apiUrl = 'https://sistema-mongo.onrender.com/api';
+  ngOnInit(): void {
+    // Obtener la URL de la API del environment
+
+    this.apiUrl = environment.apiUrl + '/api';
+  }
+
+  testAPI(): void {
+    if (!this.orderId) {
+      this.error = 'Por favor ingresa un ID de orden';
+      return;
     }
 
-    testAPI(): void {
-        if (!this.orderId) {
-            this.error = 'Por favor ingresa un ID de orden';
-            return;
-        }
+    this.isLoading = true;
+    this.response = null;
+    this.error = '';
 
-        this.isLoading = true;
-        this.response = null;
-        this.error = '';
+    this.orderInquiryService.getOrderById(this.orderId).subscribe({
+      next: (data) => {
+        this.response = data;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.error = err.message || 'Error al consultar la API';
+        this.isLoading = false;
+      }
+    });
+  }
 
-        this.orderInquiryService.getOrderById(this.orderId).subscribe({
-            next: (data) => {
-                this.response = data;
-                this.isLoading = false;
-            },
-            error: (err) => {
-                this.error = err.message || 'Error al consultar la API';
-                this.isLoading = false;
-            }
-        });
-    }
+  useExampleId(): void {
+    this.orderId = '68767f84e969706394f06e4a';
+    this.clearResults();
+  }
 
-    useExampleId(): void {
-        this.orderId = '68767f84e969706394f06e4a';
-        this.clearResults();
-    }
-
-    clearResults(): void {
-        this.response = null;
-        this.error = '';
-    }
+  clearResults(): void {
+    this.response = null;
+    this.error = '';
+  }
 }

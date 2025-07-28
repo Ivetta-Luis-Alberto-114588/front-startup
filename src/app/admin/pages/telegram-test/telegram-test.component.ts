@@ -1,6 +1,8 @@
+
 import { Component, OnInit } from '@angular/core';
 import { TelegramNotificationService, TelegramNotificationResponse } from '../../../shared/services/telegram-notification.service';
 import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 interface TelegramConfig {
     bot_token?: string;
@@ -35,7 +37,8 @@ export class TelegramTestComponent implements OnInit {
     testResults: TelegramTestResult[] = [];
 
     // API Base URL
-    private readonly apiUrl = 'https://sistema-mongo.onrender.com/api';
+    private readonly apiUrl = `${environment.apiUrl}/api`;
+    environment = environment;
 
     constructor(
         private telegramService: TelegramNotificationService,

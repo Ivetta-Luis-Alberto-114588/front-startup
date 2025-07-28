@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 export interface TelegramNotificationRequest {
     message: string;
@@ -16,7 +17,8 @@ export interface TelegramNotificationResponse {
     providedIn: 'root'
 })
 export class TelegramNotificationService {
-    private readonly telegramApiUrl = 'https://sistema-mongo.onrender.com/api/admin/telegram/send-notification';
+
+    private readonly telegramApiUrl = `${environment.apiUrl}/api/admin/telegram/send-notification`;
 
     constructor(private http: HttpClient) { }
 
