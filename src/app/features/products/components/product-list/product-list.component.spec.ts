@@ -338,7 +338,7 @@ describe('ProductListComponent', () => {
         });
     });
 
-    describe('addToCart (Authentication Required)', () => {
+    describe('addToCart (Guest and Authenticated Users)', () => {
         it('should add product to cart when user is authenticated', () => {
             authService.isAuthenticated.and.returnValue(true);
             cartService.addItem.and.returnValue(of({} as any));
@@ -349,31 +349,16 @@ describe('ProductListComponent', () => {
             expect(component.productsBeingAdded[mockProduct.id]).toBeUndefined();
         });
 
-        it('should redirect to login when user is not authenticated', () => {
+        it('should add product to cart when user is guest (not authenticated)', () => {
             authService.isAuthenticated.and.returnValue(false);
+            cartService.addItem.and.returnValue(of({} as any));
 
             component.addToCart(mockProduct);
 
-            expect(notificationService.showInfo).toHaveBeenCalledWith(
-                'Inicia sesión para añadir al carrito.',
-                'Inicio Requerido'
-            );
-            expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
-                queryParams: { returnUrl: router.url }
-            });
-            expect(cartService.addItem).not.toHaveBeenCalled();
-        });
-
-        it('should save pending cart action when not authenticated', () => {
-            authService.isAuthenticated.and.returnValue(false);
-            spyOn(localStorage, 'setItem');
-
-            component.addToCart(mockProduct);
-
-            expect(localStorage.setItem).toHaveBeenCalledWith(
-                'pendingCartAction',
-                JSON.stringify({ productId: mockProduct.id, quantity: 1 })
-            );
+            expect(cartService.addItem).toHaveBeenCalledWith(mockProduct.id, 1);
+            expect(component.productsBeingAdded[mockProduct.id]).toBeUndefined();
+            expect(notificationService.showInfo).not.toHaveBeenCalled();
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should not add product if already being added', () => {

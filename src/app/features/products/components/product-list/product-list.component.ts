@@ -129,14 +129,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
   addToCart(product: IProduct): void {
     if (!product || this.productsBeingAdded[product.id] || product.stock <= 0) return;
 
-    if (!this.authService.isAuthenticated()) {
-      // Guardar acción pendiente en localStorage
-      localStorage.setItem('pendingCartAction', JSON.stringify({ productId: product.id, quantity: 1 }));
-      this.notificationService.showInfo('Inicia sesión para añadir al carrito.', 'Inicio Requerido');
-      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
-
+    // Permitir agregar al carrito tanto para usuarios autenticados como invitados
+    // El CartService maneja internamente la diferencia entre carrito de usuario y carrito guest
     this.productsBeingAdded[product.id] = true;
     this.cartService.addItem(product.id, 1).pipe(
       finalize(() => { delete this.productsBeingAdded[product.id]; })

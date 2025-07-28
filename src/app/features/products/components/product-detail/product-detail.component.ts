@@ -103,23 +103,10 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     }
 
     // Validar autenticación antes de agregar al carrito
-    if (!this.authService.isAuthenticated()) {
-      this.notificationService.showInfo(
-        'Inicia sesión para añadir al carrito.',
-        'Inicio Requerido'
-      );
-      this.router.navigate(['/auth/login'], {
-        queryParams: { returnUrl: this.router.url }
-      });
-      // Guardar acción pendiente en localStorage
-      localStorage.setItem('pendingCartAction', JSON.stringify({
-        productId: this.product.id,
-        quantity: this.quantity
-      }));
-      return;
-    }
+    // ELIMINADO: Permitir agregar al carrito tanto para usuarios autenticados como invitados
+    // El CartService maneja internamente la diferencia entre carrito de usuario y carrito guest
 
-    // Agregar al carrito (solo si está autenticado)
+    // Agregar al carrito (permitido para usuarios autenticados e invitados)
     this.isAddingToCart = true;
     this.cartService.addItem(this.product.id, this.quantity).pipe(
       finalize(() => { this.isAddingToCart = false; })

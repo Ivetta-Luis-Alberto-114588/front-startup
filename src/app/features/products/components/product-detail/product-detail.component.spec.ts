@@ -259,7 +259,7 @@ describe('ProductDetailComponent', () => {
         });
     });
 
-    describe('addToCart - Authentication Required', () => {
+    describe('addToCart - Guest and Authenticated Users', () => {
         beforeEach(() => {
             component.product = mockProduct;
             component.quantity = 2;
@@ -275,31 +275,16 @@ describe('ProductDetailComponent', () => {
             expect(component.isAddingToCart).toBe(false);
         });
 
-        it('should redirect to login when user is not authenticated', () => {
+        it('should add product to cart when user is guest (not authenticated)', () => {
             authService.isAuthenticated.and.returnValue(false);
+            cartService.addItem.and.returnValue(of({} as any));
 
             component.addToCart();
 
-            expect(notificationService.showInfo).toHaveBeenCalledWith(
-                'Inicia sesión para añadir al carrito.',
-                'Inicio Requerido'
-            );
-            expect(router.navigate).toHaveBeenCalledWith(['/auth/login'], {
-                queryParams: { returnUrl: router.url }
-            });
-            expect(cartService.addItem).not.toHaveBeenCalled();
-        });
-
-        it('should save pending cart action when not authenticated', () => {
-            authService.isAuthenticated.and.returnValue(false);
-            spyOn(localStorage, 'setItem');
-
-            component.addToCart();
-
-            expect(localStorage.setItem).toHaveBeenCalledWith(
-                'pendingCartAction',
-                JSON.stringify({ productId: mockProduct.id, quantity: 2 })
-            );
+            expect(cartService.addItem).toHaveBeenCalledWith(mockProduct.id, 2);
+            expect(component.isAddingToCart).toBe(false);
+            expect(notificationService.showInfo).not.toHaveBeenCalled();
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should not add to cart if product is null', () => {

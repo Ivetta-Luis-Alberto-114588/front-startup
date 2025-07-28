@@ -107,18 +107,8 @@ export class HomeComponent implements OnInit {
 
 
   addToCart(product: IProduct): void {
-    // 1. VERIFICAR AUTENTICACIÓN
-    if (!this.authService.isAuthenticated()) {
-      this.notificationService.showInfo('Inicia sesión para añadir al carrito.', 'Inicio Requerido');
-      // GUARDAR ACCIÓN PENDIENTE
-      const pendingAction = { productId: product.id, quantity: 1 };
-      localStorage.setItem('pendingCartAction', JSON.stringify(pendingAction));
-      // REDIRIGIR
-      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
-
-    // 2. SI ESTÁ AUTENTICADO
+    // PERMITIR AGREGAR AL CARRITO PARA USUARIOS AUTENTICADOS E INVITADOS
+    // El CartService maneja internamente la diferencia entre carrito de usuario y carrito guest
     if (!product || this.productsBeingAdded[product.id] || product.stock <= 0) return;
 
     this.productsBeingAdded[product.id] = true;
