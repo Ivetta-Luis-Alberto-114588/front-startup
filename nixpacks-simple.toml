@@ -1,0 +1,11 @@
+# Configuración mínima para Nixpacks
+providers = ["node"]
+
+[variables]
+NODE_ENV = "production"
+
+[build]
+cmd = "npm install && npm run build"
+
+[start]
+cmd = "npx serve -s dist/test2 -l 3000"
