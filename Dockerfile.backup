@@ -1,0 +1,38 @@
+# Dockerfile para Angular con Node.js 20
+FROM node:20-alpine as build
+
+# Configurar directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de configuración de dependencias
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm ci --prefer-offline --no-audit
+
+# Copiar código fuente
+COPY . .
+
+# Construir la aplicación para producción
+RUN npm run build:prod
+
+# Etapa de producción con servidor estático
+FROM node:20-alpine as production
+
+WORKDIR /app
+
+# Instalar serve globalmente
+RUN npm install -g serve
+
+# Copiar archivos construidos desde la etapa anterior
+COPY --from=build /app/dist/test2 /app/dist
+
+# Exponer puerto
+EXPOSE 3000
+
+# Variables de entorno
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Comando para servir la aplicación
+CMD ["serve", "-s", "/app/dist", "-l", "3000"]

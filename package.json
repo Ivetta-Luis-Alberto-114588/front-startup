@@ -4,7 +4,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --proxy-config proxy.conf.json",
-    "build": "ng build",
+    "start:prod": "serve -s dist/test2 -l 3000",
+    "build": "ng build --configuration production",
+    "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:coverage": "ng test --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox",
@@ -15,6 +17,10 @@
     "test:checkout:coverage": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --karma-config=karma-checkout.conf.js --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox",
     "test:checkout:coverage:open": "ng test --include=\"src/app/features/checkout/**/*.spec.ts\" --karma-config=karma-checkout.conf.js --code-coverage --watch=false --browsers=ChromeHeadlessNoSandbox && start coverage/checkout/index.html",
     "lint": "ng lint"
+  },
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=8.0.0"
   },
   "private": true,
   "dependencies": {
@@ -35,6 +41,7 @@
     "bootstrap-icons": "^1.11.3",
     "ngx-toastr": "^19.0.0",
     "rxjs": "~7.8.0",
+    "serve": "^14.2.3",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0"
   },
