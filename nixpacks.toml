@@ -1,0 +1,2 @@
+# Configuración forzada para usar Dockerfile
+providers = []

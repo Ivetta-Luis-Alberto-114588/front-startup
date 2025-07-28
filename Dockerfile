@@ -1,39 +1,32 @@
-# Multi-stage Dockerfile para Angular
-FROM node:20-alpine AS build
+# Dockerfile para Angular con Node.js 22
+FROM node:22-alpine AS build
 
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de configuración de dependencias
+# Copiar archivos de configuración
 COPY package*.json ./
 
-# Instalar dependencias (incluyendo devDependencies para el build)
-RUN npm ci --include=dev --prefer-offline --no-audit
+# Instalar dependencias
+RUN npm install
 
 # Copiar código fuente
 COPY . .
 
-# Construir la aplicación para producción
+# Construir la aplicación
 RUN npm run build
 
 # Etapa de producción
-FROM node:20-alpine AS production
+FROM nginx:alpine AS production
 
-# Instalar serve globalmente
-RUN npm install -g serve@14.2.3
+# Copiar archivos construidos
+COPY --from=build /app/dist/test2 /usr/share/nginx/html
 
-# Crear directorio de trabajo
-WORKDIR /app
-
-# Copiar archivos construidos desde la etapa anterior
-COPY --from=build /app/dist/test2 ./dist
+# Copiar configuración de nginx
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Exponer puerto
-EXPOSE 3000
-
-# Variables de entorno
-ENV NODE_ENV=production
-ENV PORT=3000
+EXPOSE 80
 
 # Comando de inicio
-CMD ["serve", "-s", "dist", "-l", "3000"]
+CMD ["nginx", "-g", "daemon off;"]
