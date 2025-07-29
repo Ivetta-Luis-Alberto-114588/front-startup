@@ -9,6 +9,7 @@ import { By } from '@angular/platform-browser';
 import { CartPageComponent } from './cart-page.component';
 import { CartService } from '../../services/cart.service';
 import { AuthService } from 'src/app/auth/services/auth.service';
+import { ImageUrlService } from 'src/app/shared/services/image-url.service';
 import { ICart } from '../../models/icart';
 import { ICartItem } from '../../models/icart-item';
 import { IProduct } from '../../../products/model/iproduct';
@@ -22,6 +23,7 @@ describe('CartPageComponent', () => {
     let router: jasmine.SpyObj<Router>;
     let location: jasmine.SpyObj<Location>;
     let modalService: jasmine.SpyObj<NgbModal>;
+    let imageUrlService: jasmine.SpyObj<ImageUrlService>;
 
     // Mocks de datos
     const mockUser: IUser = {
@@ -98,6 +100,11 @@ describe('CartPageComponent', () => {
         const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
         const locationSpy = jasmine.createSpyObj('Location', ['back']);
         const modalServiceSpy = jasmine.createSpyObj('NgbModal', ['open']);
+        const imageUrlServiceSpy = jasmine.createSpyObj('ImageUrlService', [
+            'getProductImageUrl',
+            'getPlaceholderUrl',
+            'isValidImageUrl'
+        ]);
 
         await TestBed.configureTestingModule({
             declarations: [CartPageComponent],
@@ -106,7 +113,8 @@ describe('CartPageComponent', () => {
                 { provide: AuthService, useValue: authServiceSpy },
                 { provide: Router, useValue: routerSpy },
                 { provide: Location, useValue: locationSpy },
-                { provide: NgbModal, useValue: modalServiceSpy }
+                { provide: NgbModal, useValue: modalServiceSpy },
+                { provide: ImageUrlService, useValue: imageUrlServiceSpy }
             ]
         }).compileComponents();
 
@@ -117,6 +125,12 @@ describe('CartPageComponent', () => {
         router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
         location = TestBed.inject(Location) as jasmine.SpyObj<Location>;
         modalService = TestBed.inject(NgbModal) as jasmine.SpyObj<NgbModal>;
+        imageUrlService = TestBed.inject(ImageUrlService) as jasmine.SpyObj<ImageUrlService>;
+
+        // Setup default return values for imageUrlService
+        imageUrlService.getProductImageUrl.and.returnValue('assets/placeholder.png');
+        imageUrlService.getPlaceholderUrl.and.returnValue('assets/placeholder.png');
+        imageUrlService.isValidImageUrl.and.returnValue(true);
     });
 
     afterEach(() => {
@@ -476,6 +490,43 @@ describe('CartPageComponent', () => {
             component['cartSubscription'] = null;
 
             expect(() => component.ngOnDestroy()).not.toThrow();
+        });
+    });
+
+    describe('Image handling', () => {
+        it('should get product image URL using imageUrlService', () => {
+            const expectedUrl = 'https://backend.com/uploads/product.jpg';
+            imageUrlService.getProductImageUrl.and.returnValue(expectedUrl);
+
+            const result = component.getProductImageUrl(mockCartItem);
+
+            expect(imageUrlService.getProductImageUrl).toHaveBeenCalledWith(mockProduct.imgUrl);
+            expect(result).toBe(expectedUrl);
+        });
+
+        it('should handle image error by setting placeholder', () => {
+            const mockEvent = {
+                target: {
+                    src: 'broken-image-url'
+                }
+            };
+            const placeholderUrl = 'assets/placeholder.png';
+            imageUrlService.getPlaceholderUrl.and.returnValue(placeholderUrl);
+            spyOn(console, 'warn');
+
+            component.onImageError(mockEvent);
+
+            expect(console.warn).toHaveBeenCalledWith('[CartPage] Error cargando imagen:', 'broken-image-url');
+            expect(mockEvent.target.src).toBe(placeholderUrl);
+        });
+
+        it('should log successful image load', () => {
+            spyOn(console, 'log');
+            const productName = 'Test Product';
+
+            component.onImageLoad(productName);
+
+            expect(console.log).toHaveBeenCalledWith('[CartPage] Imagen cargada exitosamente para:', productName);
         });
     });
 });

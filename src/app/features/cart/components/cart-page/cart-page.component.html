@@ -36,15 +36,20 @@
                     </thead>
                     <tbody>
                         <tr *ngFor="let item of cart.items">
-                            <!-- Columna Imagen (sin cambios) -->
+                            <!-- Columna Imagen (con manejo de URL mejorado) -->
                             <td>
-                                <img [src]="item.product.imgUrl || 'assets/placeholder.png'" [alt]="item.product.name"
-                                    class="img-fluid rounded" style="max-width: 60px; height: auto;">
+                                <img [src]="getProductImageUrl(item)" [alt]="item.product.name"
+                                    (error)="onImageError($event)" class="img-fluid rounded"
+                                    style="max-width: 60px; height: auto; object-fit: cover; border: 1px solid #ddd;">
                             </td>
-                            <!-- Columna Nombre/Descripción (sin cambios) -->
+                            <!-- Columna Nombre/Descripción (mejorada) -->
                             <td>
                                 <h6 class="mb-0">{{ item.product.name }}</h6>
-                                <small class="text-muted">{{ item.product.description | slice:0:50 }}...</small>
+                                <small class="text-muted"
+                                    *ngIf="item.product.description && item.product.description !== item.product.name">
+                                    {{ item.product.description | slice:0:50 }}{{ item.product.description.length > 50 ?
+                                    '...' : '' }}
+                                </small>
                             </td>
                             <!-- ***** Columna Precio Unitario CORREGIDA ***** -->
                             <td class="text-center">{{ item.unitPriceWithTax | currency }}</td>

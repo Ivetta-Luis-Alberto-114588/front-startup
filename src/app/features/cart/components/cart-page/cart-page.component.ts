@@ -9,6 +9,7 @@ import { ICart } from '../../models/icart';
 import { ICartItem } from '../../models/icart-item';
 import { CartService } from '../../services/cart.service';
 import { AuthService } from 'src/app/auth/services/auth.service';
+import { ImageUrlService } from 'src/app/shared/services/image-url.service';
 
 @Component({
   selector: 'app-cart-page',
@@ -33,12 +34,15 @@ export class CartPageComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private location: Location,
-    private modalService: NgbModal // <--- INYECTAR NgbModal
+    private modalService: NgbModal, // <--- INYECTAR NgbModal
+    private imageUrlService: ImageUrlService
   ) {
     this.cart$ = this.cartService.cart$;
   }
 
-  ngOnInit(): void { this.loadCart(); }
+  ngOnInit(): void {
+    this.loadCart();
+  }
   ngOnDestroy(): void { this.cartSubscription?.unsubscribe(); }
 
 
@@ -88,16 +92,12 @@ export class CartPageComponent implements OnInit, OnDestroy {
   }
 
   removeItem(productId: string): void {
-    // ***** AÑADIR ESTE LOG *****
-    // ***** FIN LOG AÑADIDO *****
-
     if (this.updatingItemId) {
       return; // Evitar múltiples actualizaciones
     }
     this.updatingItemId = productId; // Usar el mismo flag para deshabilitar
     this.cartService.removeItem(productId)
       .subscribe({
-        error: (err) => console.error('[CartPage] Error en subscribe de removeItem:', err), // Loguear error si la suscripción falla
         complete: () => {
           this.updatingItemId = null; // Resetear al completar
         }
@@ -154,6 +154,21 @@ export class CartPageComponent implements OnInit, OnDestroy {
   // Getter para usar en template
   get authenticationService() {
     return this.authService;
+  }
+
+  /**
+   * Obtiene la URL correcta de la imagen del producto
+   */
+  getProductImageUrl(item: ICartItem): string {
+    return this.imageUrlService.getProductImageUrl(item.product.imgUrl);
+  }
+
+  /**
+   * Maneja errores de carga de imágenes estableciendo una imagen por defecto
+   */
+  onImageError(event: any): void {
+    const img = event.target as HTMLImageElement;
+    img.src = this.imageUrlService.getPlaceholderUrl();
   }
 
 }
