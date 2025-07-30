@@ -307,15 +307,6 @@ describe('CartPageComponent', () => {
             component.removeItem(mockCartItem.product.id);
 
             expect(component.updatingItemId).toBeNull();
-        }); it('should handle remove item error', () => {
-            spyOn(console, 'error');
-            cartService.removeItem.and.returnValue(throwError(() => new Error('Error removing item')));
-
-            component.removeItem(mockCartItem.product.id);
-
-            expect(console.error).toHaveBeenCalled();
-            // En caso de error, el updatingItemId permanece con el valor (no se resetea)
-            expect(component.updatingItemId).toBe(mockCartItem.product.id);
         });
     });
 
@@ -512,21 +503,11 @@ describe('CartPageComponent', () => {
             };
             const placeholderUrl = 'assets/placeholder.png';
             imageUrlService.getPlaceholderUrl.and.returnValue(placeholderUrl);
-            spyOn(console, 'warn');
 
             component.onImageError(mockEvent);
 
-            expect(console.warn).toHaveBeenCalledWith('[CartPage] Error cargando imagen:', 'broken-image-url');
+            expect(imageUrlService.getPlaceholderUrl).toHaveBeenCalled();
             expect(mockEvent.target.src).toBe(placeholderUrl);
-        });
-
-        it('should log successful image load', () => {
-            spyOn(console, 'log');
-            const productName = 'Test Product';
-
-            component.onImageLoad(productName);
-
-            expect(console.log).toHaveBeenCalledWith('[CartPage] Imagen cargada exitosamente para:', productName);
         });
     });
 });

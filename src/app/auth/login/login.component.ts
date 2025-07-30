@@ -60,15 +60,27 @@ export class LoginComponent implements OnInit, OnDestroy { // Implementar OnDest
           // --- FIN PROCESAR ACCIÓN PENDIENTE ---
         },
         error: (err) => {
+          console.error('[LoginComponent] Error completo:', err);
+          console.error('[LoginComponent] Status:', err.status);
+          console.error('[LoginComponent] StatusText:', err.statusText);
+          console.error('[LoginComponent] Error body:', err.error);
+          console.error('[LoginComponent] URL:', err.url);
+
           this.isLoading = false;
           if (err.error && err.error.message) {
             this.error = err.error.message;
-          } else if (err.status === 0 || err.status === 503) { // Service Unavailable
-            this.error = 'No se pudo conectar con el servidor. Inténtalo más tarde.';
+          } else if (err.status === 0) {
+            this.error = 'No se pudo conectar con el servidor. Verifica tu conexión a internet y que el servidor esté disponible.';
+          } else if (err.status === 503) { // Service Unavailable
+            this.error = 'El servidor no está disponible temporalmente. Inténtalo más tarde.';
           } else if (err.status === 401) { // Unauthorized (credenciales inválidas)
             this.error = 'Correo electrónico o contraseña incorrectos.';
+          } else if (err.status === 404) { // Not Found
+            this.error = 'El servicio de autenticación no está disponible. Contacta con el administrador.';
+          } else if (err.status >= 500) {
+            this.error = 'Error interno del servidor. Inténtalo más tarde.';
           } else {
-            this.error = 'Ocurrió un error durante el inicio de sesión.';
+            this.error = `Error durante el inicio de sesión (${err.status}: ${err.statusText}).`;
           }
         }
         // complete: () => { // El complete se llama después de next o error

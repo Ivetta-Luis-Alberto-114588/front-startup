@@ -94,9 +94,13 @@ export class AuthService {
 
 
   login(email: string, password: string): Observable<any> {
+    console.log('[AuthService] Iniciando login a:', `${this.apiUrl}/login`);
+    console.log('[AuthService] Datos enviados:', { email, password: '***' });
+
     return this.http.post<any>(`${this.apiUrl}/login`, { email, password })
       .pipe(
         tap(response => {
+          console.log('[AuthService] Respuesta recibida:', response);
           if (response && typeof response === 'object' && response.user && typeof response.user === 'object' && typeof response.user.token === 'string') {
             const token = response.user.token;
             const userData = response.user;
@@ -104,12 +108,17 @@ export class AuthService {
             const { token: _, ...userWithoutToken } = userData;
             this.storeUser(userWithoutToken);
             this.isAuthenticatedSubject.next(true);
+            console.log('[AuthService] Login exitoso, usuario almacenado');
           } else {
-            console.error("Invalid login response structure:", response);
+            console.error("[AuthService] Estructura de respuesta inválida:", response);
             throw new Error('Respuesta de login inválida del servidor.');
           }
         }),
         catchError(err => {
+          console.error('[AuthService] Error en login:', err);
+          console.error('[AuthService] Status:', err.status);
+          console.error('[AuthService] Error completo:', err.error);
+          console.error('[AuthService] Headers:', err.headers);
           return throwError(() => err);
         })
       );
