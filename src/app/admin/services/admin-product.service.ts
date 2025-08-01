@@ -1,11 +1,12 @@
 // src/app/admin/services/admin-product.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, switchMap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { IProduct } from 'src/app/features/products/model/iproduct';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 import { AuthService } from 'src/app/auth/services/auth.service';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 export interface PaginatedAdminProductsResponse {
   total: number;
@@ -34,7 +35,8 @@ export class AdminProductService {
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private roleService: RoleService
   ) { }
 
   getProducts(pagination: PaginationDto): Observable<PaginatedAdminProductsResponse> {
@@ -74,34 +76,55 @@ export class AdminProductService {
   }
 
   updateProduct(id: string, productData: Partial<ProductFormData>, imageFile?: File | null): Observable<IProduct> {
-    const formData = new FormData();
-    Object.keys(productData).forEach(key => {
-      const value = (productData as any)[key];
-      if (value !== undefined && value !== null) {
-        if (key === 'tags' && Array.isArray(value)) {
-          formData.append(key, value.join(','));
-        } else if (key === 'isActive' && typeof value === 'boolean') {
-          formData.append(key, value ? 'true' : 'false'); // Booleano a string 'true'/'false'
-        } else if (typeof value === 'number' || typeof value === 'string') {
-          // --- NO convertir números a string explícitamente ---
-          formData.append(key, value as any); // Dejar que FormData lo maneje
+    return this.roleService.canUpdate().pipe(
+      switchMap(canUpdate => {
+        if (!canUpdate) {
+          return throwError(() => new Error('No tienes permisos para actualizar productos. Solo los Super Administradores pueden realizar esta acción.'));
         }
-        // Ignorar otros tipos si los hubiera
-      }
-    });
-    if (imageFile) {
-      formData.append('image', imageFile, imageFile.name);
-    }
-    // --- CORRECCIÓN: Enviar imgUrl solo si es explícitamente '' para borrar ---
-    if (productData.imgUrl === '') {
-      formData.append('imgUrl', '');
-    }
-    // --- FIN CORRECCIÓN ---
 
-    return this.http.put<IProduct>(`${this.adminApiUrl}/${id}`, formData);
+        const formData = new FormData();
+        Object.keys(productData).forEach(key => {
+          const value = (productData as any)[key];
+          if (value !== undefined && value !== null) {
+            if (key === 'tags' && Array.isArray(value)) {
+              formData.append(key, value.join(','));
+            } else if (key === 'isActive' && typeof value === 'boolean') {
+              formData.append(key, value ? 'true' : 'false'); // Booleano a string 'true'/'false'
+            } else if (typeof value === 'number' || typeof value === 'string') {
+              // --- NO convertir números a string explícitamente ---
+              formData.append(key, value as any); // Dejar que FormData lo maneje
+            }
+            // Ignorar otros tipos si los hubiera
+          }
+        });
+        if (imageFile) {
+          formData.append('image', imageFile, imageFile.name);
+        }
+        // --- CORRECCIÓN: Enviar imgUrl solo si es explícitamente '' para borrar ---
+        if (productData.imgUrl === '') {
+          formData.append('imgUrl', '');
+        }
+        // --- FIN CORRECCIÓN ---
+
+        return this.http.put<IProduct>(`${this.adminApiUrl}/${id}`, formData);
+      })
+    );
   }
 
+  /**
+   * Elimina un producto (admin).
+   * Solo disponible para SUPER_ADMIN_ROLE.
+   * DELETE /api/admin/products/:id
+   */
   deleteProduct(id: string): Observable<IProduct> {
-    return this.http.delete<IProduct>(`${this.adminApiUrl}/${id}`);
+    return this.roleService.canDelete().pipe(
+      switchMap(canDelete => {
+        if (!canDelete) {
+          return throwError(() => new Error('No tienes permisos para eliminar productos. Solo los Super Administradores pueden realizar esta acción.'));
+        }
+
+        return this.http.delete<IProduct>(`${this.adminApiUrl}/${id}`);
+      })
+    );
   }
 }

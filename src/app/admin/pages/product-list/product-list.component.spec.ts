@@ -5,10 +5,12 @@ import { of, throwError, EMPTY, Subject } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { NgbModal, NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { ProductListComponent } from './product-list.component';
 import { AdminProductService, PaginatedAdminProductsResponse } from '../../services/admin-product.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
+import { RoleService } from 'src/app/shared/services/role.service';
 import { IProduct } from 'src/app/features/products/model/iproduct';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 
@@ -17,6 +19,7 @@ describe('Admin ProductListComponent - Pagination Tests', () => {
     let fixture: ComponentFixture<ProductListComponent>;
     let adminProductService: jasmine.SpyObj<AdminProductService>;
     let notificationService: jasmine.SpyObj<NotificationService>;
+    let roleService: jasmine.SpyObj<RoleService>;
     let router: jasmine.SpyObj<Router>;
     let location: jasmine.SpyObj<Location>;
     let modalService: jasmine.SpyObj<NgbModal>;
@@ -58,14 +61,18 @@ describe('Admin ProductListComponent - Pagination Tests', () => {
     beforeEach(async () => {
         const adminProductServiceSpy = jasmine.createSpyObj('AdminProductService', ['getProducts', 'deleteProduct']);
         const notificationServiceSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError', 'showWarning']);
+        const roleServiceSpy = jasmine.createSpyObj('RoleService', ['canUpdate', 'canDelete', 'canEdit', 'isSuperAdmin']);
         const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
         const locationSpy = jasmine.createSpyObj('Location', ['back']);
-        const modalServiceSpy = jasmine.createSpyObj('NgbModal', ['open']); await TestBed.configureTestingModule({
+        const modalServiceSpy = jasmine.createSpyObj('NgbModal', ['open']); 
+
+        await TestBed.configureTestingModule({
             declarations: [ProductListComponent],
-            imports: [NgbPaginationModule],
+            imports: [NgbPaginationModule, HttpClientTestingModule],
             providers: [
                 { provide: AdminProductService, useValue: adminProductServiceSpy },
                 { provide: NotificationService, useValue: notificationServiceSpy },
+                { provide: RoleService, useValue: roleServiceSpy },
                 { provide: Router, useValue: routerSpy },
                 { provide: Location, useValue: locationSpy },
                 { provide: NgbModal, useValue: modalServiceSpy }
@@ -77,9 +84,16 @@ describe('Admin ProductListComponent - Pagination Tests', () => {
         component = fixture.componentInstance;
         adminProductService = TestBed.inject(AdminProductService) as jasmine.SpyObj<AdminProductService>;
         notificationService = TestBed.inject(NotificationService) as jasmine.SpyObj<NotificationService>;
+        roleService = TestBed.inject(RoleService) as jasmine.SpyObj<RoleService>;
         router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
         location = TestBed.inject(Location) as jasmine.SpyObj<Location>;
         modalService = TestBed.inject(NgbModal) as jasmine.SpyObj<NgbModal>;
+        
+        // Configurar valores por defecto para RoleService
+        roleService.canUpdate.and.returnValue(of(true));
+        roleService.canDelete.and.returnValue(of(true));
+        roleService.canEdit.and.returnValue(of(true));
+        roleService.isSuperAdmin.and.returnValue(of(true));
     });
 
     describe('Pagination Functionality', () => {

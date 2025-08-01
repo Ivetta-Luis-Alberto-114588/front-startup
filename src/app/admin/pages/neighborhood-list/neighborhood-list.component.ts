@@ -9,6 +9,7 @@ import { INeighborhood } from 'src/app/features/customers/models/ineighborhood';
 import { AdminNeighborhoodService } from '../../services/admin-neighborhood.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-neighborhood-list',
@@ -35,7 +36,8 @@ export class NeighborhoodListComponent implements OnInit, OnDestroy {
     private adminNeighborhoodService: AdminNeighborhoodService,
     private notificationService: NotificationService,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -74,7 +76,13 @@ export class NeighborhoodListComponent implements OnInit, OnDestroy {
   }
 
   goToEditNeighborhood(neighborhoodId: string): void {
-    this.router.navigate(['/admin/neighborhoods/edit', neighborhoodId]);
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (canEdit) {
+        this.router.navigate(['/admin/neighborhoods/edit', neighborhoodId]);
+      } else {
+        this.notificationService.showError('No tienes permisos para editar barrios', 'Acceso denegado');
+      }
+    });
   }
 
   // --- Métodos para Eliminar con Confirmación ---

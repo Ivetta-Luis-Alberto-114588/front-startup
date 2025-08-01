@@ -50,12 +50,12 @@
                     </td>
                     <td class="text-end">
                         <div class="d-inline-flex gap-1">
-                            <button class="btn btn-sm btn-outline-primary" title="Editar"
-                                (click)="goToEditNeighborhood(hood.id)">
+                            <button *ngIf="roleService.canEdit() | async" class="btn btn-sm btn-outline-primary"
+                                title="Editar" (click)="goToEditNeighborhood(hood.id)">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" title="Eliminar"
-                                (click)="openDeleteConfirmation(hood)">
+                            <button *ngIf="roleService.canDelete() | async" class="btn btn-sm btn-outline-danger"
+                                title="Eliminar" (click)="openDeleteConfirmation(hood)">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>

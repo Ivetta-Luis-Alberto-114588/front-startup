@@ -9,6 +9,7 @@ import { ICategory } from 'src/app/features/products/model/icategory';
 import { AdminCategoryService } from '../../services/admin-category.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-category-list',
@@ -35,7 +36,8 @@ export class CategoryListComponent implements OnInit, OnDestroy {
     private adminCategoryService: AdminCategoryService,
     private notificationService: NotificationService,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -79,7 +81,13 @@ export class CategoryListComponent implements OnInit, OnDestroy {
   }
 
   goToEditCategory(categoryId: string): void {
-    this.router.navigate(['/admin/categories/edit', categoryId]);
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (canEdit) {
+        this.router.navigate(['/admin/categories/edit', categoryId]);
+      } else {
+        this.notificationService.showError('No tienes permisos para editar categorías', 'Acceso denegado');
+      }
+    });
   }
 
   // --- Métodos para Eliminar con Confirmación ---

@@ -2,14 +2,17 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AdminProductService, PaginatedAdminProductsResponse, ProductFormData } from './admin-product.service';
 import { AuthService } from 'src/app/auth/services/auth.service';
+import { RoleService } from 'src/app/shared/services/role.service';
 import { IProduct } from 'src/app/features/products/model/iproduct';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 import { environment } from 'src/environments/environment';
+import { of } from 'rxjs';
 
 describe('AdminProductService', () => {
     let service: AdminProductService;
     let httpMock: HttpTestingController;
     let authService: jasmine.SpyObj<AuthService>;
+    let roleService: jasmine.SpyObj<RoleService>;
 
     const baseUrl = `${environment.apiUrl.trim()}/api/admin/products`;
     const mockToken = 'admin-jwt-token';
@@ -50,20 +53,27 @@ describe('AdminProductService', () => {
 
     beforeEach(() => {
         const authServiceSpy = jasmine.createSpyObj('AuthService', ['getToken']);
+        const roleServiceSpy = jasmine.createSpyObj('RoleService', ['canUpdate', 'canDelete', 'isSuperAdmin']);
 
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
             providers: [
                 AdminProductService,
-                { provide: AuthService, useValue: authServiceSpy }
+                { provide: AuthService, useValue: authServiceSpy },
+                { provide: RoleService, useValue: roleServiceSpy }
             ]
         });
 
         service = TestBed.inject(AdminProductService);
         httpMock = TestBed.inject(HttpTestingController);
         authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+        roleService = TestBed.inject(RoleService) as jasmine.SpyObj<RoleService>;
 
         authService.getToken.and.returnValue(mockToken);
+        // Por defecto, configuramos permisos como true para los tests
+        roleService.canUpdate.and.returnValue(of(true));
+        roleService.canDelete.and.returnValue(of(true));
+        roleService.isSuperAdmin.and.returnValue(of(true));
     });
 
     afterEach(() => {

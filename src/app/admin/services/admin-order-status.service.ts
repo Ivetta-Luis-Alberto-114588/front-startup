@@ -2,10 +2,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { IOrderStatus, IOrderStatusesResponse } from 'src/app/shared/models/iorder-status';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 export interface IOrderStatusCreateDto {
     name: string;
@@ -40,7 +41,10 @@ export class AdminOrderStatusService {
     private adminApiUrl = `${environment.apiUrl}/api/order-statuses`;
     private publicApiUrl = `${environment.apiUrl}/api/order-statuses`; // Para GET públicos
 
-    constructor(private http: HttpClient) { }
+    constructor(
+        private http: HttpClient,
+        private roleService: RoleService
+    ) { }
 
     private transformBackendToFrontend(data: any): IOrderStatus {
         return {
@@ -109,17 +113,32 @@ export class AdminOrderStatusService {
     }
 
     updateOrderStatus(id: string, orderStatusData: IOrderStatusUpdateDto): Observable<IOrderStatus> {
-        const payload = this.transformFrontendToBackend(orderStatusData);
-        return this.http.put<any>(`${this.adminApiUrl}/${id}`, payload).pipe( // Ruta de admin para actualizar
-            map(response => this.transformBackendToFrontend(response)),
-            catchError(this.handleError)
+        return this.roleService.canUpdate().pipe(
+            switchMap((canUpdate: boolean) => {
+                if (!canUpdate) {
+                    return throwError(() => new Error('No tienes permisos para actualizar estados de orden'));
+                }
+                const payload = this.transformFrontendToBackend(orderStatusData);
+                return this.http.put<any>(`${this.adminApiUrl}/${id}`, payload).pipe( // Ruta de admin para actualizar
+                    map(response => this.transformBackendToFrontend(response)),
+                    catchError(this.handleError)
+                );
+            })
         );
     }
 
     deleteOrderStatus(id: string): Observable<IOrderStatus> { // El backend devuelve el objeto eliminado
-        return this.http.delete<any>(`${this.adminApiUrl}/${id}`).pipe( // Ruta de admin para eliminar
-            map(response => this.transformBackendToFrontend(response)), // Asumiendo que el backend lo devuelve
-            catchError(this.handleError)
+        return this.roleService.canDelete().pipe(
+            switchMap(canDelete => {
+                if (!canDelete) {
+                    return throwError(() => new Error('No tienes permisos para eliminar estados de orden. Solo los Super Administradores pueden realizar esta acción.'));
+                }
+
+                return this.http.delete<any>(`${this.adminApiUrl}/${id}`).pipe( // Ruta de admin para eliminar
+                    map(response => this.transformBackendToFrontend(response)), // Asumiendo que el backend lo devuelve
+                    catchError(this.handleError)
+                );
+            })
         );
     }
 

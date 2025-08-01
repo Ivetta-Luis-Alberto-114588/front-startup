@@ -11,6 +11,7 @@ import { AdminUserService, PaginatedAdminUsersResponse } from '../../services/ad
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 import { AuthService } from 'src/app/auth/services/auth.service';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-user-list',
@@ -39,7 +40,8 @@ export class UserListComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private router: Router,
     private modalService: NgbModal,
-    private authService: AuthService
+    private authService: AuthService,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -94,7 +96,15 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   // --- Métodos restantes sin cambios ---
   goToEditUser(userId: string): void {
-    this.router.navigate(['/admin/users/edit', userId]);
+    // Verificar permisos antes de navegar
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (!canEdit) {
+        this.notificationService.showError('No tienes permisos para editar usuarios. Solo los Super Administradores pueden realizar esta acción.', 'Acceso Denegado');
+        return;
+      }
+
+      this.router.navigate(['/admin/users/edit', userId]);
+    });
   }
 
   loadPage(page: number): void {

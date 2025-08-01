@@ -139,6 +139,15 @@ export class RoleService {
     }
 
     /**
+     * Verifica si el usuario puede editar registros
+     * Solo SUPER_ADMIN_ROLE puede editar (alias para canUpdate)
+     * @returns Observable<boolean>
+     */
+    canEdit(): Observable<boolean> {
+        return this.canUpdate();
+    }
+
+    /**
      * Verifica si el usuario puede realizar una operación específica
      * @param operation - Tipo de operación: 'create', 'read', 'update', 'delete'
      * @returns Observable<boolean>

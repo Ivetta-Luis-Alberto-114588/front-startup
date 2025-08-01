@@ -5,6 +5,7 @@ import { takeUntil, finalize } from 'rxjs/operators';
 import { IOrderStatus } from 'src/app/shared/models/iorder-status';
 import { AdminOrderStatusService } from '../../services/admin-order-status.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 declare var bootstrap: any;
 
@@ -36,7 +37,8 @@ export class OrderStatusListComponent implements OnInit, OnDestroy {
 
   constructor(
     private orderStatusService: AdminOrderStatusService,
-    private router: Router
+    private router: Router,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -63,43 +65,50 @@ export class OrderStatusListComponent implements OnInit, OnDestroy {
     this.orderStatusService.getOrderStatuses(pagination)
       .pipe(
         takeUntil(this.destroy$),
-        finalize(() => this.isLoading = false)      )      .subscribe({
-        next: (response) => {
-          this.orderStatuses = response.orderStatuses;
-          this.totalItems = response.total;
-          this.totalPages = Math.ceil(this.totalItems / this.limit);
-        },
-        error: (error) => {
-          console.error('Error loading order statuses:', error);
-          this.error = 'Error al cargar los estados de pedidos: ' + (error.error?.message || error.message);
-        }
-      });
+        finalize(() => this.isLoading = false)).subscribe({
+          next: (response) => {
+            this.orderStatuses = response.orderStatuses;
+            this.totalItems = response.total;
+            this.totalPages = Math.ceil(this.totalItems / this.limit);
+          },
+          error: (error) => {
+            console.error('Error loading order statuses:', error);
+            this.error = 'Error al cargar los estados de pedidos: ' + (error.error?.message || error.message);
+          }
+        });
   }
 
   goToCreateOrderStatus(): void {
     this.router.navigate(['/admin/order-statuses/new']);
-  }  editOrderStatus(orderStatus: IOrderStatus): void {
+  } editOrderStatus(orderStatus: IOrderStatus): void {
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (!canEdit) {
+        this.error = 'No tienes permisos para editar estados de orden';
+        return;
+      }
+
+      // El backend devuelve 'id' en lugar de '_id'
+      const statusId = orderStatus._id || (orderStatus as any).id;
+
+      if (!statusId) {
+        this.error = 'Error: El ID del estado no está definido';
+        return;
+      }
+
+      this.router.navigate(['/admin/order-statuses/edit', statusId]);
+    });
+  } openDeleteModal(orderStatus: IOrderStatus): void {
     // El backend devuelve 'id' en lugar de '_id'
     const statusId = orderStatus._id || (orderStatus as any).id;
-    
+
     if (!statusId) {
       this.error = 'Error: El ID del estado no está definido';
       return;
     }
-    
-    this.router.navigate(['/admin/order-statuses/edit', statusId]);
-  }openDeleteModal(orderStatus: IOrderStatus): void {
-    // El backend devuelve 'id' en lugar de '_id'
-    const statusId = orderStatus._id || (orderStatus as any).id;
-    
-    if (!statusId) {
-      this.error = 'Error: El ID del estado no está definido';
-      return;
-    }
-    
+
     this.selectedOrderStatus = orderStatus;
     const modalElement = document.getElementById('deleteModal');
-    
+
     if (modalElement) {
       this.deleteModal = new bootstrap.Modal(modalElement);
       this.deleteModal.show();
@@ -110,7 +119,7 @@ export class OrderStatusListComponent implements OnInit, OnDestroy {
 
     // El backend devuelve 'id' en lugar de '_id'
     const statusId = this.selectedOrderStatus._id || (this.selectedOrderStatus as any).id;
-    
+
     if (!statusId) {
       this.error = 'Error: El ID del estado no está definido';
       return;

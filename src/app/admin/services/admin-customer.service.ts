@@ -1,10 +1,12 @@
 // src/app/admin/services/admin-customer.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ICustomer } from '../../features/customers/models/icustomer'; // Reutiliza la interfaz existente
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 // Interfaz para la respuesta paginada (AJÚSTALA SI TU BACKEND DEVUELVE ALGO DIFERENTE)
 export interface PaginatedAdminCustomersResponse {
@@ -34,7 +36,10 @@ export class AdminCustomerService {
   // Apunta al endpoint de admin para clientes
   private adminApiUrl = `${environment.apiUrl}/api/admin/customers`;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private roleService: RoleService
+  ) { }
 
   /**
    * Obtiene una lista paginada de todos los clientes (admin).
@@ -65,14 +70,21 @@ export class AdminCustomerService {
    * @param customerData Objeto con los campos a modificar (ver UpdateAdminCustomerData).
    */
   updateCustomer(id: string, customerData: UpdateAdminCustomerData): Observable<ICustomer> {
-    // Asegúrate que el payload solo contenga los campos permitidos
-    // y que neighborhood sea solo el ID si se envía.
-    const payload: any = { ...customerData };
-    if (payload.neighborhoodId) {
-      payload.neighborhood = payload.neighborhoodId; // El backend espera 'neighborhood' con el ID
-      delete payload.neighborhoodId; // Elimina la propiedad extra
-    }
-    return this.http.put<ICustomer>(`${this.adminApiUrl}/${id}`, payload);
+    return this.roleService.canUpdate().pipe(
+      switchMap((canUpdate: boolean) => {
+        if (!canUpdate) {
+          return throwError(() => new Error('No tienes permisos para actualizar clientes'));
+        }
+        // Asegúrate que el payload solo contenga los campos permitidos
+        // y que neighborhood sea solo el ID si se envía.
+        const payload: any = { ...customerData };
+        if (payload.neighborhoodId) {
+          payload.neighborhood = payload.neighborhoodId; // El backend espera 'neighborhood' con el ID
+          delete payload.neighborhoodId; // Elimina la propiedad extra
+        }
+        return this.http.put<ICustomer>(`${this.adminApiUrl}/${id}`, payload);
+      })
+    );
   }
 
   /**
@@ -81,8 +93,16 @@ export class AdminCustomerService {
    * @returns Observable con el cliente eliminado (o void si el backend no devuelve nada).
    */
   deleteCustomer(id: string): Observable<ICustomer> {
-    // Ajusta el tipo de retorno (ICustomer o void) según lo que devuelva tu API
-    return this.http.delete<ICustomer>(`${this.adminApiUrl}/${id}`);
+    return this.roleService.canDelete().pipe(
+      switchMap(canDelete => {
+        if (!canDelete) {
+          return throwError(() => new Error('No tienes permisos para eliminar clientes. Solo los Super Administradores pueden realizar esta acción.'));
+        }
+
+        // Ajusta el tipo de retorno (ICustomer o void) según lo que devuelva tu API
+        return this.http.delete<ICustomer>(`${this.adminApiUrl}/${id}`);
+      })
+    );
   }
 
   // --- Métodos Adicionales (Opcionales pero útiles para admin) ---

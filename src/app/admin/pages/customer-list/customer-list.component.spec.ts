@@ -3,10 +3,12 @@ import { Router } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 import { NgbModal, NgbPaginationModule } from '@ng-bootstrap/ng-bootstrap';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { CustomerListComponent } from './customer-list.component';
 import { AdminCustomerService, PaginatedAdminCustomersResponse } from '../../services/admin-customer.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
+import { RoleService } from 'src/app/shared/services/role.service';
 import { ICustomer } from 'src/app/features/customers/models/icustomer';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 
@@ -15,6 +17,7 @@ describe('Admin CustomerListComponent - Pagination Tests', () => {
     let fixture: ComponentFixture<CustomerListComponent>;
     let adminCustomerService: jasmine.SpyObj<AdminCustomerService>;
     let notificationService: jasmine.SpyObj<NotificationService>;
+    let roleService: jasmine.SpyObj<RoleService>;
     let router: jasmine.SpyObj<Router>;
     let modalService: jasmine.SpyObj<NgbModal>;
 
@@ -51,13 +54,17 @@ describe('Admin CustomerListComponent - Pagination Tests', () => {
     beforeEach(async () => {
         const adminCustomerServiceSpy = jasmine.createSpyObj('AdminCustomerService', ['getCustomers', 'deleteCustomer']);
         const notificationServiceSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError', 'showWarning']);
+        const roleServiceSpy = jasmine.createSpyObj('RoleService', ['canUpdate', 'canDelete', 'canEdit', 'isSuperAdmin']);
         const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-        const modalServiceSpy = jasmine.createSpyObj('NgbModal', ['open']); await TestBed.configureTestingModule({
+        const modalServiceSpy = jasmine.createSpyObj('NgbModal', ['open']); 
+
+        await TestBed.configureTestingModule({
             declarations: [CustomerListComponent],
-            imports: [NgbPaginationModule],
+            imports: [NgbPaginationModule, HttpClientTestingModule],
             providers: [
                 { provide: AdminCustomerService, useValue: adminCustomerServiceSpy },
                 { provide: NotificationService, useValue: notificationServiceSpy },
+                { provide: RoleService, useValue: roleServiceSpy },
                 { provide: Router, useValue: routerSpy },
                 { provide: NgbModal, useValue: modalServiceSpy }
             ],
@@ -68,8 +75,15 @@ describe('Admin CustomerListComponent - Pagination Tests', () => {
         component = fixture.componentInstance;
         adminCustomerService = TestBed.inject(AdminCustomerService) as jasmine.SpyObj<AdminCustomerService>;
         notificationService = TestBed.inject(NotificationService) as jasmine.SpyObj<NotificationService>;
+        roleService = TestBed.inject(RoleService) as jasmine.SpyObj<RoleService>;
         router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
         modalService = TestBed.inject(NgbModal) as jasmine.SpyObj<NgbModal>;
+        
+        // Configurar valores por defecto para RoleService
+        roleService.canUpdate.and.returnValue(of(true));
+        roleService.canDelete.and.returnValue(of(true));
+        roleService.canEdit.and.returnValue(of(true));
+        roleService.isSuperAdmin.and.returnValue(of(true));
     });
     describe('Pagination Functionality', () => {
         beforeEach(() => {

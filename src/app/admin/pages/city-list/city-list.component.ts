@@ -9,6 +9,7 @@ import { ICity } from 'src/app/features/customers/models/icity'; // Reutilizar i
 import { AdminCityService } from '../../services/admin-city.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-city-list',
@@ -35,7 +36,8 @@ export class CityListComponent implements OnInit, OnDestroy {
     private adminCityService: AdminCityService,
     private notificationService: NotificationService,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -74,7 +76,13 @@ export class CityListComponent implements OnInit, OnDestroy {
   }
 
   goToEditCity(cityId: string): void {
-    this.router.navigate(['/admin/cities/edit', cityId]);
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (canEdit) {
+        this.router.navigate(['/admin/cities/edit', cityId]);
+      } else {
+        this.notificationService.showError('No tienes permisos para editar ciudades', 'Acceso denegado');
+      }
+    });
   }
 
   // --- Métodos para Eliminar con Confirmación ---

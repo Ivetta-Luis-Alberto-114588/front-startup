@@ -1,10 +1,12 @@
 // src/app/admin/services/admin-unit.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { IUnit } from 'src/app/features/products/model/iunit'; // Reutilizar interfaz
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 // Interfaz para la respuesta paginada (si tu API la devuelve así)
 // Si tu API devuelve directamente IUnit[], puedes omitir esto.
@@ -23,7 +25,10 @@ export class AdminUnitService {
   // Apuntar al endpoint de admin para unidades
   private adminApiUrl = `${environment.apiUrl}/api/admin/units`;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private roleService: RoleService
+  ) { }
 
   // GET /api/admin/units
   getUnits(pagination: PaginationDto): Observable<IUnit[]> {
@@ -48,11 +53,27 @@ export class AdminUnitService {
 
   // PUT /api/admin/units/:id
   updateUnit(id: string, unitData: { name?: string, description?: string, isActive?: boolean }): Observable<IUnit> {
-    return this.http.put<IUnit>(`${this.adminApiUrl}/${id}`, unitData);
+    return this.roleService.canUpdate().pipe(
+      switchMap(canUpdate => {
+        if (!canUpdate) {
+          return throwError(() => new Error('No tienes permisos para actualizar unidades. Solo los Super Administradores pueden realizar esta acción.'));
+        }
+
+        return this.http.put<IUnit>(`${this.adminApiUrl}/${id}`, unitData);
+      })
+    );
   }
 
   // DELETE /api/admin/units/:id
   deleteUnit(id: string): Observable<IUnit> { // El backend devuelve la unidad eliminada
-    return this.http.delete<IUnit>(`${this.adminApiUrl}/${id}`);
+    return this.roleService.canDelete().pipe(
+      switchMap(canDelete => {
+        if (!canDelete) {
+          return throwError(() => new Error('No tienes permisos para eliminar unidades. Solo los Super Administradores pueden realizar esta acción.'));
+        }
+
+        return this.http.delete<IUnit>(`${this.adminApiUrl}/${id}`);
+      })
+    );
   }
 }

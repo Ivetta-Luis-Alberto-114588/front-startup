@@ -10,6 +10,7 @@ import { AdminPaymentMethodService } from '../../services/admin-payment-method.s
 import { OrderStatusService } from 'src/app/shared/services/order-status.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-payment-method-list',
@@ -38,7 +39,8 @@ export class PaymentMethodListComponent implements OnInit, OnDestroy {
     private orderStatusService: OrderStatusService,
     private notificationService: NotificationService,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -110,7 +112,13 @@ export class PaymentMethodListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/admin/payment-methods/edit', paymentMethodId]);
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (canEdit) {
+        this.router.navigate(['/admin/payment-methods/edit', paymentMethodId]);
+      } else {
+        this.notificationService.showError('No tienes permisos para editar métodos de pago', 'Acceso denegado');
+      }
+    });
   }
 
   // --- Métodos para Eliminar con Confirmación ---

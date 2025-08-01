@@ -9,6 +9,7 @@ import { ITag } from 'src/app/features/products/model/itag'; // Ajusta la ruta s
 import { AdminTagService } from '../../services/admin-tag.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-tag-list',
@@ -35,7 +36,8 @@ export class TagListComponent implements OnInit, OnDestroy {
     private adminTagService: AdminTagService,
     private notificationService: NotificationService,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -75,7 +77,13 @@ export class TagListComponent implements OnInit, OnDestroy {
   }
 
   goToEditTag(tagId: string): void {
-    this.router.navigate(['/admin/tags/edit', tagId]);
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (canEdit) {
+        this.router.navigate(['/admin/tags/edit', tagId]);
+      } else {
+        this.notificationService.showError('No tienes permisos para editar tags', 'Acceso denegado');
+      }
+    });
   }
 
   // --- Métodos para Eliminar con Confirmación ---

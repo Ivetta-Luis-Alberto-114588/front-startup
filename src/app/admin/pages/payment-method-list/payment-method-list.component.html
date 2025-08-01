@@ -79,13 +79,14 @@
                     </td>
                     <td class="text-end">
                         <div class="d-inline-flex gap-1">
-                            <button class="btn btn-sm btn-outline-primary" title="Editar método de pago"
+                            <button *ngIf="roleService.canEdit() | async" class="btn btn-sm btn-outline-primary"
+                                title="Editar método de pago"
                                 (click)="goToEditPaymentMethod(getPaymentMethodId(paymentMethod))"
                                 [attr.data-payment-method-id]="getPaymentMethodId(paymentMethod)">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" title="Eliminar método de pago"
-                                (click)="openDeleteConfirmation(paymentMethod)">
+                            <button *ngIf="roleService.canDelete() | async" class="btn btn-sm btn-outline-danger"
+                                title="Eliminar método de pago" (click)="openDeleteConfirmation(paymentMethod)">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>

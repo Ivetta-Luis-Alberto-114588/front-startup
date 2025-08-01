@@ -9,6 +9,7 @@ import { ICustomer } from 'src/app/features/customers/models/icustomer';
 import { AdminCustomerService, PaginatedAdminCustomersResponse } from '../../services/admin-customer.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-customer-list',
@@ -34,7 +35,8 @@ export class CustomerListComponent implements OnInit, OnDestroy {
     private adminCustomerService: AdminCustomerService,
     private notificationService: NotificationService,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -71,7 +73,13 @@ export class CustomerListComponent implements OnInit, OnDestroy {
 
   // --- Métodos sin cambios ---
   goToEditCustomer(customerId: string): void {
-    this.router.navigate(['/admin/customers/edit', customerId]);
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (canEdit) {
+        this.router.navigate(['/admin/customers/edit', customerId]);
+      } else {
+        this.notificationService.showError('No tienes permisos para editar clientes', 'Acceso denegado');
+      }
+    });
   }
 
   loadPage(page: number): void {

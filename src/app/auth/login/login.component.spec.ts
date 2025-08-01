@@ -365,7 +365,7 @@ describe('LoginComponent', () => {
 
       component.onSubmit();
 
-      expect(component.error).toBe('Ocurrió un error durante el inicio de sesión.');
+      expect(component.error).toBe('Error interno del servidor. Inténtalo más tarde.');
       // El componente no llama a notificationService en errores, solo establece component.error
     });
 
@@ -380,7 +380,7 @@ describe('LoginComponent', () => {
 
       component.onSubmit();
 
-      expect(component.error).toBe('No se pudo conectar con el servidor. Inténtalo más tarde.');
+      expect(component.error).toBe('No se pudo conectar con el servidor. Verifica tu conexión a internet y que el servidor esté disponible.');
       // El componente no llama a notificationService en errores, solo establece component.error
     });
 
@@ -395,7 +395,7 @@ describe('LoginComponent', () => {
 
       component.onSubmit();
 
-      expect(component.error).toBe('No se pudo conectar con el servidor. Inténtalo más tarde.');
+      expect(component.error).toBe('El servidor no está disponible temporalmente. Inténtalo más tarde.');
       expect(component.isLoading).toBeFalsy();
     });
   });

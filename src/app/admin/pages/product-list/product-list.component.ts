@@ -10,6 +10,7 @@ import { IProduct } from 'src/app/features/products/model/iproduct';
 import { AdminProductService, PaginatedAdminProductsResponse } from '../../services/admin-product.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-product-list',
@@ -37,7 +38,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private router: Router,
     private modalService: NgbModal,
-    private location: Location
+    private location: Location,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -77,7 +79,15 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   goToEditProduct(productId: string): void {
-    this.router.navigate(['/admin/products/edit', productId]);
+    // Verificar permisos antes de navegar
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (!canEdit) {
+        this.notificationService.showError('No tienes permisos para editar productos. Solo los Super Administradores pueden realizar esta acción.', 'Acceso Denegado');
+        return;
+      }
+
+      this.router.navigate(['/admin/products/edit', productId]);
+    });
   }
 
   // --- Métodos para Eliminar con Confirmación ---

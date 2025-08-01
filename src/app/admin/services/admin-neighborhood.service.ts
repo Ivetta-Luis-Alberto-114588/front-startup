@@ -1,10 +1,12 @@
 // src/app/admin/services/admin-neighborhood.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { INeighborhood } from 'src/app/features/customers/models/ineighborhood'; // Reutilizar interfaz
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 // Interfaz para respuesta paginada (si aplica)
 export interface PaginatedNeighborhoodsResponse {
@@ -19,7 +21,10 @@ export class AdminNeighborhoodService {
 
   private adminApiUrl = `${environment.apiUrl}/api/admin/neighborhoods`;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private roleService: RoleService
+  ) { }
 
   // GET /api/admin/neighborhoods
   getNeighborhoods(pagination: PaginationDto): Observable<INeighborhood[]> {
@@ -50,16 +55,31 @@ export class AdminNeighborhoodService {
 
   // PUT /api/admin/neighborhoods/:id
   updateNeighborhood(id: string, neighborhoodData: { name?: string, description?: string, cityId?: string, isActive?: boolean }): Observable<INeighborhood> {
-    // --- CORRECCIÓN: Enviar 'cityId' si existe ---
-    // El backend espera 'cityId' en el DTO UpdateNeighborhoodDto (implícito)
-    const payload: any = { ...neighborhoodData };
-    // No es necesario renombrar, solo enviar los campos que llegan
-    return this.http.put<INeighborhood>(`${this.adminApiUrl}/${id}`, payload);
+    return this.roleService.canUpdate().pipe(
+      switchMap((canUpdate: boolean) => {
+        if (!canUpdate) {
+          return throwError(() => new Error('No tienes permisos para actualizar barrios'));
+        }
+        // --- CORRECCIÓN: Enviar 'cityId' si existe ---
+        // El backend espera 'cityId' en el DTO UpdateNeighborhoodDto (implícito)
+        const payload: any = { ...neighborhoodData };
+        // No es necesario renombrar, solo enviar los campos que llegan
+        return this.http.put<INeighborhood>(`${this.adminApiUrl}/${id}`, payload);
+      })
+    );
   }
 
   // DELETE /api/admin/neighborhoods/:id
   deleteNeighborhood(id: string): Observable<INeighborhood> { // Backend devuelve el barrio eliminado
-    return this.http.delete<INeighborhood>(`${this.adminApiUrl}/${id}`);
+    return this.roleService.canDelete().pipe(
+      switchMap(canDelete => {
+        if (!canDelete) {
+          return throwError(() => new Error('No tienes permisos para eliminar barrios. Solo los Super Administradores pueden realizar esta acción.'));
+        }
+
+        return this.http.delete<INeighborhood>(`${this.adminApiUrl}/${id}`);
+      })
+    );
   }
 
   // GET /api/admin/neighborhoods/by-city/:cityId (Opcional)

@@ -1,13 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { AdminUserService, PaginatedAdminUsersResponse, UpdateAdminUserData } from './admin-user.service';
+import { RoleService } from 'src/app/shared/services/role.service';
 import { IUser } from 'src/app/shared/models/iuser';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
 import { environment } from 'src/environments/environment';
+import { of, throwError } from 'rxjs';
 
 describe('AdminUserService', () => {
     let service: AdminUserService;
     let httpMock: HttpTestingController;
+    let roleService: jasmine.SpyObj<RoleService>;
     let baseUrl: string;
 
     // Mock data
@@ -41,13 +44,25 @@ describe('AdminUserService', () => {
     };
 
     beforeEach(() => {
+        const roleServiceSpy = jasmine.createSpyObj('RoleService', ['canUpdate', 'canDelete', 'isSuperAdmin']);
+
         TestBed.configureTestingModule({
             imports: [HttpClientTestingModule],
-            providers: [AdminUserService]
+            providers: [
+                AdminUserService,
+                { provide: RoleService, useValue: roleServiceSpy }
+            ]
         });
+        
         service = TestBed.inject(AdminUserService);
         httpMock = TestBed.inject(HttpTestingController);
+        roleService = TestBed.inject(RoleService) as jasmine.SpyObj<RoleService>;
         baseUrl = `${environment.apiUrl}/api/admin/users`;
+        
+        // Por defecto, configuramos permisos como true para los tests
+        roleService.canUpdate.and.returnValue(of(true));
+        roleService.canDelete.and.returnValue(of(true));
+        roleService.isSuperAdmin.and.returnValue(of(true));
     });
 
     afterEach(() => {
@@ -536,6 +551,231 @@ describe('AdminUserService', () => {
             req.error(new ErrorEvent('Parse error'), { status: 0, statusText: 'Parse Error' });
 
             expect(errorResponse).toBeTruthy();
+        });
+    });
+
+    describe('Permission Control Tests', () => {
+        describe('Update Permissions', () => {
+            it('should allow update when user has SUPER_ADMIN_ROLE', () => {
+                // Arrange
+                roleService.canUpdate.and.returnValue(of(true));
+                roleService.isSuperAdmin.and.returnValue(of(true));
+                
+                const userId = 'user123';
+                const updateData: UpdateAdminUserData = {
+                    name: 'Updated Name'
+                };
+                const updatedUser: IUser = {
+                    ...mockUser,
+                    name: 'Updated Name',
+                    updatedAt: '2023-12-01T00:00:00.000Z'
+                };
+
+                // Act
+                service.updateUser(userId, updateData).subscribe(user => {
+                    expect(user).toEqual(updatedUser);
+                    expect(user.name).toBe('Updated Name');
+                });
+
+                // Assert
+                const req = httpMock.expectOne(`${baseUrl}/${userId}`);
+                expect(req.request.method).toBe('PUT');
+                req.flush(updatedUser);
+            });
+
+            it('should deny update when user does not have SUPER_ADMIN_ROLE', () => {
+                // Arrange
+                roleService.canUpdate.and.returnValue(of(false));
+                roleService.isSuperAdmin.and.returnValue(of(false));
+                
+                const userId = 'user123';
+                const updateData: UpdateAdminUserData = {
+                    name: 'Updated Name'
+                };
+                let errorResponse: any;
+
+                // Act - El servicio verifica permisos antes de hacer la llamada HTTP
+                service.updateUser(userId, updateData).subscribe({
+                    next: () => fail('Should have failed due to insufficient permissions'),
+                    error: (error) => errorResponse = error
+                });
+
+                // Assert - No debería hacer llamada HTTP ya que el servicio verifica permisos primero
+                httpMock.expectNone(`${baseUrl}/${userId}`);
+                expect(errorResponse.message).toContain('No tienes permisos para actualizar usuarios');
+            });
+
+            it('should handle role verification error during update', () => {
+                // Arrange
+                roleService.canUpdate.and.returnValue(throwError(() => new Error('Role verification failed')));
+                roleService.isSuperAdmin.and.returnValue(of(false));
+                
+                const userId = 'user123';
+                const updateData: UpdateAdminUserData = {
+                    roles: ['USER_ROLE', 'ADMIN_ROLE']
+                };
+                let errorResponse: any;
+
+                // Act
+                service.updateUser(userId, updateData).subscribe({
+                    next: () => fail('Should have failed'),
+                    error: (error) => errorResponse = error
+                });
+
+                // Assert - No debería hacer llamada HTTP debido al error en verificación de roles
+                httpMock.expectNone(`${baseUrl}/${userId}`);
+                expect(errorResponse.message).toBe('Role verification failed');
+            });
+        });
+
+        describe('Delete Permissions', () => {
+            it('should allow delete when user has SUPER_ADMIN_ROLE', () => {
+                // Arrange
+                roleService.canDelete.and.returnValue(of(true));
+                roleService.isSuperAdmin.and.returnValue(of(true));
+                
+                const userId = 'user123';
+
+                // Act
+                service.deleteUser(userId).subscribe(deletedUser => {
+                    expect(deletedUser).toEqual(mockUser);
+                });
+
+                // Assert
+                const req = httpMock.expectOne(`${baseUrl}/${userId}`);
+                expect(req.request.method).toBe('DELETE');
+                req.flush(mockUser);
+            });
+
+            it('should deny delete when user does not have SUPER_ADMIN_ROLE', () => {
+                // Arrange
+                roleService.canDelete.and.returnValue(of(false));
+                roleService.isSuperAdmin.and.returnValue(of(false));
+                
+                const userId = 'user123';
+                let errorResponse: any;
+
+                // Act
+                service.deleteUser(userId).subscribe({
+                    next: () => fail('Should have failed due to insufficient permissions'),
+                    error: (error) => errorResponse = error
+                });
+
+                // Assert - No debería hacer llamada HTTP ya que el servicio verifica permisos primero
+                httpMock.expectNone(`${baseUrl}/${userId}`);
+                expect(errorResponse.message).toContain('No tienes permisos para eliminar usuarios');
+            });
+
+            it('should handle role verification error during delete', () => {
+                // Arrange
+                roleService.canDelete.and.returnValue(throwError(() => new Error('Role verification failed')));
+                roleService.isSuperAdmin.and.returnValue(of(false));
+                
+                const userId = 'user123';
+                let errorResponse: any;
+
+                // Act
+                service.deleteUser(userId).subscribe({
+                    next: () => fail('Should have failed'),
+                    error: (error) => errorResponse = error
+                });
+
+                // Assert - No debería hacer llamada HTTP debido al error en verificación de roles
+                httpMock.expectNone(`${baseUrl}/${userId}`);
+                expect(errorResponse.message).toBe('Role verification failed');
+            });
+
+            it('should prevent deletion of another SUPER_ADMIN user', () => {
+                // Arrange
+                roleService.canDelete.and.returnValue(of(true));
+                roleService.isSuperAdmin.and.returnValue(of(true));
+                
+                const superAdminId = 'super-admin-456';
+                let errorResponse: any;
+
+                // Act
+                service.deleteUser(superAdminId).subscribe({
+                    next: () => fail('Should have failed'),
+                    error: (error) => errorResponse = error
+                });
+
+                // Assert
+                const req = httpMock.expectOne(`${baseUrl}/${superAdminId}`);
+                req.flush({
+                    message: 'Cannot delete another SUPER_ADMIN user',
+                    conflictType: 'SUPER_ADMIN_PROTECTION'
+                }, { status: 409, statusText: 'Conflict' });
+
+                expect(errorResponse.status).toBe(409);
+            });
+        });
+
+        describe('Combined Permission Scenarios', () => {
+            it('should verify SUPER_ADMIN role for both update and delete operations', () => {
+                // Arrange
+                roleService.canUpdate.and.returnValue(of(true));
+                roleService.canDelete.and.returnValue(of(true));
+                roleService.isSuperAdmin.and.returnValue(of(true));
+                
+                const userId = 'user123';
+                const updateData: UpdateAdminUserData = {
+                    roles: ['USER_ROLE', 'ADMIN_ROLE']
+                };
+
+                // Act & Assert - Update
+                service.updateUser(userId, updateData).subscribe(user => {
+                    expect(user).toBeDefined();
+                });
+
+                const updateReq = httpMock.expectOne(`${baseUrl}/${userId}`);
+                expect(updateReq.request.method).toBe('PUT');
+                updateReq.flush({ ...mockUser, roles: ['USER_ROLE', 'ADMIN_ROLE'] });
+
+                // Act & Assert - Delete
+                service.deleteUser(userId).subscribe(deletedUser => {
+                    expect(deletedUser).toBeDefined();
+                });
+
+                const deleteReq = httpMock.expectOne(`${baseUrl}/${userId}`);
+                expect(deleteReq.request.method).toBe('DELETE');
+                deleteReq.flush(mockUser);
+
+                // Verify that permission checks were called
+                expect(roleService.canUpdate).toHaveBeenCalled();
+                expect(roleService.canDelete).toHaveBeenCalled();
+                // Note: isSuperAdmin may not be called directly by the service if it only uses canUpdate/canDelete
+            });
+
+            it('should handle mixed permission scenarios (can update but cannot delete)', () => {
+                // Arrange
+                roleService.canUpdate.and.returnValue(of(true));
+                roleService.canDelete.and.returnValue(of(false));
+                roleService.isSuperAdmin.and.returnValue(of(false));
+                
+                const userId = 'user123';
+                const updateData: UpdateAdminUserData = {
+                    name: 'Updated Name'
+                };
+                let deleteErrorResponse: any;
+
+                // Act & Assert - Update (should work)
+                service.updateUser(userId, updateData).subscribe(user => {
+                    expect(user.name).toBe('Updated Name');
+                });
+
+                const updateReq = httpMock.expectOne(`${baseUrl}/${userId}`);
+                updateReq.flush({ ...mockUser, name: 'Updated Name' });
+
+                // Act & Assert - Delete (should fail at permission level)
+                service.deleteUser(userId).subscribe({
+                    next: () => fail('Should have failed'),
+                    error: (error) => deleteErrorResponse = error
+                });
+
+                // No debería hacer llamada HTTP para delete ya que fallan los permisos
+                httpMock.expectNone(`${baseUrl}/${userId}`);
+                expect(deleteErrorResponse.message).toContain('No tienes permisos para eliminar usuarios');
+            });
         });
     });
 

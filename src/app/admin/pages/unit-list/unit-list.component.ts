@@ -9,6 +9,7 @@ import { IUnit } from 'src/app/features/products/model/iunit'; // Reutilizar int
 import { AdminUnitService } from '../../services/admin-unit.service'; // Usar el servicio de admin
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-unit-list',
@@ -35,7 +36,8 @@ export class UnitListComponent implements OnInit, OnDestroy {
     private adminUnitService: AdminUnitService, // Usar el servicio de admin
     private notificationService: NotificationService,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -78,25 +80,41 @@ export class UnitListComponent implements OnInit, OnDestroy {
   }
 
   goToEditUnit(unitId: string): void {
-    this.router.navigate(['/admin/units/edit', unitId]); // Ruta correcta
+    // Verificar permisos antes de navegar
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (!canEdit) {
+        this.notificationService.showError('No tienes permisos para editar unidades. Solo los Super Administradores pueden realizar esta acción.', 'Acceso Denegado');
+        return;
+      }
+
+      this.router.navigate(['/admin/units/edit', unitId]); // Ruta correcta
+    });
   }
 
   // --- Métodos para Eliminar con Confirmación ---
   openDeleteConfirmation(unit: IUnit): void {
-    this.unitToDelete = unit;
-    this.modalRef = this.modalService.open(this.modalContent, { ariaLabelledBy: 'modal-basic-title', centered: true });
-
-    this.modalRef.result.then(
-      (result) => {
-        if (result === 'confirm' && this.unitToDelete) {
-          this.confirmDelete(this.unitToDelete.id);
-        }
-        this.unitToDelete = null;
-      },
-      (reason) => {
-        this.unitToDelete = null;
+    // Verificar permisos antes de abrir el modal
+    this.roleService.canDelete().subscribe(canDelete => {
+      if (!canDelete) {
+        this.notificationService.showError('No tienes permisos para eliminar unidades. Solo los Super Administradores pueden realizar esta acción.', 'Acceso Denegado');
+        return;
       }
-    );
+
+      this.unitToDelete = unit;
+      this.modalRef = this.modalService.open(this.modalContent, { ariaLabelledBy: 'modal-basic-title', centered: true });
+
+      this.modalRef.result.then(
+        (result) => {
+          if (result === 'confirm' && this.unitToDelete) {
+            this.confirmDelete(this.unitToDelete.id);
+          }
+          this.unitToDelete = null;
+        },
+        (reason) => {
+          this.unitToDelete = null;
+        }
+      );
+    });
   }
 
   confirmDelete(unitId: string): void {

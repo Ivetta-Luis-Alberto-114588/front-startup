@@ -64,12 +64,13 @@
                     </td>
                     <td class="text-end">
                         <div class="d-inline-flex gap-1">
-                            <button class="btn btn-sm btn-outline-primary" title="Ver/Editar"
-                                (click)="goToEditCustomer(customer.id)">
+                            <button *ngIf="roleService.canEdit() | async" class="btn btn-sm btn-outline-primary"
+                                title="Ver/Editar" (click)="goToEditCustomer(customer.id)">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" title="Eliminar"
-                                (click)="openDeleteConfirmation(customer)" [disabled]="!!customer.userId">
+                            <button *ngIf="roleService.canDelete() | async" class="btn btn-sm btn-outline-danger"
+                                title="Eliminar" (click)="openDeleteConfirmation(customer)"
+                                [disabled]="!!customer.userId">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>

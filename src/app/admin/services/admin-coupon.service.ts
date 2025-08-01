@@ -1,10 +1,12 @@
 // src/app/admin/services/admin-coupon.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ICoupon } from 'src/app/shared/models/icoupon'; // Ajusta la ruta si es necesario
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 // Interfaz para la respuesta paginada (si aplica)
 export interface PaginatedCouponsResponse {
@@ -33,7 +35,10 @@ export class AdminCouponService {
 
   private adminApiUrl = `${environment.apiUrl}/api/admin/coupons`;
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private roleService: RoleService
+  ) { }
 
   // GET /api/admin/coupons
   getCoupons(pagination: PaginationDto): Observable<ICoupon[]> {
@@ -62,17 +67,32 @@ export class AdminCouponService {
 
   // PUT /api/admin/coupons/:id
   updateCoupon(id: string, couponData: Partial<CouponFormData>): Observable<ICoupon> {
-    // Asegurarse de que los campos opcionales null/undefined se manejen bien
-    const payload = { ...couponData };
-    if (payload.minPurchaseAmount === null) payload.minPurchaseAmount = null; // Enviar null explícitamente si se borra
-    if (payload.usageLimit === null) payload.usageLimit = null;
-    if (payload.validFrom === '') payload.validFrom = null; // Convertir string vacío a null
-    if (payload.validUntil === '') payload.validUntil = null;
-    return this.http.put<ICoupon>(`${this.adminApiUrl}/${id}`, payload);
+    return this.roleService.canUpdate().pipe(
+      switchMap((canUpdate: boolean) => {
+        if (!canUpdate) {
+          return throwError(() => new Error('No tienes permisos para actualizar cupones'));
+        }
+        // Asegurarse de que los campos opcionales null/undefined se manejen bien
+        const payload = { ...couponData };
+        if (payload.minPurchaseAmount === null) payload.minPurchaseAmount = null; // Enviar null explícitamente si se borra
+        if (payload.usageLimit === null) payload.usageLimit = null;
+        if (payload.validFrom === '') payload.validFrom = null; // Convertir string vacío a null
+        if (payload.validUntil === '') payload.validUntil = null;
+        return this.http.put<ICoupon>(`${this.adminApiUrl}/${id}`, payload);
+      })
+    );
   }
 
   // DELETE /api/admin/coupons/:id
   deleteCoupon(id: string): Observable<ICoupon> { // Backend devuelve el cupón eliminado
-    return this.http.delete<ICoupon>(`${this.adminApiUrl}/${id}`);
+    return this.roleService.canDelete().pipe(
+      switchMap(canDelete => {
+        if (!canDelete) {
+          return throwError(() => new Error('No tienes permisos para eliminar cupones. Solo los Super Administradores pueden realizar esta acción.'));
+        }
+
+        return this.http.delete<ICoupon>(`${this.adminApiUrl}/${id}`);
+      })
+    );
   }
 }

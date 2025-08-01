@@ -9,6 +9,7 @@ import { ICoupon } from 'src/app/shared/models/icoupon'; // Ajusta la ruta si es
 import { AdminCouponService } from '../../services/admin-coupon.service';
 import { NotificationService } from 'src/app/shared/services/notification.service';
 import { PaginationDto } from 'src/app/shared/dtos/pagination.dto';
+import { RoleService } from 'src/app/shared/services/role.service';
 
 @Component({
   selector: 'app-coupon-list',
@@ -35,7 +36,8 @@ export class CouponListComponent implements OnInit, OnDestroy {
     private adminCouponService: AdminCouponService,
     private notificationService: NotificationService,
     private router: Router,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    public roleService: RoleService
   ) { }
 
   ngOnInit(): void {
@@ -74,7 +76,13 @@ export class CouponListComponent implements OnInit, OnDestroy {
   }
 
   goToEditCoupon(couponId: string): void {
-    this.router.navigate(['/admin/coupons/edit', couponId]);
+    this.roleService.canEdit().subscribe(canEdit => {
+      if (canEdit) {
+        this.router.navigate(['/admin/coupons/edit', couponId]);
+      } else {
+        this.notificationService.showError('No tienes permisos para editar cupones', 'Acceso denegado');
+      }
+    });
   }
 
   // --- Métodos para Eliminar con Confirmación ---
