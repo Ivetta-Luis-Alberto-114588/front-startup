@@ -3,6 +3,31 @@
 
 Panel de administración para gestión avanzada de productos, pedidos, usuarios, clientes, cupones, categorías, unidades, tags y más.
 
+## Tabla de Endpoints y Permisos por Rol
+
+| Endpoint                        | Descripción                        | Lectura | Creación | Modificación | Eliminación | Roles Permitidos           |
+|----------------------------------|------------------------------------|---------|----------|--------------|-------------|----------------------------|
+| `/api/admin/products`            | Gestión de productos               |   ✅    |   ✅     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/categories`          | Gestión de categorías              |   ✅    |   ✅     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/orders`              | Gestión de pedidos                 |   ✅    |   ❌     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/users`               | Gestión de usuarios                |   ✅    |   ✅     |     ✅       |     ✅      | SUPER_ADMIN                |
+| `/api/admin/coupons`             | Gestión de cupones                 |   ✅    |   ✅     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/payments`            | Gestión de pagos                   |   ✅    |   ❌     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/reports`             | Reportes y métricas                |   ✅    |   ❌     |     ❌       |     ❌      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/units`               | Gestión de unidades                |   ✅    |   ✅     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/tags`                | Gestión de etiquetas               |   ✅    |   ✅     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/neighborhoods`       | Gestión de barrios                 |   ✅    |   ✅     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/cities`              | Gestión de ciudades                |   ✅    |   ✅     |     ✅       |     ✅      | ADMIN, SUPER_ADMIN         |
+| `/api/admin/chat-sessions`       | Gestión de sesiones de chat        |   ✅    |   ❌     |     ✅       |     ✅      | SUPER_ADMIN                |
+| `/api/admin/embeddings`          | Gestión de embeddings IA           |   ✅    |   ✅     |     ✅       |     ✅      | SUPER_ADMIN                |
+| `/api/admin/seed`                | Ejecutar seeders                   |   ❌    |   ✅     |     ❌       |     ❌      | SUPER_ADMIN                |
+
+**Notas:**
+- El rol `ADMIN` tiene acceso completo excepto a usuarios, chat y embeddings (solo `SUPER_ADMIN`).
+- El rol `SUPER_ADMIN` tiene acceso total a todos los endpoints.
+- El rol `USER` no tiene acceso a ningún endpoint bajo `/api/admin/*`.
+- Los endpoints pueden requerir permisos adicionales según la lógica de negocio.
+
 ## 📑 Índice
 
 - [Endpoints y Estructura Real](#endpoints-y-estructura-real)

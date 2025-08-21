@@ -56,7 +56,7 @@ describe('Admin CustomerListComponent - Pagination Tests', () => {
         const notificationServiceSpy = jasmine.createSpyObj('NotificationService', ['showSuccess', 'showError', 'showWarning']);
         const roleServiceSpy = jasmine.createSpyObj('RoleService', ['canUpdate', 'canDelete', 'canEdit', 'isSuperAdmin']);
         const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-        const modalServiceSpy = jasmine.createSpyObj('NgbModal', ['open']); 
+        const modalServiceSpy = jasmine.createSpyObj('NgbModal', ['open']);
 
         await TestBed.configureTestingModule({
             declarations: [CustomerListComponent],
@@ -78,7 +78,7 @@ describe('Admin CustomerListComponent - Pagination Tests', () => {
         roleService = TestBed.inject(RoleService) as jasmine.SpyObj<RoleService>;
         router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
         modalService = TestBed.inject(NgbModal) as jasmine.SpyObj<NgbModal>;
-        
+
         // Configurar valores por defecto para RoleService
         roleService.canUpdate.and.returnValue(of(true));
         roleService.canDelete.and.returnValue(of(true));

@@ -18,47 +18,36 @@
 
 ```mermaid
 flowchart TD
-    A[Usuario accede a Checkout] --> B{¿Autenticado?}
-    B -->|SÍ| C[Cargar Perfil Usuario]
-    B -->|NO| D[Mostrar Formulario Invitado]
-    C --> E[Cargar Direcciones Guardadas]
-    D --> F[Capturar Datos Básicos]
-    E --> G[Seleccionar Método Entrega]
+    A[Usuario accede a Checkout] --> B{Autenticado}
+    B -->|Si| C[Cargar Perfil Usuario]
+    B -->|No| D[Mostrar Formulario Invitado]
+    C --> E[Cargar Direcciones]
+    D --> F[Capturar Datos]
+    E --> G[Seleccionar Entrega]
     F --> G
-    G --> H{¿Requiere Dirección?}
-    H -->|SÍ - DELIVERY| I[Validar/Ingresar Dirección]
-    H -->|NO - PICKUP| J[Seleccionar Método Pago]
+    G --> H{Requiere Direccion}
+    H -->|Si| I[Validar Direccion]
+    H -->|No| J[Seleccionar Pago]
     I --> J
-    J --> K{¿Tipo de Pago?}
-    K -->|MercadoPago| L[Crear Preferencia MP]
-    K -->|Efectivo| M[Confirmar Orden Directa]
-    L --> N[Redireccionar a MercadoPago]
-    M --> O[Orden Creada - Estado Pendiente]
-    N --> P[Usuario Completa Pago]
-    P --> Q[Webhook Actualiza Estado]
-    Q --> R[Redirección a Success]
-    O --> S[Enviar Notificación Manual]
-    S --> T[Success - Pago Efectivo]
-    R --> U[PaymentSuccessComponent]
+    J --> K{Tipo de Pago}
+    K -->|MP| L[Crear Preferencia MP]
+    K -->|Efectivo| M[Confirmar Orden]
+    L --> N[Redirigir a MP]
+    M --> O[Orden Pendiente]
+    N --> P[Completa Pago]
+    P --> Q[Webhook Actualiza]
+    Q --> R[Redirigir Success]
+    O --> S[Notificacion Manual]
+    S --> T[Success Efectivo]
+    R --> U[PaymentSuccess]
     T --> U
-    U --> V{¿Usuario Autenticado?}
-    V -->|SÍ| W[Cargar con OrderService]
-    V -->|NO| X[Cargar con OrderInquiryService]
-    W --> Y[Mostrar Navegación Manual]
-    X --> Z[Timer 3s + Redirección Auto]
-    Z --> AA[Página Orden Pública]
+    U --> V{Autenticado}
+    V -->|Si| W[Cargar OrderService]
+    V -->|No| X[Cargar InquiryService]
+    W --> Y[Navegacion Manual]
+    X --> Z[Timer y Redireccion]
+    Z --> AA[Orden Publica]
     Y --> BB[Ir a Mis Pedidos]
-
-    %% Estilos modernos con classDef
-    classDef guestUser fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
-    classDef authUser fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#000
-    classDef process fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000
-    classDef success fill:#e8f5e8,stroke:#4caf50,stroke-width:2px,color:#000
-
-    class D,F,X,Z,AA guestUser
-    class C,E,W,Y,BB authUser
-    class G,H,I,J,K,L,M,N,P,Q process
-    class U,T,R,S success
 ```
 
 ### 📊 Tabla de Decisiones del Flujo
@@ -78,8 +67,8 @@ flowchart TD
 
 ```mermaid
 flowchart TB
-    subgraph Frontend["🎨 Frontend Angular"]
-        direction TB
+    %% Frontend Angular
+    subgraph Frontend
         A[CheckoutPageComponent]
         B[PaymentSuccessComponent]
         C[OrderPageComponent]
@@ -88,120 +77,75 @@ flowchart TB
         F[OrderInquiryService]
         G[OrderNotificationService]
     end
-  
-    subgraph Backend["⚙️ Backend APIs"]
-        direction TB
-        H[🔒 /api/orders<br/>Privada - Auth Required]
-        I[🌐 /api/order-inquiry<br/>Pública - Guest Access]
-        J[📧 /api/notifications/manual<br/>Notificaciones]
-        K[💳 /api/payments/create-preference<br/>MercadoPago]
+
+    %% Backend APIs
+    subgraph Backend
+        H[API Orders Privada]
+        I[API Order Inquiry Publica]
+        J[API Notificaciones Manual]
+        K[API Payments MercadoPago]
     end
-    
-    subgraph External["🔗 Servicios Externos"]
-        direction TB
-        L[💰 MercadoPago API]
-        M[📧 Email Service]
-        N[📱 Telegram Bot]
+
+    %% Servicios Externos
+    subgraph External
+        L[MercadoPago API]
+        M[Email Service]
+        N[Telegram Bot]
     end
-    
-    subgraph Database["🗃️ Base de Datos"]
-        direction TB
-        O[(📦 MongoDB Orders)]
-        P[(👤 MongoDB Users)]
-        Q[(🔔 MongoDB Notifications)]
+
+    %% Base de Datos
+    subgraph Database
+        O[(MongoDB Orders)]
+        P[(MongoDB Users)]
+        Q[(MongoDB Notifications)]
     end
-    
+
     %% Flujos Usuario Autenticado
     A -.->|Usuario Auth| E
     E --> H
     H --> O
     B -.->|Usuario Auth| E
-    
+
     %% Flujos Usuario Invitado
     A -.->|Usuario Invitado| F
-    F --> I
-    I --> O
-    B -.->|Usuario Invitado| F
-    
-    %% Sistema de Notificaciones
-    A --> G
-    B --> G
-    G --> J
-    J --> M
-    J --> N
-    
-    %% Integración MercadoPago
-    A --> K
-    K --> L
-    L --> B
-    
-    %% Autenticación
-    D --> E
-    D --> F
-    
-    %% Base de Datos
-    H --> P
-    J --> Q
-    
-    %% Estilos modernos con gradientes
-    classDef frontendStyle fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#000
-    classDef backendStyle fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#000
-    classDef externalStyle fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#000
-    classDef databaseStyle fill:#fce4ec,stroke:#e91e63,stroke-width:3px,color:#000
-    
-    class A,B,C,D,E,F,G frontendStyle
-    class H,I,J,K backendStyle
-    class L,M,N externalStyle
-    class O,P,Q databaseStyle
+    F
 ```
-    end
-  
-    subgraph "Servicios Externos"
+
+
 ### 4. Flujo de Checkout Completo con Usuarios Invitados
 
 ```mermaid
 flowchart TD
-    A[Usuario accede a Checkout] --> B{¿Autenticado?}
-    B -->|SÍ| C[Cargar Perfil Usuario]
-    B -->|NO| D[Mostrar Formulario Invitado]
-    C --> E[Cargar Direcciones Guardadas]
-    D --> F[Capturar Datos Básicos]
-    E --> G[Seleccionar Método Entrega]
+    A[Usuario accede a Checkout] --> B{Autenticado}
+    B -->|Si| C[Cargar Perfil Usuario]
+    B -->|No| D[Mostrar Formulario Invitado]
+    C --> E[Cargar Direcciones]
+    D --> F[Capturar Datos]
+    E --> G[Seleccionar Entrega]
     F --> G
-    G --> H{¿Requiere Dirección?}
-    H -->|SÍ - DELIVERY| I[Validar/Ingresar Dirección]
-    H -->|NO - PICKUP| J[Seleccionar Método Pago]
+    G --> H{Requiere Direccion}
+    H -->|Si| I[Validar Direccion]
+    H -->|No| J[Seleccionar Pago]
     I --> J
-    J --> K{¿Tipo de Pago?}
-    K -->|MercadoPago| L[Crear Preferencia MP]
-    K -->|Efectivo| M[Confirmar Orden Directa]
-    L --> N[Redireccionar a MercadoPago]
-    M --> O[Orden Creada - Estado Pendiente]
-    N --> P[Usuario Completa Pago]
-    P --> Q[Webhook Actualiza Estado]
-    Q --> R[Redirección a Success]
-    O --> S[Enviar Notificación Manual]
-    S --> T[Success - Pago Efectivo]
-    R --> U[PaymentSuccessComponent]
+    J --> K{Tipo de Pago}
+    K -->|MP| L[Crear Preferencia MP]
+    K -->|Efectivo| M[Confirmar Orden]
+    L --> N[Redirigir a MP]
+    M --> O[Orden Pendiente]
+    N --> P[Completa Pago]
+    P --> Q[Webhook Actualiza]
+    Q --> R[Redirigir Success]
+    O --> S[Notificacion Manual]
+    S --> T[Success Efectivo]
+    R --> U[PaymentSuccess]
     T --> U
-    U --> V{¿Usuario Autenticado?}
-    V -->|SÍ| W[Cargar con OrderService]
-    V -->|NO| X[Cargar con OrderInquiryService]
-    W --> Y[Mostrar Navegación Manual]
-    X --> Z[Timer 3s + Redirección Auto]
-    Z --> AA[Página Orden Pública]
+    U --> V{Autenticado}
+    V -->|Si| W[Cargar OrderService]
+    V -->|No| X[Cargar InquiryService]
+    W --> Y[Navegacion Manual]
+    X --> Z[Timer y Redireccion]
+    Z --> AA[Orden Publica]
     Y --> BB[Ir a Mis Pedidos]
-
-    %% Estilos modernos mejorados
-    classDef guestFlow fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#000
-    classDef authFlow fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#000
-    classDef paymentFlow fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#000
-    classDef successFlow fill:#e8f5e8,stroke:#4caf50,stroke-width:3px,color:#000
-
-    class D,F,X,Z,AA guestFlow
-    class C,E,W,Y,BB authFlow
-    class J,K,L,M,N,P,Q paymentFlow
-    class U,T,R,S successFlow
 ```
 
 ### 🔀 Matriz de Servicios por Usuario
@@ -405,81 +349,49 @@ flowchart TD
     C --> D[Llamada API MercadoPago]
     D --> E[MP retorna preferencia]
     E --> F[Frontend redirecciona a MP]
-  
     F --> G[Usuario en plataforma MP]
-    G --> H{¿Usuario completa pago?}
-  
-    H -->|SÍ| I[MP procesa pago]
-    H -->|NO| J[MP cancela/rechaza]
-  
-    I --> K[MP envía webhook a backend]
+    G --> H{Usuario completa pago}
+    H -->|Si| I[MP procesa pago]
+    H -->|No| J[MP cancela o rechaza]
+    I --> K[MP envia webhook a backend]
     J --> L[MP redirige a failure]
-  
     K --> M[Backend actualiza estado orden]
-    M --> N[Backend envía notificaciones]
-  
+    M --> N[Backend envia notificaciones]
     K --> O[MP redirige a success]
     L --> P[Frontend maneja error]
-  
     O --> Q[PaymentSuccessComponent]
     Q --> R[Verificar estado orden]
-    R --> S{¿Pago confirmado?}
-  
-    S -->|SÍ| T[Mostrar éxito + productos]
-    S -->|NO| U[Mostrar pendiente]
+    R --> S{Pago confirmado}
+    S -->|Si| T[Mostrar exito y productos]
+    S -->|No| U[Mostrar pendiente]
+```
 
-    %% Estilos modernos para MercadoPago
-    classDef mpProcess fill:#00d2ff,stroke:#0066cc,stroke-width:3px,color:#000
-    classDef successPath fill:#4caf50,stroke:#2e7d32,stroke-width:3px,color:#fff
-    classDef errorPath fill:#f44336,stroke:#c62828,stroke-width:3px,color:#fff
-    classDef decision fill:#ff9800,stroke:#ef6c00,stroke-width:3px,color:#000
-    classDef notification fill:#9c27b0,stroke:#6a1b9a,stroke-width:3px,color:#fff
-    
-    class A,B,C,D,E,F,G mpProcess
-    class I,K,M,O,Q,R,T successPath
-    class J,L,P,U errorPath
-    class H,S decision
-    class N notification
-```
-  
-    T --> V{¿Usuario autenticado?}
-    V -->|SÍ| W[Navegación manual]
-    V -->|NO| X[Redirección automática 3s]
-  
-    X --> Y[Página orden pública]
-  
-    style K fill:#c8e6c9
-    style N fill:#fff3e0
-    style Q fill:#e3f2fd
-    style X fill:#e3f2fd
-    style Y fill:#e3f2fd
-```
 
 ### 🔄 Estados de Pago MercadoPago
 
 ```mermaid
 stateDiagram-v2
-    [*] --> CreatingPreference: Usuario confirma
-    CreatingPreference --> RedirectingToMP: Preferencia creada
-    CreatingPreference --> PreferenceError: Error API MP
-  
-    RedirectingToMP --> UserAtMP: Usuario en MP
-    UserAtMP --> PaymentProcessing: Usuario paga
-    UserAtMP --> PaymentCancelled: Usuario cancela
-    UserAtMP --> PaymentRejected: Pago rechazado
-  
-    PaymentProcessing --> WebhookReceived: MP notifica backend
-    WebhookReceived --> OrderUpdated: Estado actualizado
-    OrderUpdated --> NotificationSent: Notificaciones enviadas
-    NotificationSent --> RedirectToSuccess: Usuario a success
-  
-    PaymentCancelled --> RedirectToFailure: Usuario a error
-    PaymentRejected --> RedirectToFailure: Usuario a error
-    PreferenceError --> RedirectToFailure: Error mostrado
-  
-    RedirectToSuccess --> PaymentSuccess: Mostrar éxito
-    RedirectToFailure --> PaymentFailure: Mostrar error
-  
+    [*] --> CreatingPreference
+    CreatingPreference --> RedirectingToMP
+    CreatingPreference --> PreferenceError
+
+    RedirectingToMP --> UserAtMP
+    UserAtMP --> PaymentProcessing
+    UserAtMP --> PaymentCancelled
+    UserAtMP --> PaymentRejected
+
+    PaymentProcessing --> WebhookReceived
+    WebhookReceived --> OrderUpdated
+    OrderUpdated --> NotificationSent
+    NotificationSent --> RedirectToSuccess
+
+    PaymentCancelled --> RedirectToFailure
+    PaymentRejected --> RedirectToFailure
+    PreferenceError --> RedirectToFailure
+
+    RedirectToSuccess --> PaymentSuccess
+    RedirectToFailure --> PaymentFailure
+
     PaymentSuccess --> [*]
     PaymentFailure --> [*]
 ```
@@ -673,33 +585,33 @@ gantt
 ```mermaid
 stateDiagram-v2
     [*] --> CheckoutIniciado
-    
+  
     CheckoutIniciado --> UsuarioAutenticado: Usuario logueado
     CheckoutIniciado --> UsuarioInvitado: Usuario guest
-    
+  
     UsuarioAutenticado --> DatosPersonales: Cargar perfil
     UsuarioInvitado --> DatosPersonales: Ingresar datos
-    
+  
     DatosPersonales --> SeleccionEntrega: Datos válidos
     SeleccionEntrega --> DireccionRequerida: Delivery selected
     SeleccionEntrega --> SeleccionPago: Pickup selected
-    
+  
     DireccionRequerida --> SeleccionPago: Dirección válida
     SeleccionPago --> PagoEfectivo: Cash selected
     SeleccionPago --> PagoMercadoPago: MP selected
-    
+  
     PagoEfectivo --> OrdenCreada: Orden confirmada
     PagoMercadoPago --> ProcesandoPago: Redirección MP
-    
+  
     ProcesandoPago --> PagoExitoso: Webhook success
     ProcesandoPago --> PagoFallido: Webhook failed
-    
+  
     OrdenCreada --> NotificacionEnviada: Manual notification
     PagoExitoso --> NotificacionEnviada: Auto notification
-    
+  
     NotificacionEnviada --> CompletadoAuth: Usuario autenticado
     NotificacionEnviada --> CompletadoGuest: Usuario invitado
-    
+  
     CompletadoAuth --> [*]
     CompletadoGuest --> [*]
     PagoFallido --> [*]

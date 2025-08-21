@@ -13,7 +13,7 @@ describe('AdminCouponService', () => {
     let roleService: jasmine.SpyObj<RoleService>;
 
     const baseUrl = `${environment.apiUrl}/api/admin/coupons`;
-    
+
     const mockCoupon: ICoupon = {
         id: '1',
         code: 'TEST10',

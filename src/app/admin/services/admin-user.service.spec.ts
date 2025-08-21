@@ -53,12 +53,12 @@ describe('AdminUserService', () => {
                 { provide: RoleService, useValue: roleServiceSpy }
             ]
         });
-        
+
         service = TestBed.inject(AdminUserService);
         httpMock = TestBed.inject(HttpTestingController);
         roleService = TestBed.inject(RoleService) as jasmine.SpyObj<RoleService>;
         baseUrl = `${environment.apiUrl}/api/admin/users`;
-        
+
         // Por defecto, configuramos permisos como true para los tests
         roleService.canUpdate.and.returnValue(of(true));
         roleService.canDelete.and.returnValue(of(true));
@@ -560,7 +560,7 @@ describe('AdminUserService', () => {
                 // Arrange
                 roleService.canUpdate.and.returnValue(of(true));
                 roleService.isSuperAdmin.and.returnValue(of(true));
-                
+
                 const userId = 'user123';
                 const updateData: UpdateAdminUserData = {
                     name: 'Updated Name'
@@ -587,7 +587,7 @@ describe('AdminUserService', () => {
                 // Arrange
                 roleService.canUpdate.and.returnValue(of(false));
                 roleService.isSuperAdmin.and.returnValue(of(false));
-                
+
                 const userId = 'user123';
                 const updateData: UpdateAdminUserData = {
                     name: 'Updated Name'
@@ -609,7 +609,7 @@ describe('AdminUserService', () => {
                 // Arrange
                 roleService.canUpdate.and.returnValue(throwError(() => new Error('Role verification failed')));
                 roleService.isSuperAdmin.and.returnValue(of(false));
-                
+
                 const userId = 'user123';
                 const updateData: UpdateAdminUserData = {
                     roles: ['USER_ROLE', 'ADMIN_ROLE']
@@ -633,7 +633,7 @@ describe('AdminUserService', () => {
                 // Arrange
                 roleService.canDelete.and.returnValue(of(true));
                 roleService.isSuperAdmin.and.returnValue(of(true));
-                
+
                 const userId = 'user123';
 
                 // Act
@@ -651,7 +651,7 @@ describe('AdminUserService', () => {
                 // Arrange
                 roleService.canDelete.and.returnValue(of(false));
                 roleService.isSuperAdmin.and.returnValue(of(false));
-                
+
                 const userId = 'user123';
                 let errorResponse: any;
 
@@ -670,7 +670,7 @@ describe('AdminUserService', () => {
                 // Arrange
                 roleService.canDelete.and.returnValue(throwError(() => new Error('Role verification failed')));
                 roleService.isSuperAdmin.and.returnValue(of(false));
-                
+
                 const userId = 'user123';
                 let errorResponse: any;
 
@@ -689,7 +689,7 @@ describe('AdminUserService', () => {
                 // Arrange
                 roleService.canDelete.and.returnValue(of(true));
                 roleService.isSuperAdmin.and.returnValue(of(true));
-                
+
                 const superAdminId = 'super-admin-456';
                 let errorResponse: any;
 
@@ -716,7 +716,7 @@ describe('AdminUserService', () => {
                 roleService.canUpdate.and.returnValue(of(true));
                 roleService.canDelete.and.returnValue(of(true));
                 roleService.isSuperAdmin.and.returnValue(of(true));
-                
+
                 const userId = 'user123';
                 const updateData: UpdateAdminUserData = {
                     roles: ['USER_ROLE', 'ADMIN_ROLE']
@@ -751,7 +751,7 @@ describe('AdminUserService', () => {
                 roleService.canUpdate.and.returnValue(of(true));
                 roleService.canDelete.and.returnValue(of(false));
                 roleService.isSuperAdmin.and.returnValue(of(false));
-                
+
                 const userId = 'user123';
                 const updateData: UpdateAdminUserData = {
                     name: 'Updated Name'
