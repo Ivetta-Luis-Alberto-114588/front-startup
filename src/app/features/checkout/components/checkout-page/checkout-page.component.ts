@@ -455,7 +455,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     const selectedPayment = this.availablePaymentMethods.find(m => m._id === this.selectedPaymentMethod);
     const selectedPaymentCode = selectedPayment?.code?.toUpperCase() || '';
 
-  this.orderService.createOrder(orderPayload).pipe(
+    this.orderService.createOrder(orderPayload).pipe(
       tap((createdOrder) => {
         console.log('✅ Orden creada exitosamente con método:', this.selectedDeliveryMethod?.name);
 
@@ -563,9 +563,9 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       message = 'Error de conexión. Verifica tu conexión a internet.';
     }
 
-  this.notificationService.showError(message, 'Error en Pedido');
-  // Asegurar que el loader se oculte en errores
-  this.isProcessingOrder = false;
+    this.notificationService.showError(message, 'Error en Pedido');
+    // Asegurar que el loader se oculte en errores
+    this.isProcessingOrder = false;
   }
 
   // ===========================================
@@ -975,7 +975,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       this.checkoutStateService.resetCheckoutState();
     }
     setTimeout(() => {
-  this.isProcessingOrder = false; // Finaliza el loader justo antes de navegar
+      this.isProcessingOrder = false; // Finaliza el loader justo antes de navegar
       this.redirectToOrderPage(orderIdStr);
     }, 2000);
   }
