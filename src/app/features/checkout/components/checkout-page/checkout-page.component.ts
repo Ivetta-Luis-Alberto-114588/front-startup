@@ -2,7 +2,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subscription, switchMap, tap, catchError, EMPTY, of, finalize, map } from 'rxjs';
+import { Observable, Subscription, switchMap, tap, catchError, EMPTY, of, map } from 'rxjs';
+import { filter, take, finalize } from 'rxjs/operators';
 import { AuthService } from 'src/app/auth/services/auth.service';
 import { CartService } from 'src/app/features/cart/services/cart.service';
 import { ICart } from 'src/app/features/cart/models/icart';
@@ -106,13 +107,18 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     // Cargar métodos de entrega disponibles
     this.loadDeliveryMethods();
 
-    // Redirigir si el carrito está vacío
-    this.cartSubscription = this.cart$.subscribe(cart => {
-      if (!cart || cart.items.length === 0) {
-        this.notificationService.showWarning('Tu carrito está vacío.', 'Checkout');
-        this.router.navigate(['/cart']);
-      }
-    });
+    // Redirigir si el carrito está vacío SOLO al entrar al checkout (evitar redirección tras limpiar el carrito)
+    this.cartSubscription = this.cart$
+      .pipe(
+        filter((cart): cart is ICart => cart !== null), // esperar primera emisión válida
+        take(1)
+      )
+      .subscribe(cart => {
+        if (!cart || cart.items.length === 0) {
+          this.notificationService.showWarning('Tu carrito está vacío.', 'Checkout');
+          this.router.navigate(['/cart']);
+        }
+      });
 
     // Cargar direcciones si el usuario está autenticado
     this.authService.isAuthenticated$.pipe(
@@ -152,7 +158,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     this.addressSubscription = this.addressService.getAddresses().pipe(
       finalize(() => this.isLoadingAddresses = false)
     ).subscribe({
-      next: (addrs) => {
+      next: (addrs: IAddress[]) => {
         this.addresses = addrs;
         // Preseleccionar la dirección default si existe
         const defaultAddr = addrs.find(a => a.isDefault);
@@ -185,7 +191,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     this.citySubscription = this.cityService.getCities().pipe(
       finalize(() => this.isLoadingCities = false)
     ).subscribe({
-      next: (cities) => this.cities = cities,
+      next: (cities: ICity[]) => this.cities = cities,
       error: (err) => this.notificationService.showError('No se pudieron cargar las ciudades.', 'Error')
     });
   }
@@ -199,7 +205,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
         this.newAddressForm.get('neighborhoodId')?.enable(); // Habilitar al terminar
       })
     ).subscribe({
-      next: (neighborhoods) => this.neighborhoods = neighborhoods,
+      next: (neighborhoods: INeighborhood[]) => this.neighborhoods = neighborhoods,
       error: (err) => this.notificationService.showError('No se pudieron cargar los barrios.', 'Error')
     });
   }
@@ -449,7 +455,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
     const selectedPayment = this.availablePaymentMethods.find(m => m._id === this.selectedPaymentMethod);
     const selectedPaymentCode = selectedPayment?.code?.toUpperCase() || '';
 
-    this.orderService.createOrder(orderPayload).pipe(
+  this.orderService.createOrder(orderPayload).pipe(
       tap((createdOrder) => {
         console.log('✅ Orden creada exitosamente con método:', this.selectedDeliveryMethod?.name);
 
@@ -484,8 +490,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       catchError(err => {
         this.handleOrderError(err);
         return EMPTY;
-      }),
-      finalize(() => this.isProcessingOrder = false)
+      })
     ).subscribe({
       next: (result: any) => {
         console.log('✅ Resultado del procesamiento:', result);
@@ -501,6 +506,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
             } else if (result.paymentType === 'mercado_pago') {
               if (result.preference?.preference?.init_point) {
                 // Para Mercado Pago, redirigir al pago
+                this.isProcessingOrder = false; // fin del flujo antes de salir a MP
                 this.navigateToPayment(result.preference.preference.init_point);
               } else {
                 // Error: no se pudo obtener el init_point para Mercado Pago
@@ -509,6 +515,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
               }
             } else {
               this.notificationService.showSuccess('¡Pedido confirmado!', 'Orden Creada');
+              this.isProcessingOrder = false;
             }
           },
           error: (err) => {
@@ -518,6 +525,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
               this.handleCashPaymentSuccess(result.orderId);
             } else if (result.paymentType === 'mercado_pago') {
               if (result.preference?.preference?.init_point) {
+                this.isProcessingOrder = false;
                 this.navigateToPayment(result.preference.preference.init_point);
               } else {
                 this.notificationService.showError('No se pudo inicializar el pago. Inténtalo nuevamente.', 'Error de Pago');
@@ -555,7 +563,9 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       message = 'Error de conexión. Verifica tu conexión a internet.';
     }
 
-    this.notificationService.showError(message, 'Error en Pedido');
+  this.notificationService.showError(message, 'Error en Pedido');
+  // Asegurar que el loader se oculte en errores
+  this.isProcessingOrder = false;
   }
 
   // ===========================================
@@ -965,6 +975,7 @@ export class CheckoutPageComponent implements OnInit, OnDestroy {
       this.checkoutStateService.resetCheckoutState();
     }
     setTimeout(() => {
+  this.isProcessingOrder = false; // Finaliza el loader justo antes de navegar
       this.redirectToOrderPage(orderIdStr);
     }, 2000);
   }
